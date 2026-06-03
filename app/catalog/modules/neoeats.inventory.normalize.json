@@ -1,0 +1,162 @@
+{
+  "catalog_version": "v0",
+  "module_id": "neoeats.inventory.normalize",
+  "title": "NeoEats Inventory Normalize",
+  "description": "Normalize inventory naming/units, merge duplicates, and canonicalize ingredient aliases for strict recipe generation.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "inventory": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "pantry_staples": {
+        "type": "array",
+        "items": {
+          "type": [
+            "string",
+            "object"
+          ]
+        }
+      },
+      "aliases": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "inventory"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "normalized_inventory": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "quantity": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string"
+            },
+            "expires_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "alias_map": {
+        "type": "object"
+      },
+      "notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "normalized_inventory",
+      "alias_map",
+      "notes"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "inventory": [
+          {
+            "name": "Tomatoes",
+            "quantity": 2,
+            "unit": "pcs"
+          },
+          {
+            "name": "tomato",
+            "quantity": 500,
+            "unit": "g"
+          }
+        ],
+        "aliases": {
+          "tomatoes": "tomato"
+        }
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "inventory": {
+          "from": "load_inventory.inventory",
+          "default": []
+        },
+        "pantry_staples": {
+          "from": "payload.pantry_staples",
+          "default": []
+        },
+        "aliases": {
+          "from": "payload.aliases",
+          "default": {}
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "inventory",
+    "normalization",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 10,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      100,
+      300
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "local_inventory_transform_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "neoeats.inventory.get"
+  ],
+  "produces": [
+    "normalized_inventory",
+    "alias_map",
+    "notes"
+  ]
+}

@@ -1,0 +1,106 @@
+version: v1
+pricing_version: pricing.v1
+
+prompt_registry:
+  plan: { version: plan.v1 }
+  execute: { version: execute.v1 }
+  repair: { version: repair.v1 }
+  format: { version: format.v1 }
+  finalize: { version: finalize.v1 }
+
+rubric_registry:
+  semantic: { version: rubric.semantic.v1 }
+  json: { version: rubric.json.v1 }
+
+quorum_caps:
+  max_candidates: 5
+  max_concurrency: 3
+  per_candidate_timeout_seconds: 30
+
+artifacts:
+  enabled: true
+  store_raw_responses: true
+  raw_max_chars: 4096
+  raw_hash_only: false
+
+tool_security:
+  enabled: true
+  default_caps: ["llm.read", "llm.generate"]
+  deny_prompt_injection_markers: true
+
+model_tiers:
+  cheap:
+    provider: mock
+    model: fast-small
+    unit_cost: 1
+  balanced:
+    provider: mock
+    model: mid
+    unit_cost: 3
+  powerful:
+    provider: mock
+    model: pro
+    unit_cost: 10
+
+global_budgets:
+  fast:
+    max_total_tokens: 6000
+    max_total_cost_units: 12
+    max_wall_time_seconds: 25
+    max_repairs: 1
+  best:
+    max_total_tokens: 18000
+    max_total_cost_units: 40
+    max_wall_time_seconds: 90
+    max_repairs: 2
+
+task_policies:
+  default:
+    default_mode: fast
+    thresholds:
+      pass_score: 85
+    steps:
+      plan: { tier: cheap, prompt_ref: plan }
+      execute: { tier: balanced, prompt_ref: execute }
+      validate: { tier: cheap, rubric_ref: json }
+      repair_loop: { tier: balanced, prompt_ref: repair }
+      format: { tier: cheap, prompt_ref: format, rubric_ref: json }
+      finalize: { tier: cheap, prompt_ref: finalize }
+
+  high_stakes_text:
+    default_mode: best
+    max_repairs: 2
+    thresholds:
+      pass_score: 90
+    quorum:
+      enabled: true
+      strategy: dual_run_judge
+      merge: pick_best
+    steps:
+      plan: { tier: balanced }
+      execute: { tier: powerful }
+      validate:
+        tier: balanced
+        rubric_ref: semantic
+        ensemble:
+          - kind: llm_judge
+            tier: balanced
+            trust_or_escalate: true
+            confidence_threshold: 0.9
+            escalate_tier: powerful
+      repair_loop: { tier: powerful }
+      format: { tier: balanced }
+      finalize: { tier: balanced }
+
+  json_export:
+    default_mode: fast
+    thresholds:
+      pass_score: 85
+      hard_fail_on_schema_error: true
+    steps:
+      plan: { tier: cheap }
+      execute: { tier: balanced }
+      validate: { tier: cheap }
+      repair_loop: { tier: balanced }
+      format: { tier: cheap }
+      finalize: { tier: cheap }

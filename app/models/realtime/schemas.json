@@ -1,0 +1,406 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Real-time Conversational AI - Message Contracts",
+  "description": "JSON schemas for client-server communication in real-time conversational AI system",
+  "definitions": {
+    "ActionMetadata": {
+      "type": "object",
+      "title": "Action Metadata",
+      "description": "Audit trail metadata for all actions",
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "Session identifier"
+        },
+        "user_id": {
+          "type": ["string", "null"],
+          "description": "User identifier (optional)"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Model confidence in action (0.0-1.0)"
+        },
+        "requires_user_confirmation": {
+          "type": "boolean",
+          "description": "Whether this action requires user confirmation"
+        },
+        "audit_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for audit logging (e.g., ['booking', 'external_api'])"
+        }
+      },
+      "required": ["session_id", "timestamp"],
+      "additionalProperties": false
+    },
+    "Action": {
+      "type": "object",
+      "title": "Action",
+      "description": "Action that model intends to invoke (NOT executed by model)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Action name (search_listings, book_viewing, create_cv, etc.)"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique action ID (e.g., act_12345)"
+        },
+        "params": {
+          "type": "object",
+          "description": "Action-specific parameters",
+          "additionalProperties": true
+        },
+        "metadata": {
+          "$ref": "#/definitions/ActionMetadata"
+        }
+      },
+      "required": ["name", "id", "params", "metadata"],
+      "additionalProperties": false
+    },
+    "ClientMessage": {
+      "type": "object",
+      "title": "Client Message",
+      "description": "User input: text, audio reference, or file",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["client.message"]
+        },
+        "text": {
+          "type": ["string", "null"]
+        },
+        "audio_ref": {
+          "type": ["string", "null"],
+          "description": "Reference to audio file (S3, etc.)"
+        },
+        "file_ref": {
+          "type": ["string", "null"],
+          "description": "Reference to uploaded file (resume, etc.)"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    },
+    "ClientCommand": {
+      "type": "object",
+      "title": "Client Command",
+      "description": "UI/system command",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["client.command"]
+        },
+        "command": {
+          "type": "string",
+          "enum": ["stop", "regenerate", "upload_resume", "clear_context"]
+        },
+        "action_id": {
+          "type": ["string", "null"]
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["type", "command"],
+      "additionalProperties": false
+    },
+    "ClientActionConfirm": {
+      "type": "object",
+      "title": "Client Action Confirmation",
+      "description": "User confirms or rejects an action",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["client.action.confirm"]
+        },
+        "action_id": {
+          "type": "string",
+          "description": "ID of action to confirm/reject"
+        },
+        "confirm": {
+          "type": "boolean",
+          "description": "True to confirm, False to reject"
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Optional reason for confirmation/rejection"
+        }
+      },
+      "required": ["type", "action_id", "confirm"],
+      "additionalProperties": false
+    },
+    "ActionInvoke": {
+      "type": "object",
+      "title": "Action Invoke",
+      "description": "Client invokes an action (FastAPI WS variant)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["action.invoke"]
+        },
+        "action": {
+          "$ref": "#/definitions/Action"
+        }
+      },
+      "required": ["type", "action"],
+      "additionalProperties": true
+    },
+    "ActionConfirm": {
+      "type": "object",
+      "title": "Action Confirm",
+      "description": "Client confirms or rejects an action (FastAPI WS variant)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["action.confirm"]
+        },
+        "action_id": {
+          "type": "string",
+          "description": "ID of action to confirm/reject"
+        },
+        "confirm": {
+          "type": "boolean",
+          "description": "True to confirm, False to reject"
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Optional reason"
+        }
+      },
+      "required": ["type", "action_id", "confirm"],
+      "additionalProperties": false
+    },
+    "ActionCancel": {
+      "type": "object",
+      "title": "Action Cancel",
+      "description": "Client cancels an action (FastAPI WS variant)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["action.cancel"]
+        },
+        "action_id": {
+          "type": "string",
+          "description": "ID of action to cancel"
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Optional reason"
+        }
+      },
+      "required": ["type", "action_id"],
+      "additionalProperties": false
+    },
+    "SagaStatusRequest": {
+      "type": "object",
+      "title": "Saga Status Request",
+      "description": "Client requests saga status",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["saga.status"]
+        },
+        "saga_id": {
+          "type": "string",
+          "description": "Saga ID to query"
+        }
+      },
+      "required": ["type", "saga_id"],
+      "additionalProperties": false
+    },
+    "ModelPartial": {
+      "type": "object",
+      "title": "Model Partial Response",
+      "description": "Streaming partial response from model",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["model.partial"]
+        },
+        "chunk": {
+          "type": "string",
+          "description": "Partial text/token"
+        },
+        "delta": {
+          "type": ["string", "null"],
+          "description": "Optional delta for display"
+        }
+      },
+      "required": ["type", "chunk"],
+      "additionalProperties": false
+    },
+    "ModelFinal": {
+      "type": "object",
+      "title": "Model Final Response",
+      "description": "Complete response from model",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["model.final"]
+        },
+        "content": {
+          "type": "string",
+          "description": "Complete response content"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Response metadata (tokens, model, etc.)",
+          "additionalProperties": true
+        }
+      },
+      "required": ["type", "content"],
+      "additionalProperties": false
+    },
+    "ModelInvokeAction": {
+      "type": "object",
+      "title": "Model Invoke Action",
+      "description": "Model requests to invoke an action (NOT executed by model)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["model.invoke_action"]
+        },
+        "action": {
+          "$ref": "#/definitions/Action"
+        }
+      },
+      "required": ["type", "action"],
+      "additionalProperties": false
+    },
+    "ActionStatus": {
+      "type": "string",
+      "enum": ["pending", "in_progress", "success", "failed", "requires_manual_review"]
+    },
+    "ActionResult": {
+      "type": "object",
+      "title": "Action Result",
+      "description": "Result of action execution by Gateway",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["action.result"]
+        },
+        "action_id": {
+          "type": "string",
+          "description": "Corresponding action ID"
+        },
+        "action_name": {
+          "type": "string",
+          "description": "Name of the action"
+        },
+        "status": {
+          "$ref": "#/definitions/ActionStatus"
+        },
+        "result": {
+          "type": ["object", "null"],
+          "description": "Result data",
+          "additionalProperties": true
+        },
+        "error": {
+          "type": ["string", "null"],
+          "description": "Error message if status=failed"
+        },
+        "requires_manual_review": {
+          "type": "boolean"
+        },
+        "audit": {
+          "type": "object",
+          "description": "Audit trail",
+          "additionalProperties": true
+        }
+      },
+      "required": ["type", "action_id", "action_name", "status"],
+      "additionalProperties": false
+    },
+    "SystemEvent": {
+      "type": "object",
+      "title": "System Event",
+      "description": "System-level event (auth, error, warning)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["system.event"]
+        },
+        "level": {
+          "type": "string",
+          "enum": ["error", "warning", "info"]
+        },
+        "code": {
+          "type": "string",
+          "description": "Event code (auth_failed, rate_limit, etc.)"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "required": ["type", "level", "code", "message"],
+      "additionalProperties": false
+    },
+    "SagaUpdate": {
+      "type": "object",
+      "title": "Saga Update",
+      "description": "Saga state update for clients",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["saga.update"]
+        },
+        "session_id": {"type": "string"},
+        "saga_id": {"type": "string"},
+        "saga_type": {"type": ["string", "null"]},
+        "state": {"type": "string"},
+        "steps": {
+          "type": ["array", "null"],
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "result": {"type": ["object", "null"], "additionalProperties": true},
+        "updated_at": {"type": ["string", "null"]}
+      },
+      "required": ["type", "session_id", "saga_id", "state"],
+      "additionalProperties": false
+    },
+    "SagaStatusResponse": {
+      "type": "object",
+      "title": "Saga Status Response",
+      "description": "Saga status response (server → client)",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["saga.status"]
+        },
+        "session_id": {"type": "string"},
+        "saga_id": {"type": "string"},
+        "saga_type": {"type": ["string", "null"]},
+        "state": {"type": ["string", "null"]},
+        "steps": {
+          "type": ["array", "null"],
+          "items": {"type": "object", "additionalProperties": true}
+        },
+        "result": {"type": ["object", "null"], "additionalProperties": true},
+        "updated_at": {"type": ["string", "null"]},
+        "error": {"type": ["string", "null"]}
+      },
+      "required": ["type", "session_id", "saga_id"],
+      "additionalProperties": false
+    }
+  }
+}

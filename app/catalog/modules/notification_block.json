@@ -1,0 +1,106 @@
+{
+  "catalog_version": "v0",
+  "module_id": "notification_block",
+  "title": "Notification Block",
+  "description": "Render and deliver a notification based on ranked items.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "channel": {
+        "type": "string",
+        "description": "Delivery channel: webhook, email, slack, telegram."
+      },
+      "message_body": {
+        "type": "string",
+        "description": "Optional prebuilt message."
+      },
+      "recipient_info": {
+        "type": "object",
+        "description": "Delivery metadata."
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "timeout_sec": {
+        "type": "number",
+        "description": "Webhook timeout override."
+      }
+    },
+    "required": [
+      "items"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "notified_count": {
+        "type": "integer"
+      },
+      "notification_preview": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "notified_count"
+    ]
+  },
+  "side_effects": [
+    "network.write:webhook",
+    "smtp.send:email"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "items": []
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "items": {
+          "from": "payload.items"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "alerts",
+    "delivery",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 15,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "adapter:webhook_or_email"
+  ],
+  "produces": [
+    "notification_preview",
+    "notified_count"
+  ]
+}

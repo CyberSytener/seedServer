@@ -1,0 +1,101 @@
+{
+  "catalog_version": "v0",
+  "module_id": "vision_apply_update",
+  "title": "Vision Apply Update",
+  "description": "Apply confirmed vision analysis to storage or inventory.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "intake_id": {
+        "type": "string"
+      },
+      "analysis": {
+        "type": "object"
+      },
+      "target": {
+        "type": "string",
+        "description": "storage|inventory"
+      },
+      "approved": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "intake_id"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "applied": {
+        "type": "boolean"
+      },
+      "storage_id": {
+        "type": "string"
+      },
+      "lot_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "applied"
+    ]
+  },
+  "side_effects": [
+    "db.write:inventory_updates"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "intake_id": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "intake_id": {
+          "from": "payload.intake_id"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "saga",
+    "vision"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": false,
+  "timeout_sec": 25,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:inventory_catalog"
+  ],
+  "produces": [
+    "applied",
+    "lot_id",
+    "storage_id"
+  ]
+}

@@ -1,0 +1,53 @@
+# Tool permission matrix for agent sessions (Phase 7 — P7-12).
+#
+# Each tool can override the defaults below.
+# Tools not listed here inherit all defaults (default-deny for sandbox).
+#
+# Fields:
+#   require_scope          — scope needed to call this tool (default: agent:tools:execute)
+#   sandbox_required       — must run in sandbox worker, not in-process (default: false)
+#   requires_confirmation  — human-in-the-loop gate before execution (default: false)
+#   allowed_in_sandbox     — explicitly allowlisted for sandbox worker (default: false, defense-in-depth)
+#   max_calls_per_session  — per-session cap for this tool (null = unlimited)
+
+defaults:
+  require_scope: "agent:tools:execute"
+  sandbox_required: false
+  requires_confirmation: false
+  allowed_in_sandbox: false
+  max_calls_per_session: null
+
+tools:
+  # --- Write operations (confirmation gate + sandbox eligible) ---
+  inventory_sync:
+    require_scope: "agent:tools:execute"
+    sandbox_required: true
+    allowed_in_sandbox: true
+    requires_confirmation: true
+    max_calls_per_session: 5
+
+  # --- Read-only operations ---
+  recipe_generator:
+    require_scope: "agent:tools:execute"
+    sandbox_required: false
+    requires_confirmation: false
+
+  menu_lookup:
+    require_scope: "agent:tools:execute"
+    sandbox_required: false
+    requires_confirmation: false
+
+  # --- Administrative tools (elevated scope) ---
+  admin_reset:
+    require_scope: "admin:tools:execute"
+    sandbox_required: false
+    requires_confirmation: true
+    max_calls_per_session: 1
+
+  # --- GitHub fetch (P0-29) — read-only, sandbox-only ---
+  github_fetch:
+    require_scope: "agent:tools:execute"
+    sandbox_required: true
+    allowed_in_sandbox: true
+    requires_confirmation: false   # read-only
+    max_calls_per_session: 20

@@ -1,0 +1,92 @@
+{
+  "catalog_version": "v0",
+  "module_id": "alert_block",
+  "title": "Alert Block",
+  "description": "Create staff alerts for expiring inventory.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "expiring_items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "channel": {
+        "type": "string"
+      },
+      "recipient_info": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "expiring_items"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "notified_count": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "notified_count"
+    ]
+  },
+  "side_effects": [
+    "db.write:alerts"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "expiring_items": []
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "expiring_items": {
+          "from": "payload.expiring_items"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "alerts",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": false,
+  "timeout_sec": 15,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "database:alerts"
+  ],
+  "produces": [
+    "notified_count"
+  ]
+}

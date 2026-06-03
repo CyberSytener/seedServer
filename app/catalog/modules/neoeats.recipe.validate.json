@@ -1,0 +1,170 @@
+{
+  "catalog_version": "v0",
+  "module_id": "neoeats.recipe.validate",
+  "title": "NeoEats Recipe Validate",
+  "description": "Validate compiled recipe output against allergens, inventory bounds, nutrition completeness, and calorie targets.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object"
+      },
+      "constraints": {
+        "type": "object",
+        "properties": {
+          "diet": {
+            "type": "string"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "calories_target": {
+            "type": "integer"
+          }
+        }
+      },
+      "normalized_inventory": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "nutrition": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "recipe",
+      "constraints"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "ok": {
+        "type": "boolean"
+      },
+      "violations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "suggestions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "estimated_calories": {
+        "type": "integer"
+      }
+    },
+    "required": [
+      "ok",
+      "violations",
+      "suggestions"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "recipe": {
+          "title": "Quick Peanut Rice",
+          "ingredients": [
+            {
+              "name": "peanut",
+              "quantity": 20,
+              "unit": "g"
+            }
+          ],
+          "steps": [
+            "Mix and serve."
+          ]
+        },
+        "constraints": {
+          "allergens": [
+            "peanut"
+          ],
+          "diet": "vegetarian",
+          "calories_target": 450
+        }
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "recipe": {
+          "from": "compile_recipe.recipe"
+        },
+        "constraints": {
+          "from": "normalize_input.normalized.constraints",
+          "default": {}
+        },
+        "normalized_inventory": {
+          "from": "normalize_inventory.normalized_inventory",
+          "default": []
+        },
+        "nutrition": {
+          "from": "compile_recipe.nutrition",
+          "default": {}
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "recipe",
+    "validation",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 12,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      120,
+      360
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_validation_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "neoeats.recipe.compile_strict"
+  ],
+  "produces": [
+    "ok",
+    "violations",
+    "suggestions"
+  ]
+}

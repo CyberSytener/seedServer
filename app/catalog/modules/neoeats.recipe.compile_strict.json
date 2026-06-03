@@ -1,0 +1,192 @@
+{
+  "catalog_version": "v0",
+  "module_id": "neoeats.recipe.compile_strict",
+  "title": "NeoEats Recipe Compile Strict",
+  "description": "Compile draft recipes into inventory-backed ingredients, explicit missing items, and deterministic nutrition estimates.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "draft_recipe": {
+        "type": "object"
+      },
+      "normalized_inventory": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "constraints": {
+        "type": "object"
+      },
+      "pantry_staples": {
+        "type": "array",
+        "items": {
+          "type": [
+            "string",
+            "object"
+          ]
+        }
+      }
+    },
+    "required": [
+      "draft_recipe",
+      "normalized_inventory"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object"
+      },
+      "nutrition": {
+        "type": "object",
+        "properties": {
+          "kcal_total": {
+            "type": "integer"
+          },
+          "protein_g": {
+            "type": "number"
+          },
+          "fat_g": {
+            "type": "number"
+          },
+          "carbs_g": {
+            "type": "number"
+          },
+          "per_serving": {
+            "type": "object"
+          },
+          "estimate_confidence": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kcal_total",
+          "protein_g",
+          "fat_g",
+          "carbs_g"
+        ]
+      },
+      "missing_items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "substitutions": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "facts": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "recipe",
+      "nutrition",
+      "missing_items",
+      "substitutions",
+      "facts"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "draft_recipe": {
+          "title": "Quick Bowl",
+          "ingredients": [
+            {
+              "name": "egg",
+              "quantity": 2,
+              "unit": "pcs"
+            }
+          ],
+          "steps": [
+            "Cook and serve."
+          ]
+        },
+        "normalized_inventory": [
+          {
+            "name": "egg",
+            "quantity": 6,
+            "unit": "pcs"
+          }
+        ],
+        "constraints": {
+          "servings": 2
+        }
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "draft_recipe": {
+          "from": "generate_recipe.recipe"
+        },
+        "normalized_inventory": {
+          "from": "normalize_inventory.normalized_inventory",
+          "default": []
+        },
+        "constraints": {
+          "from": "normalize_input.normalized.constraints",
+          "default": {}
+        },
+        "pantry_staples": {
+          "from": "payload.pantry_staples",
+          "default": []
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "recipe",
+    "compiler",
+    "facts_first",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 15,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      100,
+      300
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "local_facts_first_compiler_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "neoeats.recipe.generate",
+    "neoeats.inventory.normalize"
+  ],
+  "produces": [
+    "recipe",
+    "recipe.ingredients[].source",
+    "recipe.ingredients[].days_to_expiry",
+    "nutrition",
+    "nutrition.estimate_confidence",
+    "missing_items",
+    "substitutions",
+    "facts"
+  ]
+}

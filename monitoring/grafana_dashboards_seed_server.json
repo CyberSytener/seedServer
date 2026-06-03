@@ -1,0 +1,159 @@
+{
+  "dashboard": {
+    "title": "Seed Server - LLM Pipeline Monitoring",
+    "tags": ["seed-server", "llm", "pipeline"],
+    "timezone": "UTC",
+    "panels": [
+      {
+        "title": "LLM API Latency (by Model)",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(seed_server_llm_api_latency_bucket[5m]))",
+            "legendFormat": "{{ model }} - p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(seed_server_llm_api_latency_bucket[5m]))",
+            "legendFormat": "{{ model }} - p99"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Latency (ms)",
+            "format": "ms"
+          }
+        ]
+      },
+      {
+        "title": "API Call Success Rate",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(seed_server_llm_api_calls_success[5m])) by (model) / sum(rate(seed_server_llm_api_calls_total[5m])) by (model) * 100",
+            "legendFormat": "{{ model }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Success Rate (%)",
+            "format": "percent",
+            "max": 100,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "title": "Pipeline Quality Scores",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "avg(seed_server_validation_score) by (mode)",
+            "legendFormat": "{{ mode }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Quality Score",
+            "format": "short",
+            "max": 100,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "title": "Pipeline Execution Time",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(seed_server_pipeline_total_latency_bucket[5m]))",
+            "legendFormat": "{{ mode }} - p95"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Duration (ms)",
+            "format": "ms"
+          }
+        ]
+      },
+      {
+        "title": "LLM Retry Attempts",
+        "type": "graph",
+        "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(seed_server_llm_retries_total[5m])) by (reason)",
+            "legendFormat": "{{ reason }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Retries/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "title": "Parse Errors by Type",
+        "type": "graph",
+        "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "sum(rate(seed_server_llm_parse_errors_total[5m])) by (error_type)",
+            "legendFormat": "{{ error_type }}"
+          }
+        ],
+        "yaxes": [
+          {
+            "label": "Errors/sec",
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "title": "Queue Depth (Real-time)",
+        "type": "stat",
+        "gridPos": { "x": 0, "y": 24, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "seed_server_queue_depth",
+            "legendFormat": "{{ queue_name }}"
+          }
+        ]
+      },
+      {
+        "title": "Exercises Generated (Last 5m)",
+        "type": "stat",
+        "gridPos": { "x": 6, "y": 24, "w": 6, "h": 4 },
+        "targets": [
+          {
+            "expr": "sum(seed_server_pipeline_exercises_count)",
+            "legendFormat": "Total"
+          }
+        ]
+      },
+      {
+        "title": "Last Error Details",
+        "type": "table",
+        "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 },
+        "targets": [
+          {
+            "expr": "topk(10, seed_server_llm_api_calls_error)",
+            "format": "table"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "version": 1
+  }
+}

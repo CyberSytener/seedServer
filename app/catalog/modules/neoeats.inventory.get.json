@@ -1,0 +1,133 @@
+{
+  "catalog_version": "v0",
+  "module_id": "neoeats.inventory.get",
+  "title": "NeoEats Inventory Get",
+  "description": "Read-only inventory fetch for strict recipe orchestration; deterministic stub in DRY_RUN/STUB and DB-backed in LIVE.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string",
+        "enum": [
+          "db",
+          "stub"
+        ]
+      },
+      "include_expired": {
+        "type": "boolean",
+        "default": false
+      }
+    },
+    "required": [
+      "user_id"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "inventory": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "quantity": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string"
+            },
+            "expires_at": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "confidence": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "updated_at": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "inventory"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "user_id": "user-1",
+        "source": "stub",
+        "include_expired": false
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "user_id": {
+          "from": "user_id"
+        },
+        "source": {
+          "from": "payload.inventory_source",
+          "default": "db"
+        },
+        "include_expired": {
+          "from": "payload.include_expired",
+          "default": false
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "inventory",
+    "read_only",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 10,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      100,
+      300
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "local_stub_or_single_db_read_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [],
+  "produces": [
+    "inventory"
+  ]
+}

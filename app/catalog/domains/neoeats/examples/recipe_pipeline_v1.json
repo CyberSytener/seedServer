@@ -1,0 +1,39 @@
+{
+  "name": "recipe_pipeline_v1",
+  "version": "v1",
+  "steps": [
+    {
+      "id": "check_availability",
+      "block": "inventory_sync",
+      "inputs": {
+        "action": "check",
+        "ingredients": {
+          "from": "payload.ingredients",
+          "default": []
+        }
+      }
+    },
+    {
+      "id": "generate_recipe",
+      "block": "recipe_generator",
+      "inputs": {
+        "dish_name": {
+          "from": "payload.dish_name",
+          "default": "Chef Special"
+        },
+        "available_ingredients": {
+          "from": "check_availability.available_ingredients",
+          "default": []
+        },
+        "missing_ingredients": {
+          "from": "check_availability.missing_ingredients",
+          "default": []
+        },
+        "servings": {
+          "from": "payload.servings",
+          "default": 1
+        }
+      }
+    }
+  ]
+}

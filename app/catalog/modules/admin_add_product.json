@@ -1,0 +1,109 @@
+{
+  "catalog_version": "v0",
+  "module_id": "admin_add_product",
+  "title": "Admin Add Product",
+  "description": "Add a new product into the inventory catalog.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "sku": {
+        "type": "string"
+      },
+      "name": {
+        "type": "string"
+      },
+      "category": {
+        "type": "string"
+      },
+      "unit": {
+        "type": "string"
+      },
+      "initial_quantity": {
+        "type": "number"
+      },
+      "expires_at": {
+        "type": "string"
+      },
+      "location_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sku",
+      "name"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "item_id": {
+        "type": "string"
+      },
+      "lot_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "item_id"
+    ]
+  },
+  "side_effects": [
+    "db.write:inventory_catalog"
+  ],
+  "required_scopes": [
+    "flows:*"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sku": "value",
+        "name": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sku": {
+          "from": "payload.sku"
+        },
+        "name": {
+          "from": "payload.name"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "admin",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 20,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:inventory_catalog"
+  ],
+  "produces": [
+    "item_id",
+    "lot_id"
+  ]
+}

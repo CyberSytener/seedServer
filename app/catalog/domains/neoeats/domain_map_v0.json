@@ -1,0 +1,106 @@
+{
+  "catalog_version": "v0",
+  "domain_id": "neoeats",
+  "title": "NeoEats Domain Pack",
+  "summary": "Inventory, recipe, receipt, order, and hot-offer orchestration for NeoEats grocery operations.",
+  "entrypoints": [
+    "recipe from pantry inventory and user constraints",
+    "facts-first strict recipe from available inventory",
+    "inventory update and reconciliation",
+    "daily expiry scan and alerts",
+    "hot offer generation and approval",
+    "vision-assisted inventory updates"
+  ],
+  "intent_routes": [
+    {
+      "intent": "recipe_from_inventory",
+      "pattern": "inventory_check_then_recipe",
+      "preferred_modules": [
+        "neoeats.input.normalize",
+        "neoeats.inventory.get",
+        "neoeats.inventory.normalize",
+        "neoeats.recipe.generate",
+        "neoeats.recipe.validate"
+      ],
+      "notes": "Run normalize -> generate -> validate in DRY_RUN/STUB before SANDBOXED publish."
+    },
+    {
+      "intent": "recipe_from_inventory_strict",
+      "pattern": "inventory_strict_recipe",
+      "preferred_modules": [
+        "neoeats.inventory.get",
+        "neoeats.inventory.normalize",
+        "neoeats.input.normalize",
+        "neoeats.recipe.generate",
+        "neoeats.recipe.compile_strict",
+        "neoeats.recipe.validate"
+      ],
+      "notes": "Facts-first flow enforces inventory-backed ingredients and nutrition before validation; in LIVE mode source=db is required."
+    }
+  ],
+  "recommended_orchestration": [
+    {
+      "name": "order_checkout",
+      "required_modules": [
+        "inventory_block",
+        "billing_block",
+        "accounting_block"
+      ],
+      "ordering_rule": "inventory_block -> billing_block -> accounting_block"
+    },
+    {
+      "name": "hot_offer_flow",
+      "required_modules": [
+        "priority_inventory_scan",
+        "sales_stats_fetch",
+        "hot_offer_generator",
+        "culinary_validator",
+        "approval_block"
+      ],
+      "ordering_rule": "priority_inventory_scan -> sales_stats_fetch -> hot_offer_generator -> culinary_validator -> approval_block"
+    },
+    {
+      "name": "inventory_check_then_recipe",
+      "required_modules": [
+        "neoeats.inventory.get",
+        "neoeats.inventory.normalize",
+        "neoeats.input.normalize",
+        "neoeats.recipe.generate",
+        "neoeats.recipe.validate"
+      ],
+      "optional_modules": [
+        "inventory_sync"
+      ],
+      "ordering_rule": "neoeats.inventory.get -> neoeats.inventory.normalize -> neoeats.input.normalize -> (inventory_sync optional) -> neoeats.recipe.generate -> neoeats.recipe.validate"
+    },
+    {
+      "name": "inventory_strict_recipe",
+      "required_modules": [
+        "neoeats.inventory.get",
+        "neoeats.inventory.normalize",
+        "neoeats.input.normalize",
+        "neoeats.recipe.generate",
+        "neoeats.recipe.compile_strict",
+        "neoeats.recipe.validate"
+      ],
+      "ordering_rule": "neoeats.inventory.get -> neoeats.inventory.normalize -> neoeats.input.normalize -> neoeats.recipe.generate -> neoeats.recipe.compile_strict -> neoeats.recipe.validate"
+    }
+  ],
+  "safety_guidance": [
+    "Use DRY_RUN/STUB before ACTIVE publish.",
+    "Recipe modules are local deterministic heuristics in DRY_RUN/STUB and perform no external calls.",
+    "Facts-first recipe flow must run compile_strict so recipe ingredients come only from inventory + approved staples.",
+    "If validation fails, attach suggestions and keep output marked as non-compliant; avoid implicit side effects.",
+    "Treat approval_block as the final policy gate for promotions.",
+    "Avoid modules with direct writes in unaudited drafts."
+  ],
+  "entity_file": "domains/neoeats/entities_v0.json",
+  "nutrition_table_file": "domains/neoeats/nutrition_table_v0.json",
+  "recipe_card_schema_file": "domains/neoeats/recipe_card_v1.json",
+  "cooking_plan_schema_file": "domains/neoeats/cooking_plan_v1.json",
+  "example_blueprints": [
+    "domains/neoeats/examples/recipe_pipeline_v1.json",
+    "domains/neoeats/examples/recipe_pipeline_v2.json",
+    "domains/neoeats/examples/recipe_pipeline_v3.json"
+  ]
+}

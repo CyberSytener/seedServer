@@ -1,0 +1,75 @@
+# Version control
+.git
+.gitignore
+
+# Environment / secrets
+.env
+.env.*
+
+# Python artifacts
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist/
+build/
+.eggs/
+
+# Tests & dev tooling
+tests/
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+prompt_test_results/
+
+# Documentation (not needed in image)
+# NOTE: README.md must stay — pyproject.toml readme field needs it.
+# Using specific exclusions instead of *.md to avoid BuildKit negation bugs.
+docs/
+reports/
+5.md
+AGENT_INTEGRATION_SURFACE_REPORT.md
+AGENT_TASKS.json
+AUDIT_REPORT.md
+BLUEPRINT_GENERATION_HARDENING_REPORT.md
+CONNECTIVITY_GUIDE.md
+DASHBOARD.md
+DEPLOYMENT_SUMMARY.md
+FINALIZE_AGENT_INTEGRATION_PR.md
+LLM_orchestration_playbook_Saga.md
+NEOEATS_*.md
+PUBLIC_DEPLOYMENT_GUIDE.md
+REAL_LLM_SMOKE_TEST_REPORT.md
+ROADMAP_2026.md
+roadmap.md
+SAGA_EVOLUTION_PLAN.md
+SERVER_AUDIT_REPORT.md
+SERVER_INTEGRATION_AUDIT.md
+SOURCE_OF_TRUTH.md
+TASKS*.md
+TECHNICAL_DOCS.md
+deep-research-report*.md
+newresearch.md
+portfolio_context*.md
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+
+# Node / frontend artifacts
+node_modules/
+saga-console/
+
+# Docker / CI
+docker-compose*.yml
+Dockerfile
+Caddyfile
+cloudflared/
+monitoring/
+Makefile

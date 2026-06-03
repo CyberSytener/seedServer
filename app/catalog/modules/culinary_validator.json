@@ -1,0 +1,121 @@
+{
+  "catalog_version": "v0",
+  "module_id": "culinary_validator",
+  "title": "Culinary Validator",
+  "description": "Validate hot offer palatability and safety using LLM scoring.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "offer": {
+        "type": "object"
+      },
+      "threshold": {
+        "type": "number"
+      },
+      "terminate_on_reject": {
+        "type": "boolean"
+      },
+      "retry_on_reject": {
+        "type": "boolean"
+      },
+      "retry_attempt": {
+        "type": "integer"
+      },
+      "max_retries": {
+        "type": "integer"
+      },
+      "mock_validation": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "offer"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "palatability_score": {
+        "type": "number"
+      },
+      "safety_score": {
+        "type": "number"
+      },
+      "accepted": {
+        "type": "boolean"
+      },
+      "notes": {
+        "type": "string"
+      },
+      "should_retry": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "palatability_score",
+      "safety_score",
+      "accepted"
+    ]
+  },
+  "side_effects": [
+    "llm.call:safety_scoring"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "offer": {}
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "offer": {
+          "from": "payload.offer"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "hot_offer",
+    "neoeats",
+    "quality",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 45,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "high",
+    "estimated_units_per_call": 4,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "llm_provider",
+    "hot_offer_generator"
+  ],
+  "produces": [
+    "accepted",
+    "notes",
+    "palatability_score",
+    "safety_score",
+    "should_retry"
+  ]
+}

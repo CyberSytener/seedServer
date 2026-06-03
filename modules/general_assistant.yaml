@@ -1,0 +1,48 @@
+mode_id: general_assistant
+pipeline: llm_pipeline
+module_version: 1.0.0
+breaking_changes: false
+migrations: []
+prompt_versions:
+  - general_assistant.prompt.v1
+rubric_versions:
+  - general_assistant.rubric.v1
+task_type: general
+default_mode: fast
+format_hint: json_object
+required_fields:
+  - answer
+capabilities:
+  - llm.read
+  - llm.generate
+input_schema:
+  type: object
+  required: [user_request]
+  properties:
+    user_request:
+      type: string
+      minLength: 1
+    constraints:
+      type: object
+      additionalProperties: true
+output_schema:
+  type: object
+  required: [answer]
+  properties:
+    answer:
+      type: string
+    confidence:
+      type: number
+tool_security:
+  deny_prompt_injection_markers: true
+  injection_markers:
+    - "ignore previous instructions"
+    - "reveal system prompt"
+    - "tool override"
+tests:
+  golden:
+    - input:
+        user_request: "Summarize this text"
+      expect_fields: [answer]
+  cost_regression:
+    max_avg_cost_units: 3.0

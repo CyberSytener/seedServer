@@ -1,0 +1,90 @@
+{
+  "catalog_version": "v0",
+  "module_id": "priority_inventory_scan",
+  "title": "Priority Inventory Scan",
+  "description": "Find priority inventory items for hot offers.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "expiry_days": {
+        "type": "integer"
+      },
+      "overstock_threshold": {
+        "type": "number"
+      },
+      "location_id": {
+        "type": "string"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      }
+    },
+    "required": [
+      "items"
+    ]
+  },
+  "side_effects": [
+    "db.read:inventory_and_sales"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "hot_offer",
+    "inventory",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 25,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "database:inventory_lot"
+  ],
+  "produces": [
+    "items"
+  ]
+}

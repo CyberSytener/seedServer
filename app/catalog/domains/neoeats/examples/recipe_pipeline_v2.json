@@ -1,0 +1,49 @@
+{
+  "name": "recipe_pipeline_v2",
+  "version": "v1",
+  "steps": [
+    {
+      "id": "normalize_input",
+      "block": "neoeats.input.normalize",
+      "inputs": {
+        "user_id": {
+          "from": "user_id"
+        },
+        "ingredients": {
+          "from": "payload.ingredients",
+          "default": []
+        },
+        "constraints": {
+          "from": "payload.constraints",
+          "default": {}
+        }
+      }
+    },
+    {
+      "id": "generate_recipe",
+      "block": "neoeats.recipe.generate",
+      "inputs": {
+        "normalized": {
+          "from": "normalize_input.normalized"
+        },
+        "inventory": {
+          "from": "payload.inventory",
+          "default": []
+        }
+      }
+    },
+    {
+      "id": "validate_recipe",
+      "block": "neoeats.recipe.validate",
+      "inputs": {
+        "recipe": {
+          "from": "generate_recipe.recipe"
+        },
+        "constraints": {
+          "from": "normalize_input.normalized.constraints",
+          "default": {}
+        }
+      }
+    }
+  ]
+}

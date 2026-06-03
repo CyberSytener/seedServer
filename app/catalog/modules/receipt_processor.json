@@ -1,0 +1,105 @@
+{
+  "catalog_version": "v0",
+  "module_id": "receipt_processor",
+  "title": "Receipt Processor",
+  "description": "Validate receipt data and prepare ledger + fiscal transactions.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "receipt": {
+        "type": "object"
+      },
+      "approved": {
+        "type": "boolean"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "receipt",
+      "approved"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "accepted": {
+        "type": "boolean"
+      },
+      "ledger_updates": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "fiscal_transaction_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "accepted"
+    ]
+  },
+  "side_effects": [
+    "db.write:receipt_transactions"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "receipt": {},
+        "approved": true
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "receipt": {
+          "from": "payload.receipt"
+        },
+        "approved": {
+          "from": "payload.approved"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "receipt",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": false,
+  "timeout_sec": 35,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:receipt_store"
+  ],
+  "produces": [
+    "accepted",
+    "fiscal_transaction_id",
+    "ledger_updates"
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "catalog_version": "v0",
+  "module_id": "recipe_generator",
+  "title": "Recipe Generator",
+  "description": "Generate a recipe from in-stock ingredients.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "dish_name": {
+        "type": "string"
+      },
+      "ingredients": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "available_ingredients": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "missing_ingredients": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "servings": {
+        "type": "integer"
+      }
+    },
+    "required": []
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "recipe"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "experimental",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "recipe",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 25,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 3,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "inventory_sync"
+  ],
+  "produces": [
+    "recipe"
+  ]
+}

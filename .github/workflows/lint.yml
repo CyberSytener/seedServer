@@ -1,0 +1,71 @@
+name: lint
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Check formatting with black
+        run: black --check --diff app/ tests/
+
+      - name: Check import ordering with isort
+        run: isort --check-only --diff --profile=black app/ tests/
+
+      - name: Lint with flake8
+        run: |
+          flake8 app/ tests/ \
+            --max-line-length=120 \
+            --extend-ignore=E203,W503 \
+            --statistics
+
+      - name: Type-check with mypy
+        run: |
+          mypy app/ \
+            --ignore-missing-imports \
+            --no-strict-optional \
+            --allow-untyped-defs \
+            --warn-unused-configs \
+            --no-error-summary || true
+
+  console-build:
+    name: Saga Console (TypeScript + Vite build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: saga-console/package-lock.json
+
+      - name: Install dependencies
+        working-directory: saga-console
+        run: npm ci
+
+      - name: Type-check and build
+        working-directory: saga-console
+        run: npm run build

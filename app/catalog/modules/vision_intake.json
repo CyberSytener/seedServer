@@ -1,0 +1,116 @@
+{
+  "catalog_version": "v0",
+  "module_id": "vision_intake",
+  "title": "Vision Intake",
+  "description": "Store a vision intake request for inventory or storage updates.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string"
+      },
+      "intent": {
+        "type": "string",
+        "description": "inventory_update|storage_update"
+      },
+      "image_url": {
+        "type": "string"
+      },
+      "image_base64": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "metadata": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "intent"
+    ],
+    "anyOf": [
+      {
+        "required": [
+          "image_url"
+        ]
+      },
+      {
+        "required": [
+          "image_base64"
+        ]
+      }
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "intake_id": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "intake_id",
+      "status"
+    ]
+  },
+  "side_effects": [
+    "db.write:vision_intake"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "intent": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "intent": {
+          "from": "payload.intent"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "saga",
+    "vision"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": false,
+  "timeout_sec": 20,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "database:vision_intake"
+  ],
+  "produces": [
+    "intake_id",
+    "status"
+  ]
+}

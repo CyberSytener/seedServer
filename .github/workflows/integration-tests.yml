@@ -1,0 +1,77 @@
+name: integration-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      postgres:
+        image: postgres:16-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: seed_test
+          POSTGRES_PASSWORD: seed_test_pass
+          POSTGRES_DB: seed_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SEED_ENV: test
+      SEED_DEV: "0"
+      SEED_DB_PATH: ":memory:"
+      SEED_REDIS_URL: redis://localhost:6379/15
+      SEED_REDIS_NAMESPACE: seed_ci
+      SEED_DEFAULT_PROVIDER_FAST: stub
+      SEED_DEFAULT_PROVIDER_BATCH: stub
+      SEED_ENABLE_STUB: "1"
+      SEED_ENABLE_LEGACY_X_USER_ID: "0"
+      SEED_SEED_DEV_USERS_ON_STARTUP: "0"
+      SEED_DEV_CORS: "0"
+      SEED_METRICS_ENABLED: "0"
+      JWT_SECRET_KEY: test-jwt-secret-key-change-this-32-bytes
+      DATABASE_URL: postgresql://seed_test:seed_test_pass@localhost:5432/seed_test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -x -q --timeout=120 \
+            --junitxml=junit-integration.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: junit-integration.xml

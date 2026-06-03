@@ -1,0 +1,88 @@
+{
+  "catalog_version": "v0",
+  "module_id": "admin_remove_product",
+  "title": "Admin Remove Product",
+  "description": "Deactivate a product in the catalog.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "item_id": {
+        "type": "string"
+      },
+      "sku": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "item_id"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "removed": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "removed"
+    ]
+  },
+  "side_effects": [
+    "db.write:inventory_catalog"
+  ],
+  "required_scopes": [
+    "flows:*"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "item_id": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "item_id": {
+          "from": "payload.item_id"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "admin",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 20,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:inventory_catalog"
+  ],
+  "produces": [
+    "removed"
+  ]
+}

@@ -1,0 +1,38 @@
+# Development and Security Testing Dependencies
+# Installs the package itself first, then all dev/test tooling.
+# Usage: pip install -r requirements-dev.txt
+#        (equivalent to: pip install -e ".[dev]")
+-e .
+
+# Code Quality & Linting
+black==24.1.1
+flake8==7.0.0
+pylint==3.0.3
+mypy==1.8.0
+isort==5.13.2
+
+# Testing
+pytest==8.4.2
+pytest-asyncio==0.24.0
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+pytest-timeout==2.2.0
+httpx-ws==0.6.0
+coverage[toml]==7.4.0
+
+# Security Scanning
+bandit[toml]==1.7.6
+safety==3.0.1
+pip-audit==2.7.0
+
+# Secret Detection
+detect-secrets==1.4.0
+
+# Mutation Testing
+mutmut==2.4.4
+
+# License Checking
+pip-licenses==4.3.4
+
+# Pre-commit
+pre-commit==3.6.0

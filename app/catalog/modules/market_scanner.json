@@ -1,0 +1,104 @@
+{
+  "catalog_version": "v0",
+  "module_id": "market_scanner",
+  "title": "Market Scanner",
+  "description": "Scan job sources for a user persona and return matched jobs.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string",
+        "description": "User identifier."
+      },
+      "persona": {
+        "type": "object",
+        "description": "Persona and preferences."
+      }
+    },
+    "required": [
+      "user_id"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "scan_id": {
+        "type": "string"
+      },
+      "jobs": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "source_counts": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "integer"
+        }
+      }
+    },
+    "required": [
+      "scan_id",
+      "jobs",
+      "source_counts"
+    ]
+  },
+  "side_effects": [
+    "network.read:job_sources"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "user_id": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "user_id": {
+          "from": "payload.user_id"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "discovery",
+    "jobs",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 40,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 3,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "adapter:job_sources"
+  ],
+  "produces": [
+    "jobs",
+    "scan_id",
+    "source_counts"
+  ]
+}

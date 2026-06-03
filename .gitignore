@@ -1,0 +1,113 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.venv_py313/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+*.log
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+.env.public
+*.pem
+*.key
+*.crt
+
+# Database/runtime files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+.demo/
+
+# Docker/runtime
+*.pid
+*.seed
+*.sock
+
+# Node/frontend artifacts
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+saga-console/node_modules/
+saga-console/dist/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+.tmp_openclaw_extract/
+.seed_artifacts/
+logs/
+logs/public/
+cloudflared/*.json
+cloudflared/config.yml
+
+# Archive hygiene
+*.zip
+_archive/
+
+# Generated benchmark/test artifacts
+test_artifacts/
+test_path/
+optimizer_logs/
+optimizer_logs_temp/
+mode_test_logs/
+response_capture_logs/
+extended_test_logs/
+dynamic_test_logs/
+final_test_logs/
+multi_phase_*/
+prompt_test_results/
+reports/baseline/
+hashes_*.txt
+grid_info.txt
+bench_slack.txt
+temp_bench.txt
+
+# Local scratch/benchmark scripts produced during exploratory tuning
+scripts/_*.py
+scripts/bench_*.txt
+scripts/*_results.txt
+scripts/startup_trace.txt
+scripts/detour_dist.txt

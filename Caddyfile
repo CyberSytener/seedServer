@@ -1,0 +1,62 @@
+{
+    # Caddy will request/renew TLS certs automatically when DNS + ports are correct.
+    email admin@neoeats.no
+}
+
+neoeats.no, www.neoeats.no {
+    encode zstd gzip
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+    }
+
+    @backend path /health /v1/* /api/* /docs /docs/* /openapi* /redoc* /metrics* /ws* /sse* /internal/*
+    handle @backend {
+        reverse_proxy 127.0.0.1:8001
+    }
+
+    handle {
+        root * C:/Users/Exempel/Desktop/seed.server.v5/front-neoeats-snapshot/dist
+        @index path / /index.html
+        header @index Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        @nested_assets path_regexp nested_assets ^/.+/assets/(.+)$
+        rewrite @nested_assets /assets/{re.nested_assets.1}
+        try_files {path} /index.html
+        file_server
+    }
+}
+
+# Temporary direct-IP check endpoint (HTTP only).
+# Remove this block after neoeats.no DNS cutover if you want domain-only access.
+http://84.52.237.218 {
+    encode zstd gzip
+    reverse_proxy 127.0.0.1:8001
+}
+
+# Cloudflare Tunnel ingress — plain HTTP for tunnel connector (no TLS needed).
+:8080 {
+    encode zstd gzip
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+    }
+
+    @backend path /health /v1/* /api/* /docs /docs/* /openapi* /redoc* /metrics* /ws* /sse* /internal/*
+    handle @backend {
+        reverse_proxy 127.0.0.1:8001
+    }
+
+    handle {
+        root * C:/Users/Exempel/Desktop/seed.server.v5/front-neoeats-snapshot/dist
+        @index path / /index.html
+        header @index Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        @nested_assets path_regexp nested_assets ^/.+/assets/(.+)$
+        rewrite @nested_assets /assets/{re.nested_assets.1}
+        try_files {path} /index.html
+        file_server
+    }
+}

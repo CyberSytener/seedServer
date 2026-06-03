@@ -1,0 +1,91 @@
+{
+  "catalog_version": "v0",
+  "module_id": "daily_expiry_scan",
+  "title": "Daily Expiry Scan",
+  "description": "Scan inventory lots for expiring items.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "as_of_date": {
+        "type": "string",
+        "description": "ISO date"
+      },
+      "window_days": {
+        "type": "integer",
+        "description": "Expiry window in days"
+      },
+      "location_id": {
+        "type": "string"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "expiring_items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      }
+    },
+    "required": [
+      "expiring_items"
+    ]
+  },
+  "side_effects": [
+    "db.read:inventory_lots"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "inventory",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 20,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "database:inventory_lot"
+  ],
+  "produces": [
+    "expiring_items"
+  ]
+}

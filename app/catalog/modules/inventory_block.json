@@ -1,0 +1,113 @@
+{
+  "catalog_version": "v0",
+  "module_id": "inventory_block",
+  "title": "Inventory Block",
+  "description": "Reserve, release, or commit inventory in the ledger.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "description": "reserve|release|commit"
+      },
+      "order_id": {
+        "type": "string"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "reservation_id": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "action"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "ok": {
+        "type": "boolean"
+      },
+      "reservation_id": {
+        "type": "string"
+      },
+      "ledger_version": {
+        "type": "string"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      }
+    },
+    "required": [
+      "ok"
+    ]
+  },
+  "side_effects": [
+    "db.write:inventory_ledger"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "action": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "action": {
+          "from": "payload.action"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "inventory",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 30,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:inventory_ledger"
+  ],
+  "produces": [
+    "items",
+    "ledger_version",
+    "ok",
+    "reservation_id"
+  ]
+}

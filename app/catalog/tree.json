@@ -1,0 +1,669 @@
+{
+  "catalog_version": "v0",
+  "title": "Seed Agent Capability Tree",
+  "root": "app/catalog",
+  "sections": [
+    {
+      "id": "dsl",
+      "title": "Blueprint DSL",
+      "paths": [
+        "blueprint_dsl_v0.json"
+      ]
+    },
+    {
+      "id": "errors",
+      "title": "Error Contracts",
+      "paths": [
+        "error_envelope_v0.json"
+      ]
+    },
+    {
+      "id": "modules",
+      "title": "Module Manifests",
+      "path_prefix": "modules/"
+    },
+    {
+      "id": "domains",
+      "title": "Domain Packs",
+      "path_prefix": "domains/"
+    },
+    {
+      "id": "schemas",
+      "title": "Catalog Schemas",
+      "paths": [
+        "tree_schema_v0.json"
+      ]
+    },
+    {
+      "id": "policies",
+      "title": "Orchestration Policies",
+      "paths": [
+        "orchestration_policy_v0.json"
+      ]
+    },
+    {
+      "id": "patterns",
+      "title": "Blueprint Patterns",
+      "paths": [
+        "blueprint_patterns_v0.json"
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "id": "dsl:blueprint_v0",
+      "title": "Blueprint DSL v0",
+      "kind": "dsl",
+      "path": "blueprint_dsl_v0.json",
+      "tags": [
+        "blueprint",
+        "dsl",
+        "v0"
+      ],
+      "summary": "Formal authoring contract for saga blueprints."
+    },
+    {
+      "id": "pattern:blueprint_patterns_v0",
+      "title": "Blueprint Patterns v0",
+      "kind": "pattern",
+      "path": "blueprint_patterns_v0.json",
+      "tags": [
+        "pattern",
+        "blueprint",
+        "orchestration",
+        "v0"
+      ],
+      "summary": "Reusable blueprint assembly patterns for common orchestration tasks."
+    },
+    {
+      "id": "domain:neoeats:map",
+      "title": "NeoEats Domain Map v0",
+      "kind": "domain",
+      "path": "domains/neoeats/domain_map_v0.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "v0"
+      ],
+      "summary": "NeoEats entities and orchestration guidance."
+    },
+    {
+      "id": "domain:neoeats:entities",
+      "title": "NeoEats Entities v0",
+      "kind": "domain",
+      "path": "domains/neoeats/entities_v0.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "entities",
+        "v0"
+      ],
+      "summary": "Entity catalog for NeoEats workflows."
+    },
+    {
+      "id": "domain:neoeats:nutrition_table",
+      "title": "NeoEats Nutrition Table v0",
+      "kind": "domain",
+      "path": "domains/neoeats/nutrition_table_v0.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "nutrition",
+        "v0"
+      ],
+      "summary": "Local deterministic nutrition table for facts-first recipe compilation."
+    },
+    {
+      "id": "domain:neoeats:recipe_card_v1",
+      "title": "NeoEats Recipe Card Schema v1",
+      "kind": "domain",
+      "path": "domains/neoeats/recipe_card_v1.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "schema",
+        "recipe_card",
+        "v1"
+      ],
+      "summary": "Strict facts-first recipe card contract for UI-safe rendering."
+    },
+    {
+      "id": "domain:neoeats:cooking_plan_v1",
+      "title": "NeoEats Cooking Plan Schema v1",
+      "kind": "domain",
+      "path": "domains/neoeats/cooking_plan_v1.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "schema",
+        "cooking_plan",
+        "v1"
+      ],
+      "summary": "Structured Cooking Mode plan contract with steps, timers, and ingredient refs."
+    },
+    {
+      "id": "domain:neoeats:example:recipe_pipeline_v1",
+      "title": "NeoEats Recipe Pipeline Example",
+      "kind": "example",
+      "path": "domains/neoeats/examples/recipe_pipeline_v1.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "example",
+        "blueprint"
+      ],
+      "summary": "Example blueprint for inventory availability + recipe generation."
+    },
+    {
+      "id": "domain:neoeats:example:recipe_pipeline_v2",
+      "title": "NeoEats Recipe Pipeline Example v2",
+      "kind": "example",
+      "path": "domains/neoeats/examples/recipe_pipeline_v2.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "example",
+        "blueprint",
+        "recipe"
+      ],
+      "summary": "DRY_RUN/STUB-safe recipe pipeline with normalize, generate, and validate steps."
+    },
+    {
+      "id": "domain:neoeats:example:recipe_pipeline_v3",
+      "title": "NeoEats Recipe Pipeline Example v3",
+      "kind": "example",
+      "path": "domains/neoeats/examples/recipe_pipeline_v3.json",
+      "tags": [
+        "domain",
+        "neoeats",
+        "example",
+        "blueprint",
+        "facts_first"
+      ],
+      "summary": "Facts-first recipe pipeline with strict compile and nutrition estimation."
+    },
+    {
+      "id": "errors:error_envelope_v0",
+      "title": "Error Envelope v0",
+      "kind": "schema",
+      "path": "error_envelope_v0.json",
+      "tags": [
+        "errors",
+        "api",
+        "v0"
+      ],
+      "summary": "Shared API error response contract."
+    },
+    {
+      "id": "module:accounting_block",
+      "title": "Accounting Block",
+      "kind": "module",
+      "path": "modules/accounting_block.json",
+      "tags": [
+        "finance",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Post receipts and update daily financial ledger.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:admin_add_product",
+      "title": "Admin Add Product",
+      "kind": "module",
+      "path": "modules/admin_add_product.json",
+      "tags": [
+        "admin",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Add a new product into the inventory catalog.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:admin_remove_product",
+      "title": "Admin Remove Product",
+      "kind": "module",
+      "path": "modules/admin_remove_product.json",
+      "tags": [
+        "admin",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Deactivate a product in the catalog.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:admin_update_product",
+      "title": "Admin Update Product",
+      "kind": "module",
+      "path": "modules/admin_update_product.json",
+      "tags": [
+        "admin",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Update product metadata or lot quantities.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:alert_block",
+      "title": "Alert Block",
+      "kind": "module",
+      "path": "modules/alert_block.json",
+      "tags": [
+        "alerts",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Create staff alerts for expiring inventory.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:approval_block",
+      "title": "Approval Block",
+      "kind": "module",
+      "path": "modules/approval_block.json",
+      "tags": [
+        "approval",
+        "hot_offer",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Approve or reject a hot offer and persist final status.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:billing_block",
+      "title": "Billing Block",
+      "kind": "module",
+      "path": "modules/billing_block.json",
+      "tags": [
+        "finance",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Compute billing totals and generate receipt metadata.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:culinary_validator",
+      "title": "Culinary Validator",
+      "kind": "module",
+      "path": "modules/culinary_validator.json",
+      "tags": [
+        "hot_offer",
+        "neoeats",
+        "quality",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Validate hot offer palatability and safety using LLM scoring.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:daily_expiry_scan",
+      "title": "Daily Expiry Scan",
+      "kind": "module",
+      "path": "modules/daily_expiry_scan.json",
+      "tags": [
+        "inventory",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Scan inventory lots for expiring items.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:hot_offer_generator",
+      "title": "Hot Offer Generator",
+      "kind": "module",
+      "path": "modules/hot_offer_generator.json",
+      "tags": [
+        "hot_offer",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Generate a hot offer from priority inventory and sales stats.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:inventory_block",
+      "title": "Inventory Block",
+      "kind": "module",
+      "path": "modules/inventory_block.json",
+      "tags": [
+        "inventory",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Reserve, release, or commit inventory in the ledger.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:inventory_sync",
+      "title": "Inventory Sync",
+      "kind": "module",
+      "path": "modules/inventory_sync.json",
+      "tags": [
+        "inventory",
+        "neoeats",
+        "saga",
+        "sync"
+      ],
+      "stability": "experimental",
+      "summary": "Sync inventory updates and check ingredient availability against stock_levels.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:job_scorer",
+      "title": "Job Scorer",
+      "kind": "module",
+      "path": "modules/job_scorer.json",
+      "tags": [
+        "jobs",
+        "ranking",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Score a list of jobs for a user persona and optionally persist the scores.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:market_scanner",
+      "title": "Market Scanner",
+      "kind": "module",
+      "path": "modules/market_scanner.json",
+      "tags": [
+        "discovery",
+        "jobs",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Scan job sources for a user persona and return matched jobs.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:neoeats.input.normalize",
+      "title": "NeoEats Input Normalize",
+      "kind": "module",
+      "path": "modules/neoeats.input.normalize.json",
+      "tags": [
+        "neoeats",
+        "recipe",
+        "normalization",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Normalize pantry ingredients and constraints into canonical NeoEats input.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:neoeats.inventory.get",
+      "title": "NeoEats Inventory Get",
+      "kind": "module",
+      "path": "modules/neoeats.inventory.get.json",
+      "tags": [
+        "neoeats",
+        "inventory",
+        "read_only",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Fetch deterministic stub inventory in safe modes or user inventory from DB in LIVE mode.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:neoeats.inventory.normalize",
+      "title": "NeoEats Inventory Normalize",
+      "kind": "module",
+      "path": "modules/neoeats.inventory.normalize.json",
+      "tags": [
+        "neoeats",
+        "inventory",
+        "normalization",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Canonicalize inventory items and units, merge duplicates, and return normalization notes.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:neoeats.recipe.generate",
+      "title": "NeoEats Recipe Generate",
+      "kind": "module",
+      "path": "modules/neoeats.recipe.generate.json",
+      "tags": [
+        "neoeats",
+        "recipe",
+        "generation",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Generate structured recipe JSON from normalized pantry context.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:neoeats.recipe.compile_strict",
+      "title": "NeoEats Recipe Compile Strict",
+      "kind": "module",
+      "path": "modules/neoeats.recipe.compile_strict.json",
+      "tags": [
+        "neoeats",
+        "recipe",
+        "compiler",
+        "facts_first",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Compile draft recipes to inventory-backed ingredients with nutrition facts and missing-item reporting.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:neoeats.recipe.validate",
+      "title": "NeoEats Recipe Validate",
+      "kind": "module",
+      "path": "modules/neoeats.recipe.validate.json",
+      "tags": [
+        "neoeats",
+        "recipe",
+        "validation",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Validate compiled recipe facts for allergens, inventory bounds, and nutrition completeness.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:notification_block",
+      "title": "Notification Block",
+      "kind": "module",
+      "path": "modules/notification_block.json",
+      "tags": [
+        "alerts",
+        "delivery",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Render and deliver a notification based on ranked items.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:priority_inventory_scan",
+      "title": "Priority Inventory Scan",
+      "kind": "module",
+      "path": "modules/priority_inventory_scan.json",
+      "tags": [
+        "hot_offer",
+        "inventory",
+        "neoeats",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Find priority inventory items for hot offers.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:receipt_processor",
+      "title": "Receipt Processor",
+      "kind": "module",
+      "path": "modules/receipt_processor.json",
+      "tags": [
+        "neoeats",
+        "receipt",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Validate receipt data and prepare ledger + fiscal transactions.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:receipt_scanner",
+      "title": "Receipt Scanner",
+      "kind": "module",
+      "path": "modules/receipt_scanner.json",
+      "tags": [
+        "neoeats",
+        "receipt",
+        "saga",
+        "vision"
+      ],
+      "stability": "stable",
+      "summary": "Extract structured receipt data for inventory and fiscal compliance.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:recipe_generator",
+      "title": "Recipe Generator",
+      "kind": "module",
+      "path": "modules/recipe_generator.json",
+      "tags": [
+        "neoeats",
+        "recipe",
+        "saga"
+      ],
+      "stability": "experimental",
+      "summary": "Generate a recipe from in-stock ingredients.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:sales_stats_fetch",
+      "title": "Sales Stats Fetch",
+      "kind": "module",
+      "path": "modules/sales_stats_fetch.json",
+      "tags": [
+        "hot_offer",
+        "neoeats",
+        "saga",
+        "sales"
+      ],
+      "stability": "stable",
+      "summary": "Fetch sales stats for popularity cross-referencing.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:sub_saga",
+      "title": "Sub Saga",
+      "kind": "module",
+      "path": "modules/sub_saga.json",
+      "tags": [
+        "orchestration",
+        "saga"
+      ],
+      "stability": "stable",
+      "summary": "Trigger another stored saga blueprint and return its results.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:vision_analyzer",
+      "title": "Vision Analyzer",
+      "kind": "module",
+      "path": "modules/vision_analyzer.json",
+      "tags": [
+        "neoeats",
+        "saga",
+        "vision"
+      ],
+      "stability": "stable",
+      "summary": "Analyze a product image with a vision model and extract inventory signals.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "module:vision_apply_update",
+      "title": "Vision Apply Update",
+      "kind": "module",
+      "path": "modules/vision_apply_update.json",
+      "tags": [
+        "neoeats",
+        "saga",
+        "vision"
+      ],
+      "stability": "stable",
+      "summary": "Apply confirmed vision analysis to storage or inventory.",
+      "risk_level": "high"
+    },
+    {
+      "id": "module:vision_confirmation",
+      "title": "Vision Confirmation",
+      "kind": "module",
+      "path": "modules/vision_confirmation.json",
+      "tags": [
+        "neoeats",
+        "saga",
+        "vision"
+      ],
+      "stability": "stable",
+      "summary": "Confirm or reject vision analysis before applying updates.",
+      "risk_level": "low"
+    },
+    {
+      "id": "module:vision_intake",
+      "title": "Vision Intake",
+      "kind": "module",
+      "path": "modules/vision_intake.json",
+      "tags": [
+        "neoeats",
+        "saga",
+        "vision"
+      ],
+      "stability": "stable",
+      "summary": "Store a vision intake request for inventory or storage updates.",
+      "risk_level": "medium"
+    },
+    {
+      "id": "policy:orchestration_v0",
+      "title": "Model Orchestration Policy v0",
+      "kind": "policy",
+      "path": "orchestration_policy_v0.json",
+      "tags": [
+        "policy",
+        "models",
+        "orchestration",
+        "v0"
+      ],
+      "summary": "Model-tier selection rules, fallback chains, and hard denies."
+    },
+    {
+      "id": "schema:tree_v0",
+      "title": "Catalog Tree Schema v0",
+      "kind": "schema",
+      "path": "tree_schema_v0.json",
+      "tags": [
+        "schema",
+        "catalog",
+        "v0"
+      ],
+      "summary": "Formal JSON Schema for tree.json structure and node contracts."
+    }
+  ]
+}

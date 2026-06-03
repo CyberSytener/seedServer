@@ -1,0 +1,480 @@
+{
+  "catalog_version": "v0",
+  "schema_id": "neoeats.recipe_card_v1",
+  "title": "NeoEats Recipe Card v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "recipe_id",
+    "title",
+    "match_pct",
+    "match_breakdown",
+    "ingredients",
+    "missing_items",
+    "nutrition",
+    "expiry_priority",
+    "actions",
+    "explain",
+    "flags",
+    "warnings"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "recipe_card_v1"
+    },
+    "recipe_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "match_pct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "match_breakdown": {
+      "type": "object",
+      "required": [
+        "inventory_coverage_pct",
+        "expiry_priority_pct",
+        "prefs_pct",
+        "constraints_pct",
+        "health_score_0_100",
+        "budget_fit_0_100",
+        "overall_score_0_100",
+        "penalties"
+      ],
+      "properties": {
+        "inventory_coverage_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "expiry_priority_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "prefs_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "constraints_pct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "health_score_0_100": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "budget_fit_0_100": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "overall_score_0_100": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "penalties": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "code",
+              "message",
+              "points"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "points": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              }
+            }
+          }
+        }
+      }
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "quantity",
+          "unit",
+          "source"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "inventory",
+              "staple",
+              "missing"
+            ]
+          },
+          "expires_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "days_to_expiry": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "is_estimate": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "missing_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "suggested_quantity",
+          "unit"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "suggested_quantity": {
+            "type": "number",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string"
+          },
+          "est_cost_nok": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "nutrition": {
+      "type": "object",
+      "required": [
+        "kcal_total",
+        "protein_g_total",
+        "protein_g_per_serving",
+        "protein_g",
+        "fat_g",
+        "carbs_g",
+        "estimate_confidence"
+      ],
+      "properties": {
+        "kcal_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "protein_g_total": {
+          "type": "number",
+          "minimum": 0
+        },
+        "protein_g_per_serving": {
+          "type": "number",
+          "minimum": 0
+        },
+        "protein_g": {
+          "type": "number",
+          "minimum": 0
+        },
+        "fat_g": {
+          "type": "number",
+          "minimum": 0
+        },
+        "carbs_g": {
+          "type": "number",
+          "minimum": 0
+        },
+        "per_serving": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "estimate_confidence": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ]
+        }
+      }
+    },
+    "protein_badge": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "label",
+        "protein_g_per_serving",
+        "main_sources"
+      ],
+      "properties": {
+        "label": {
+          "type": "string",
+          "enum": [
+            "High Protein",
+            "Protein Focus"
+          ]
+        },
+        "protein_g_per_serving": {
+          "type": "number",
+          "minimum": 0
+        },
+        "main_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "approx_protein_per_100g",
+              "used_qty_g"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "approx_protein_per_100g": {
+                "type": "number",
+                "minimum": 0
+              },
+              "used_qty_g": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          }
+        },
+        "score_0_100": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        }
+      }
+    },
+    "cooking_plan": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "required": [
+        "schema_version",
+        "servings",
+        "steps"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "string",
+          "const": "cooking_plan_v1"
+        },
+        "servings": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "step_id",
+              "title",
+              "instruction",
+              "ingredients_used",
+              "timers",
+              "tips",
+              "warnings"
+            ],
+            "properties": {
+              "step_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "instruction": {
+                "type": "string"
+              },
+              "duration_sec": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "ingredients_used": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "quantity",
+                    "unit"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "quantity": {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    "unit": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "timers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "label",
+                    "duration_sec"
+                  ],
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "duration_sec": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              },
+              "tips": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "warnings": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "expiry_priority": {
+      "type": "object",
+      "required": [
+        "used_first",
+        "soonest_days"
+      ],
+      "properties": {
+        "used_first": {
+          "type": "array"
+        },
+        "soonest_days": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "required": [
+        "primary_cta",
+        "missing_cost_nok",
+        "missing_count"
+      ],
+      "properties": {
+        "primary_cta": {
+          "type": "string",
+          "enum": [
+            "start_cooking",
+            "order_missing"
+          ]
+        },
+        "missing_cost_nok": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "missing_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "explain": {
+      "type": "string"
+    },
+    "missing_items_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "missing_cost_nok": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "encoding_repaired": {
+      "type": "boolean"
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

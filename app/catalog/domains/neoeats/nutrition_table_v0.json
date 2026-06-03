@@ -1,0 +1,159 @@
+{
+  "catalog_version": "v0",
+  "domain_id": "neoeats",
+  "table_id": "nutrition_table_v0",
+  "items": [
+    {
+      "name": "egg",
+      "kcal_per_100g": 143,
+      "protein_g": 12.6,
+      "fat_g": 9.5,
+      "carbs_g": 0.7,
+      "aliases": ["eggs"]
+    },
+    {
+      "name": "milk",
+      "kcal_per_100g": 42,
+      "protein_g": 3.4,
+      "fat_g": 1.0,
+      "carbs_g": 5.0,
+      "aliases": ["whole milk", "2% milk"]
+    },
+    {
+      "name": "butter",
+      "kcal_per_100g": 717,
+      "protein_g": 0.9,
+      "fat_g": 81.1,
+      "carbs_g": 0.1,
+      "aliases": []
+    },
+    {
+      "name": "flour",
+      "kcal_per_100g": 364,
+      "protein_g": 10.3,
+      "fat_g": 1.0,
+      "carbs_g": 76.3,
+      "aliases": ["all-purpose flour", "ap flour"]
+    },
+    {
+      "name": "rice",
+      "kcal_per_100g": 130,
+      "protein_g": 2.7,
+      "fat_g": 0.3,
+      "carbs_g": 28.0,
+      "aliases": ["white rice", "brown rice"]
+    },
+    {
+      "name": "pasta",
+      "kcal_per_100g": 131,
+      "protein_g": 5.0,
+      "fat_g": 1.1,
+      "carbs_g": 25.0,
+      "aliases": ["spaghetti", "macaroni", "noodles"]
+    },
+    {
+      "name": "chicken",
+      "kcal_per_100g": 165,
+      "protein_g": 31.0,
+      "fat_g": 3.6,
+      "carbs_g": 0.0,
+      "aliases": ["chicken breast", "chicken thigh"]
+    },
+    {
+      "name": "tomato",
+      "kcal_per_100g": 18,
+      "protein_g": 0.9,
+      "fat_g": 0.2,
+      "carbs_g": 3.9,
+      "aliases": ["tomatoes"]
+    },
+    {
+      "name": "onion",
+      "kcal_per_100g": 40,
+      "protein_g": 1.1,
+      "fat_g": 0.1,
+      "carbs_g": 9.3,
+      "aliases": ["onions"]
+    },
+    {
+      "name": "garlic",
+      "kcal_per_100g": 149,
+      "protein_g": 6.4,
+      "fat_g": 0.5,
+      "carbs_g": 33.1,
+      "aliases": []
+    },
+    {
+      "name": "spinach",
+      "kcal_per_100g": 23,
+      "protein_g": 2.9,
+      "fat_g": 0.4,
+      "carbs_g": 3.6,
+      "aliases": []
+    },
+    {
+      "name": "cheese",
+      "kcal_per_100g": 402,
+      "protein_g": 25.0,
+      "fat_g": 33.0,
+      "carbs_g": 1.3,
+      "aliases": ["cheddar", "mozzarella", "parmesan"]
+    },
+    {
+      "name": "olive oil",
+      "kcal_per_100g": 884,
+      "protein_g": 0.0,
+      "fat_g": 100.0,
+      "carbs_g": 0.0,
+      "aliases": ["oil", "extra virgin olive oil"]
+    },
+    {
+      "name": "potato",
+      "kcal_per_100g": 77,
+      "protein_g": 2.0,
+      "fat_g": 0.1,
+      "carbs_g": 17.0,
+      "aliases": ["potatoes"]
+    },
+    {
+      "name": "tofu",
+      "kcal_per_100g": 76,
+      "protein_g": 8.0,
+      "fat_g": 4.8,
+      "carbs_g": 1.9,
+      "aliases": []
+    },
+    {
+      "name": "yogurt",
+      "kcal_per_100g": 63,
+      "protein_g": 5.3,
+      "fat_g": 1.6,
+      "carbs_g": 7.0,
+      "aliases": ["plain yogurt"]
+    },
+    {
+      "name": "bread",
+      "kcal_per_100g": 265,
+      "protein_g": 9.0,
+      "fat_g": 3.2,
+      "carbs_g": 49.0,
+      "aliases": ["loaf bread"]
+    },
+    {
+      "name": "mushroom",
+      "kcal_per_100g": 22,
+      "protein_g": 3.1,
+      "fat_g": 0.3,
+      "carbs_g": 3.3,
+      "aliases": ["mushrooms"]
+    },
+    {
+      "name": "water",
+      "kcal_per_100g": 0,
+      "protein_g": 0.0,
+      "fat_g": 0.0,
+      "carbs_g": 0.0,
+      "aliases": []
+    }
+  ]
+}

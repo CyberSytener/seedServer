@@ -1,0 +1,151 @@
+{
+  "catalog_version": "v0",
+  "id": "blueprint_dsl_v0",
+  "title": "Seed Saga Blueprint DSL v0",
+  "root": {
+    "type": "object",
+    "required": [
+      "name",
+      "version",
+      "steps"
+    ],
+    "properties": {
+      "name": {
+        "type": "string",
+        "minLength": 1
+      },
+      "version": {
+        "type": "string",
+        "enum": [
+          "v1"
+        ]
+      },
+      "steps": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/$defs/step"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "required": [
+        "id",
+        "block",
+        "inputs"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "block": {
+          "type": "string",
+          "minLength": 1
+        },
+        "block_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inputs": {
+          "type": "object"
+        },
+        "params": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "input_map": {
+      "type": "object",
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "Context path: payload.*, request.*, user_id, persona, scan_id, or <step_id>.*"
+        },
+        "default": {},
+        "transform": {
+          "description": "One transform object/string or a list"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "mapping_rules": {
+    "allowed_roots": [
+      "payload",
+      "request",
+      "user_id",
+      "persona",
+      "scan_id"
+    ],
+    "step_references": "Use prior step ids as roots, e.g. market_scanner.jobs",
+    "example": {
+      "jobs": {
+        "from": "market_scanner.jobs"
+      },
+      "user_id": {
+        "from": "user_id"
+      },
+      "fallback_channel": {
+        "from": "payload.channel",
+        "default": "webhook"
+      }
+    }
+  },
+  "transforms": [
+    "lower",
+    "upper",
+    "strip",
+    {
+      "name": "join",
+      "params": {
+        "sep": " "
+      }
+    },
+    {
+      "name": "split",
+      "params": {
+        "sep": " "
+      }
+    },
+    "to_bool",
+    "to_int",
+    "to_float",
+    {
+      "name": "coalesce",
+      "params": {
+        "fallback": "value"
+      }
+    },
+    "len",
+    {
+      "name": "slice",
+      "params": {
+        "start": 0,
+        "end": 5
+      }
+    }
+  ],
+  "publishing_lifecycle": [
+    "DRAFT",
+    "SANDBOXED",
+    "ACTIVE",
+    "ARCHIVED"
+  ],
+  "notes": [
+    "Blueprint generation must return JSON only.",
+    "Unknown block ids fail validation.",
+    "Publishing to ACTIVE requires passing validation and admin approval gate."
+  ]
+}

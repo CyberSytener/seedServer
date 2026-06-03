@@ -1,0 +1,93 @@
+{
+  "catalog_version": "v0",
+  "module_id": "sales_stats_fetch",
+  "title": "Sales Stats Fetch",
+  "description": "Fetch sales stats for popularity cross-referencing.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "day_of_week": {
+        "type": "integer"
+      },
+      "hour_of_day": {
+        "type": "integer"
+      },
+      "location_id": {
+        "type": "string"
+      },
+      "limit": {
+        "type": "integer"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "stats": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      }
+    },
+    "required": [
+      "stats"
+    ]
+  },
+  "side_effects": [
+    "db.read:sales_stats"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "hot_offer",
+    "neoeats",
+    "saga",
+    "sales"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 25,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "database:sales_stats"
+  ],
+  "produces": [
+    "stats"
+  ]
+}

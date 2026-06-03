@@ -1,0 +1,109 @@
+# =============================================================================
+# Seed Server — Local Development Stack
+# =============================================================================
+# Minimal 3-container setup: postgres + redis + api (embedded workers/scheduler)
+# No API keys required — uses the built-in stub LLM provider.
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up --build
+#   # OR via Makefile:
+#   make dev
+#
+# Exposes:
+#   API      → http://localhost:8000
+#   API docs → http://localhost:8000/docs
+#   Redis    → localhost:6379
+#   Postgres → localhost:5432
+# =============================================================================
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: seed_dev
+      POSTGRES_USER: seed
+      POSTGRES_PASSWORD: seed
+    volumes:
+      - pg_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seed -d seed_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # --- Infrastructure ---
+      SEED_REDIS_URL: redis://redis:6379/0
+      SEED_REDIS_NAMESPACE: seed_dev
+      DATABASE_URL: postgresql://seed:seed@postgres:5432/seed_dev
+      SEED_SAGA_DB_URL: postgresql://seed:seed@postgres:5432/seed_dev
+      SEED_DB_PATH: /data/seed.db
+
+      # --- Environment profile ---
+      SEED_ENV: development
+      PUBLIC_MODE: "false"
+
+      # --- Auth (dev convenience — NOT for production) ---
+      # Admin key for /admin endpoints. Change before any public exposure.
+      SEED_ADMIN_KEY: dev-only-change-before-deploy
+      # Pepper for API key hashing — any fixed string is fine in dev.
+      SEED_API_KEY_PEPPER: dev-pepper-change-in-prod
+      SEED_TEST_AUTH_MODE: "true"
+      SEED_TEST_AUTH_DEFAULT_ROLE: developer
+      SEED_TEST_AUTH_DEFAULT_SCOPES: "runs:read,runs:write,modules:read,flows:read,catalog:read,blueprints:write"
+      SEED_ENABLE_LEGACY_X_USER_ID: "false"
+
+      # --- LLM: use stub provider (no API key needed) ---
+      SEED_DEFAULT_PROVIDER_FAST: stub
+      SEED_DEFAULT_PROVIDER_BATCH: stub
+      SEED_ENABLE_STUB: "true"
+      SEED_ENABLE_GEMINI: "false"
+      SEED_ENABLE_OPENAI: "false"
+
+      # --- Embedded workers (replaces separate worker/scheduler containers) ---
+      SEED_EMBEDDED_WORKERS: "true"
+      SEED_EMBEDDED_SCHEDULER: "true"
+      SEED_EMBEDDED_WORKER_QUEUES: q_fast,q_batch,q_low
+
+      # --- Metrics / logging ---
+      SEED_METRICS_ENABLED: "0"
+      SEED_LOG_LEVEL: INFO
+      PYTHONUNBUFFERED: "1"
+
+      # --- Dev flags ---
+      SEED_DEV: "true"
+      SEED_OPTIMIZE_MODE: "false"
+      SEED_PROMPT_TEST_MODE: "false"
+    volumes:
+      - seed_dev_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  pg_dev_data:
+  redis_dev_data:
+  seed_dev_data:

@@ -1,0 +1,40 @@
+{
+  "catalog_version": "v0",
+  "id": "error_envelope_v0",
+  "title": "Standard Error Envelope",
+  "schema": {
+    "type": "object",
+    "required": [
+      "error",
+      "message"
+    ],
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      },
+      "details": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "request_id": {
+        "type": "string"
+      },
+      "hint": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": true
+  },
+  "example": {
+    "error": "invalid_blueprint",
+    "message": "Blueprint validation failed.",
+    "details": [
+      "step[1] (score_jobs) missing required input: jobs"
+    ]
+  }
+}

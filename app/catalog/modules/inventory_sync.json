@@ -1,0 +1,158 @@
+{
+  "catalog_version": "v0",
+  "module_id": "inventory_sync",
+  "title": "Inventory Sync",
+  "description": "Sync inventory updates and check ingredient availability against stock_levels.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "description": "sync or check"
+      },
+      "ingredient_name": {
+        "type": "string"
+      },
+      "barcode": {
+        "type": "string"
+      },
+      "quantity": {
+        "type": "number"
+      },
+      "unit": {
+        "type": "string"
+      },
+      "image_metadata": {
+        "type": "object"
+      },
+      "ingredients": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "ingredient_name": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            },
+            "quantity": {
+              "type": "number"
+            },
+            "unit": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "required": []
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string"
+      },
+      "updated": {
+        "type": "boolean"
+      },
+      "ingredient_name": {
+        "type": "string"
+      },
+      "barcode": {
+        "type": "string"
+      },
+      "quantity": {
+        "type": "number"
+      },
+      "unit": {
+        "type": "string"
+      },
+      "is_available": {
+        "type": "boolean"
+      },
+      "missing_ingredients": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "available_ingredients": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "error": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "status"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "experimental",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "inventory",
+    "neoeats",
+    "saga",
+    "sync"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": false,
+  "timeout_sec": 30,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:stock_levels"
+  ],
+  "produces": [
+    "available_ingredients",
+    "barcode",
+    "error",
+    "ingredient_name",
+    "is_available",
+    "missing_ingredients",
+    "quantity",
+    "status",
+    "unit",
+    "updated"
+  ]
+}

@@ -1,0 +1,99 @@
+{
+  "catalog_version": "v0",
+  "module_id": "approval_block",
+  "title": "Approval Block",
+  "description": "Approve or reject a hot offer and persist final status.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "offer_id": {
+        "type": "string"
+      },
+      "approved": {
+        "type": "boolean"
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "offer_id",
+      "approved"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "approved": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "approved",
+      "status"
+    ]
+  },
+  "side_effects": [
+    "db.write:offer_approvals"
+  ],
+  "required_scopes": [
+    "flows:*"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "offer_id": "value",
+        "approved": true
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "offer_id": {
+          "from": "payload.offer_id"
+        },
+        "approved": {
+          "from": "payload.approved"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "approval",
+    "hot_offer",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 20,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:offer_approvals"
+  ],
+  "produces": [
+    "approved",
+    "status"
+  ]
+}

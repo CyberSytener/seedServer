@@ -1,0 +1,220 @@
+groups:
+  - name: seed_server_slo_alerts
+    interval: 30s
+    rules:
+      # High Error Rate Alert
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(seed_http_requests_total{status=~"5.."}[5m]))
+            / 
+            sum(rate(seed_http_requests_total[5m]))
+          ) * 100 > 2
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 2%)"
+
+      # High Latency Alert
+      - alert: HighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(seed_http_request_latency_seconds_bucket[5m])) by (le, path)
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+  
+  - name: seed_server_llm_alerts
+    interval: 30s
+    rules:
+      # High LLM latency alert
+      - alert: HighLLMLatency
+        expr: histogram_quantile(0.95, rate(seed_server_llm_api_latency_bucket[5m])) > 50000
+        for: 2m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "High LLM API latency detected"
+          description: "p95 LLM latency is {{ $value }}ms (>50s threshold)"
+
+      # LLM API failures
+      - alert: HighLLMErrorRate
+        expr: |
+          sum(rate(seed_server_llm_api_calls_error[5m])) by (model) 
+          / sum(rate(seed_server_llm_api_calls_total[5m])) by (model) > 0.1
+        for: 3m
+        labels:
+          severity: critical
+          component: llm
+        annotations:
+          summary: "High LLM error rate"
+          description: "{{ $labels.model }} error rate is {{ $value | humanizePercentage }} (>10% threshold)"
+
+      # Multiple retries
+      - alert: HighRetryRate
+        expr: |
+          sum(rate(seed_server_llm_retries_total[5m])) 
+          / sum(rate(seed_server_llm_api_calls_total[5m])) > 0.3
+        for: 2m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "High LLM retry rate"
+          description: "Retry rate is {{ $value | humanizePercentage }} (>30% threshold)"
+
+      # Parse errors
+      - alert: HighParseErrorRate
+        expr: |
+          sum(rate(seed_server_llm_parse_errors_total[5m])) 
+          / sum(rate(seed_server_pipeline_total_latency_count[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          component: parsing
+        annotations:
+          summary: "High JSON parse error rate"
+          description: "Parse error rate is {{ $value | humanizePercentage }} (>5% threshold)"
+
+      # Quality score degradation
+      - alert: LowQualityScore
+        expr: avg(seed_server_validation_score) by (mode) < 70
+        for: 5m
+        labels:
+          severity: warning
+          component: validation
+        annotations:
+          summary: "Low lesson quality score"
+          description: "{{ $labels.mode }} average quality is {{ $value }}/100 (<70 threshold)"
+
+      # Queue depth growing
+      - alert: QueueBacklog
+        expr: seed_server_queue_depth > 100
+        for: 3m
+        labels:
+          severity: warning
+          component: queue
+        annotations:
+          summary: "Queue backlog detected"
+          description: "Queue depth is {{ $value }} (>100 threshold)"
+
+      # Pipeline failures
+      - alert: PipelineFailures
+        expr: |
+          sum(rate(seed_server_pipeline_step_result_failure[5m])) 
+          / sum(rate(seed_server_pipeline_step_result_total[5m])) > 0.2
+        for: 2m
+        labels:
+          severity: critical
+          component: pipeline
+        annotations:
+          summary: "High pipeline failure rate"
+          description: "Pipeline failure rate is {{ $value | humanizePercentage }} (>20% threshold)"
+
+      # Excessive repairs
+      - alert: ExcessiveRepairs
+        expr: |
+          sum(rate(seed_server_llm_repairs_total[5m])) 
+          / sum(rate(seed_server_pipeline_total_latency_count[5m])) > 0.2
+        for: 3m
+        labels:
+          severity: warning
+          component: repair
+        annotations:
+          summary: "High JSON repair rate"
+          description: "Repair rate is {{ $value | humanizePercentage }} (>20% of requests)"
+
+      # Queue Backlog Alert
+      - alert: QueueBacklog
+        expr: seed_queue_depth > 100
+        for: 10m
+        labels:
+          severity: warning
+          component: worker
+        annotations:
+          summary: "Job queue backlog detected"
+          description: "Queue {{ $labels.queue }} has {{ $value }} pending jobs"
+
+      # Low Job Completion Rate
+      - alert: LowJobCompletionRate
+        expr: |
+          (
+            sum(rate(seed_jobs_finished_total{status="failed"}[10m]))
+            /
+            sum(rate(seed_jobs_finished_total[10m]))
+          ) * 100 > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: worker
+        annotations:
+          summary: "High job failure rate"
+          description: "Job failure rate is {{ $value | humanizePercentage }}"
+
+      # API Down
+      - alert: APIDown
+        expr: up{job="seed-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Seed Server API is down"
+          description: "The API has been unreachable for 1 minute"
+
+      # High Request Rate (potential attack)
+      - alert: UnusualTrafficSpike
+        expr: |
+          rate(seed_http_requests_total[5m]) > 
+          avg_over_time(rate(seed_http_requests_total[5m])[1h:5m]) * 3
+        for: 5m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Unusual traffic spike detected"
+          description: "Request rate is 3x higher than normal average"
+
+  - name: seed_server_capacity_alerts
+    interval: 30s
+    rules:
+      # Scheduled Queue Growing
+      - alert: ScheduledQueueGrowing
+        expr: deriv(seed_scheduled_depth[10m]) > 1
+        for: 15m
+        labels:
+          severity: warning
+          component: scheduler
+        annotations:
+          summary: "Scheduled queue is growing"
+          description: "Scheduled jobs are accumulating (rate: {{ $value }}/min)"
+
+      # High Memory Usage (if node_exporter is available)
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}%"
+
+      # High CPU Usage (if node_exporter is available)
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"

@@ -1,0 +1,99 @@
+{
+  "catalog_version": "v0",
+  "module_id": "vision_confirmation",
+  "title": "Vision Confirmation",
+  "description": "Confirm or reject vision analysis before applying updates.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "intake_id": {
+        "type": "string"
+      },
+      "approved": {
+        "type": "boolean"
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "intake_id",
+      "approved"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "accepted": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "accepted",
+      "status"
+    ]
+  },
+  "side_effects": [
+    "workflow.gate:human_confirmation"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "intake_id": "value",
+        "approved": true
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "intake_id": {
+          "from": "payload.intake_id"
+        },
+        "approved": {
+          "from": "payload.approved"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "saga",
+    "vision"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 15,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "human_or_policy_gate"
+  ],
+  "produces": [
+    "accepted",
+    "status"
+  ]
+}

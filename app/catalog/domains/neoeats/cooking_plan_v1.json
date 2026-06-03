@@ -1,0 +1,109 @@
+{
+  "catalog_version": "v0",
+  "schema_id": "neoeats.cooking_plan_v1",
+  "title": "NeoEats Cooking Plan v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "servings",
+    "steps"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "cooking_plan_v1"
+    },
+    "servings": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "step_id",
+          "title",
+          "instruction",
+          "ingredients_used",
+          "timers",
+          "tips",
+          "warnings"
+        ],
+        "properties": {
+          "step_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "instruction": {
+            "type": "string"
+          },
+          "duration_sec": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "ingredients_used": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "quantity",
+                "unit"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "unit": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "timers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "label",
+                "duration_sec"
+              ],
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "duration_sec": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          },
+          "tips": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

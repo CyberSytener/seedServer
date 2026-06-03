@@ -1,0 +1,132 @@
+{
+  "catalog_version": "v0",
+  "module_id": "billing_block",
+  "title": "Billing Block",
+  "description": "Compute billing totals and generate receipt metadata.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "order_id": {
+        "type": "string"
+      },
+      "line_items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "cogs_total": {
+        "type": "number"
+      },
+      "waste_overhead": {
+        "type": "number"
+      },
+      "margin_pct": {
+        "type": "number"
+      },
+      "vat_pct": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "order_id",
+      "cogs_total",
+      "margin_pct",
+      "vat_pct"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "subtotal": {
+        "type": "number"
+      },
+      "vat": {
+        "type": "number"
+      },
+      "total": {
+        "type": "number"
+      },
+      "receipt_id": {
+        "type": "string"
+      },
+      "currency": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "total",
+      "receipt_id"
+    ]
+  },
+  "side_effects": [
+    "compute:billing_totals"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "order_id": "value",
+        "cogs_total": 1.0,
+        "margin_pct": 1.0
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "order_id": {
+          "from": "payload.order_id"
+        },
+        "cogs_total": {
+          "from": "payload.cogs_total"
+        },
+        "margin_pct": {
+          "from": "payload.margin_pct"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "finance",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 20,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "pricing_config"
+  ],
+  "produces": [
+    "currency",
+    "receipt_id",
+    "subtotal",
+    "total",
+    "vat"
+  ]
+}

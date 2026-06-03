@@ -1,0 +1,86 @@
+name: real-llm-smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 3 * * *'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      SEED_TEST_ALLOW_REAL_LLM: "1"
+      SEED_DEFAULT_PROVIDER_FAST: "gemini"
+      SEED_DEFAULT_PROVIDER_BATCH: "gemini"
+      SEED_GEMINI_MODEL_CHEAP: "gemini-2.0-flash-lite"
+      SEED_GEMINI_MODEL_FAST: "gemini-2.0-flash-lite"
+      SEED_GEMINI_MODEL_BATCH: "gemini-2.0-flash"
+      SEED_ENABLE_GEMINI: "1"
+      SEED_ENABLE_OPENAI: "0"
+      SEED_ENABLE_STUB: "0"
+      SEED_METRICS_ENABLED: "0"
+      SEED_EMBEDDED_WORKERS: "0"
+      SEED_EMBEDDED_SCHEDULER: "0"
+      SIM_LLM_MODE: real
+      SIM_LLM_PROVIDER: gemini
+      SIM_LLM_MODEL: gemini-2.0-flash-lite
+      SIM_OUTPUT_DIR: .seed_artifacts/simulation-real
+      SMOKE_LOG_DIR: .seed_artifacts/smoke
+    steps:
+      - name: Check secret availability
+        id: secrets_gate
+        shell: bash
+        run: |
+          if [ -n "${GEMINI_API_KEY}" ]; then
+            echo "run_smoke=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_smoke=false" >> "$GITHUB_OUTPUT"
+            echo "No GEMINI_API_KEY present; skipping real-LLM smoke job."
+          fi
+
+      - name: Checkout
+        if: steps.secrets_gate.outputs.run_smoke == 'true'
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        if: steps.secrets_gate.outputs.run_smoke == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        if: steps.secrets_gate.outputs.run_smoke == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run real-LLM smoke pytest
+        if: steps.secrets_gate.outputs.run_smoke == 'true'
+        shell: bash
+        run: |
+          mkdir -p "$SMOKE_LOG_DIR"
+          set -o pipefail
+          python -m pytest -W "ignore::PendingDeprecationWarning" -q \
+            tests/integration/test_real_llm_smoke.py \
+            tests/integration/test_real_simulation_gemini_smoke.py \
+            | tee "$SMOKE_LOG_DIR/real-llm-smoke.log"
+
+      - name: Run simulation harness in real mode
+        if: steps.secrets_gate.outputs.run_smoke == 'true'
+        shell: bash
+        run: |
+          mkdir -p "$SIM_OUTPUT_DIR"
+          set -o pipefail
+          python -m app.sim.run --llm-mode real --llm-provider gemini --llm-model "$SEED_GEMINI_MODEL_CHEAP" --output-dir "$SIM_OUTPUT_DIR" | tee "$SMOKE_LOG_DIR/sim-real.log"
+
+      - name: Upload real smoke artifacts
+        if: steps.secrets_gate.outputs.run_smoke == 'true' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: real-llm-smoke-artifacts
+          path: |
+            .seed_artifacts/smoke
+            .seed_artifacts/simulation-real
+          if-no-files-found: warn

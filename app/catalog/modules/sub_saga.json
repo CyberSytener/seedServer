@@ -1,0 +1,107 @@
+{
+  "catalog_version": "v0",
+  "module_id": "sub_saga",
+  "title": "Sub Saga",
+  "description": "Trigger another stored saga blueprint and return its results.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "blueprint_name": {
+        "type": "string",
+        "description": "Stored blueprint name."
+      },
+      "saga_name": {
+        "type": "string",
+        "description": "Alias for blueprint_name."
+      },
+      "payload": {
+        "type": "object",
+        "description": "Payload for the sub saga."
+      },
+      "inherit_context": {
+        "type": "boolean",
+        "description": "Merge current context into the sub saga payload."
+      }
+    },
+    "anyOf": [
+      {
+        "required": [
+          "blueprint_name"
+        ]
+      },
+      {
+        "required": [
+          "saga_name"
+        ]
+      }
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "sub_saga_status": {
+        "type": "string"
+      },
+      "sub_saga_result": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "sub_saga_status"
+    ]
+  },
+  "side_effects": [
+    "saga.invoke:stored_blueprint"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "orchestration",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 60,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 4,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "blueprint_store"
+  ],
+  "produces": [
+    "sub_saga_result",
+    "sub_saga_status"
+  ]
+}

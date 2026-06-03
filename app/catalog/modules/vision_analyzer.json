@@ -1,0 +1,106 @@
+{
+  "catalog_version": "v0",
+  "module_id": "vision_analyzer",
+  "title": "Vision Analyzer",
+  "description": "Analyze a product image with a vision model and extract inventory signals.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "intake_id": {
+        "type": "string"
+      },
+      "image_url": {
+        "type": "string"
+      },
+      "image_base64": {
+        "type": "string"
+      },
+      "intent": {
+        "type": "string"
+      },
+      "prompt": {
+        "type": "string"
+      },
+      "model_name": {
+        "type": "string"
+      },
+      "mock_analysis": {
+        "type": "object"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "analysis": {
+        "type": "object"
+      },
+      "confidence": {
+        "type": "number"
+      },
+      "model_name": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "analysis"
+    ]
+  },
+  "side_effects": [
+    "llm.call:vision_model"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "saga",
+    "vision"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 45,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "high",
+    "estimated_units_per_call": 5,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "vision_provider"
+  ],
+  "produces": [
+    "analysis",
+    "confidence",
+    "model_name"
+  ]
+}

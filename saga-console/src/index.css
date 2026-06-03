@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* React Flow dark-theme overrides                                     */
+/* ------------------------------------------------------------------ */
+.react-flow__background {
+  background-color: hsl(240 10% 3.9%) !important;
+}
+
+.react-flow__minimap {
+  background-color: hsl(240 10% 6%) !important;
+  border: 1px solid hsl(240 3.7% 15.9%) !important;
+  border-radius: 0.5rem;
+}
+
+.react-flow__controls {
+  border: 1px solid hsl(240 3.7% 15.9%) !important;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background-color: hsl(240 10% 6%) !important;
+  border-bottom: 1px solid hsl(240 3.7% 15.9%) !important;
+  fill: hsl(0 0% 70%) !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: hsl(240 3.7% 15.9%) !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* Animated edge particles                                             */
+/* ------------------------------------------------------------------ */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.react-flow__edge-path.animated {
+  stroke-dasharray: 5 5;
+  animation: dash-flow 0.5s linear infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/* Running node pulse                                                  */
+/* ------------------------------------------------------------------ */
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 4px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 16px currentColor;
+  }
+}
+
+.node-running {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------------ */
+/* Custom scrollbar                                                    */
+/* ------------------------------------------------------------------ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(240 3.7% 20%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(240 3.7% 30%);
+}

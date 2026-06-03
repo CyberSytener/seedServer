@@ -1,0 +1,267 @@
+{
+  "catalog_version": "v0",
+  "id": "blueprint_patterns_v0",
+  "title": "Blueprint Patterns v0",
+  "patterns": [
+    {
+      "pattern_id": "scan_score_notify",
+      "intent_tags": [
+        "jobs",
+        "discovery",
+        "notification"
+      ],
+      "description": "Collect data, rank it, then notify user or channel.",
+      "step_template": [
+        {
+          "id": "scan",
+          "block": "market_scanner"
+        },
+        {
+          "id": "score",
+          "block": "job_scorer"
+        },
+        {
+          "id": "notify",
+          "block": "notification_block"
+        }
+      ],
+      "mapping_hints": [
+        {
+          "from_step": "scan",
+          "to_step": "score",
+          "field": "jobs"
+        },
+        {
+          "from_step": "score",
+          "to_step": "notify",
+          "field": "scored_jobs"
+        }
+      ]
+    },
+    {
+      "pattern_id": "validate_approve_publish",
+      "intent_tags": [
+        "hot_offer",
+        "approval",
+        "publish"
+      ],
+      "description": "Generate proposal, validate quality, route to approval gate.",
+      "step_template": [
+        {
+          "id": "priority_scan",
+          "block": "priority_inventory_scan"
+        },
+        {
+          "id": "sales_stats",
+          "block": "sales_stats_fetch"
+        },
+        {
+          "id": "generate",
+          "block": "hot_offer_generator"
+        },
+        {
+          "id": "validate",
+          "block": "culinary_validator"
+        },
+        {
+          "id": "approve",
+          "block": "approval_block"
+        }
+      ],
+      "mapping_hints": [
+        {
+          "from_step": "priority_scan",
+          "to_step": "generate",
+          "field": "priority_items"
+        },
+        {
+          "from_step": "sales_stats",
+          "to_step": "generate",
+          "field": "sales_stats"
+        },
+        {
+          "from_step": "generate",
+          "to_step": "validate",
+          "field": "offer"
+        }
+      ]
+    },
+    {
+      "pattern_id": "inventory_check_then_recipe",
+      "intent_tags": [
+        "recipe",
+        "inventory",
+        "neoeats",
+        "recipe_from_inventory",
+        "recipe_from_inventory_strict"
+      ],
+      "description": "Read inventory, normalize it, normalize pantry input, generate recipe, and validate constraints.",
+      "step_template": [
+        {
+          "id": "load_inventory",
+          "block": "neoeats.inventory.get"
+        },
+        {
+          "id": "normalize_inventory",
+          "block": "neoeats.inventory.normalize"
+        },
+        {
+          "id": "normalize_input",
+          "block": "neoeats.input.normalize"
+        },
+        {
+          "id": "check_availability",
+          "block": "inventory_sync",
+          "optional": true
+        },
+        {
+          "id": "generate_recipe",
+          "block": "neoeats.recipe.generate"
+        },
+        {
+          "id": "validate_recipe",
+          "block": "neoeats.recipe.validate"
+        }
+      ],
+      "mapping_hints": [
+        {
+          "from_step": "load_inventory",
+          "to_step": "normalize_inventory",
+          "field": "inventory"
+        },
+        {
+          "from_step": "normalize_input",
+          "to_step": "generate_recipe",
+          "field": "normalized"
+        },
+        {
+          "from_step": "normalize_inventory",
+          "to_step": "generate_recipe",
+          "field": "inventory"
+        },
+        {
+          "from_step": "check_availability",
+          "to_step": "generate_recipe",
+          "field": "inventory"
+        },
+        {
+          "from_step": "generate_recipe",
+          "to_step": "validate_recipe",
+          "field": "recipe"
+        },
+        {
+          "from_step": "normalize_input",
+          "to_step": "validate_recipe",
+          "field": "constraints"
+        }
+      ],
+      "post_validation_strategy": {
+        "if_violations": "attach_suggestions",
+        "optional_regenerate": {
+          "enabled": true,
+          "max_attempts": 2
+        }
+      }
+    },
+    {
+      "pattern_id": "normalize_generate_validate_recipe",
+      "intent_tags": [
+        "recipe",
+        "constraints",
+        "neoeats"
+      ],
+      "description": "Minimal reusable chain for request normalization, recipe generation, and heuristic validation.",
+      "step_template": [
+        {
+          "id": "normalize_input",
+          "block": "neoeats.input.normalize"
+        },
+        {
+          "id": "generate_recipe",
+          "block": "neoeats.recipe.generate"
+        },
+        {
+          "id": "validate_recipe",
+          "block": "neoeats.recipe.validate"
+        }
+      ]
+    },
+    {
+      "pattern_id": "inventory_strict_recipe",
+      "intent_tags": [
+        "recipe",
+        "inventory",
+        "facts_first",
+        "recipe_from_inventory_strict",
+        "neoeats"
+      ],
+      "description": "Facts-first recipe orchestration from inventory through strict compile and validation.",
+      "step_template": [
+        {
+          "id": "load_inventory",
+          "block": "neoeats.inventory.get"
+        },
+        {
+          "id": "normalize_inventory",
+          "block": "neoeats.inventory.normalize"
+        },
+        {
+          "id": "normalize_input",
+          "block": "neoeats.input.normalize"
+        },
+        {
+          "id": "generate_recipe_draft",
+          "block": "neoeats.recipe.generate"
+        },
+        {
+          "id": "compile_recipe",
+          "block": "neoeats.recipe.compile_strict"
+        },
+        {
+          "id": "validate_recipe",
+          "block": "neoeats.recipe.validate"
+        }
+      ],
+      "mapping_hints": [
+        {
+          "from_step": "normalize_inventory",
+          "to_step": "generate_recipe_draft",
+          "field": "inventory"
+        },
+        {
+          "from_step": "normalize_input",
+          "to_step": "generate_recipe_draft",
+          "field": "normalized"
+        },
+        {
+          "from_step": "generate_recipe_draft",
+          "to_step": "compile_recipe",
+          "field": "draft_recipe"
+        },
+        {
+          "from_step": "normalize_inventory",
+          "to_step": "compile_recipe",
+          "field": "normalized_inventory"
+        },
+        {
+          "from_step": "compile_recipe",
+          "to_step": "validate_recipe",
+          "field": "recipe"
+        },
+        {
+          "from_step": "compile_recipe",
+          "to_step": "validate_recipe",
+          "field": "nutrition"
+        }
+      ],
+      "post_validation_strategy": {
+        "if_violations": "attach_suggestions",
+        "optional_regenerate": {
+          "enabled": true,
+          "max_attempts": 1,
+          "trigger_severity": "high"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "catalog_version": "v0",
+  "module_id": "receipt_scanner",
+  "title": "Receipt Scanner",
+  "description": "Extract structured receipt data for inventory and fiscal compliance.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "image_url": {
+        "type": "string"
+      },
+      "image_base64": {
+        "type": "string"
+      },
+      "vendor_hint": {
+        "type": "string"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "locale": {
+        "type": "string"
+      },
+      "mock_receipt": {
+        "type": "object"
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "vendor_info": {
+        "type": "object"
+      },
+      "fiscal_data": {
+        "type": "object"
+      },
+      "line_items": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "vat_validation": {
+        "type": "object"
+      }
+    },
+    "required": [
+      "vendor_info",
+      "fiscal_data",
+      "line_items"
+    ]
+  },
+  "side_effects": [
+    "llm.call:vision_ocr"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "sample": "value"
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "sample": {
+          "from": "payload.sample"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "receipt",
+    "saga",
+    "vision"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 45,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "high",
+    "estimated_units_per_call": 5,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "medium",
+  "depends_on": [
+    "vision_provider"
+  ],
+  "produces": [
+    "fiscal_data",
+    "line_items",
+    "vat_validation",
+    "vendor_info"
+  ]
+}

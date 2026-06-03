@@ -1,0 +1,111 @@
+{
+  "catalog_version": "v0",
+  "module_id": "accounting_block",
+  "title": "Accounting Block",
+  "description": "Post receipts and update daily financial ledger.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "order_id": {
+        "type": "string"
+      },
+      "receipt_id": {
+        "type": "string"
+      },
+      "total": {
+        "type": "number"
+      },
+      "vat": {
+        "type": "number"
+      },
+      "currency": {
+        "type": "string"
+      },
+      "source": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "order_id",
+      "receipt_id",
+      "total"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "posted": {
+        "type": "boolean"
+      },
+      "journal_entry_id": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "posted"
+    ]
+  },
+  "side_effects": [
+    "db.write:financial_ledger"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "order_id": "value",
+        "receipt_id": "value",
+        "total": 1.0
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "order_id": {
+          "from": "payload.order_id"
+        },
+        "receipt_id": {
+          "from": "payload.receipt_id"
+        },
+        "total": {
+          "from": "payload.total"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "finance",
+    "neoeats",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN"
+  ],
+  "idempotent": false,
+  "timeout_sec": 30,
+  "retry_policy": {
+    "max_retries": 0,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "medium",
+    "estimated_units_per_call": 2,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "high",
+  "depends_on": [
+    "database:financial_ledger"
+  ],
+  "produces": [
+    "journal_entry_id",
+    "posted"
+  ]
+}

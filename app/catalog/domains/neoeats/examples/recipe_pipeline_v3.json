@@ -1,0 +1,113 @@
+{
+  "name": "recipe_pipeline_v3",
+  "version": "v1",
+  "steps": [
+    {
+      "id": "load_inventory",
+      "block": "neoeats.inventory.get",
+      "inputs": {
+        "user_id": {
+          "from": "user_id"
+        },
+        "source": {
+          "from": "payload.inventory_source",
+          "default": "db"
+        },
+        "include_expired": {
+          "from": "payload.include_expired",
+          "default": false
+        }
+      }
+    },
+    {
+      "id": "normalize_inventory",
+      "block": "neoeats.inventory.normalize",
+      "inputs": {
+        "inventory": {
+          "from": "load_inventory.inventory",
+          "default": []
+        },
+        "pantry_staples": {
+          "from": "payload.pantry_staples",
+          "default": []
+        },
+        "aliases": {
+          "from": "payload.aliases",
+          "default": {}
+        }
+      }
+    },
+    {
+      "id": "normalize_input",
+      "block": "neoeats.input.normalize",
+      "inputs": {
+        "user_id": {
+          "from": "user_id"
+        },
+        "ingredients": {
+          "from": "payload.ingredients",
+          "default": []
+        },
+        "constraints": {
+          "from": "payload.constraints",
+          "default": {}
+        }
+      }
+    },
+    {
+      "id": "generate_recipe_draft",
+      "block": "neoeats.recipe.generate",
+      "inputs": {
+        "normalized": {
+          "from": "normalize_input.normalized"
+        },
+        "inventory": {
+          "from": "normalize_inventory.normalized_inventory",
+          "default": []
+        }
+      }
+    },
+    {
+      "id": "compile_recipe",
+      "block": "neoeats.recipe.compile_strict",
+      "inputs": {
+        "draft_recipe": {
+          "from": "generate_recipe_draft.recipe"
+        },
+        "normalized_inventory": {
+          "from": "normalize_inventory.normalized_inventory",
+          "default": []
+        },
+        "constraints": {
+          "from": "normalize_input.normalized.constraints",
+          "default": {}
+        },
+        "pantry_staples": {
+          "from": "payload.pantry_staples",
+          "default": []
+        }
+      }
+    },
+    {
+      "id": "validate_recipe",
+      "block": "neoeats.recipe.validate",
+      "inputs": {
+        "recipe": {
+          "from": "compile_recipe.recipe"
+        },
+        "constraints": {
+          "from": "normalize_input.normalized.constraints",
+          "default": {}
+        },
+        "normalized_inventory": {
+          "from": "normalize_inventory.normalized_inventory",
+          "default": []
+        },
+        "nutrition": {
+          "from": "compile_recipe.nutrition",
+          "default": {}
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "catalog_version": "v0",
+  "domain_id": "neoeats",
+  "entities": {
+    "Ingredient": {
+      "description": "Canonical ingredient item used by pantry and recipe workflows.",
+      "fields": [
+        "name",
+        "quantity",
+        "unit"
+      ]
+    },
+    "InventoryItem": {
+      "description": "User inventory item used for strict recipe generation.",
+      "fields": [
+        "name",
+        "quantity",
+        "unit",
+        "expires_at",
+        "confidence"
+      ]
+    },
+    "InventorySnapshot": {
+      "description": "Read-only inventory snapshot returned by inventory.get.",
+      "fields": [
+        "inventory",
+        "updated_at"
+      ]
+    },
+    "NormalizedInventoryResult": {
+      "description": "Normalized inventory payload from inventory.normalize.",
+      "fields": [
+        "normalized_inventory",
+        "alias_map",
+        "notes"
+      ]
+    },
+    "RecipeNutrition": {
+      "description": "Deterministic nutrition estimate payload from recipe.compile_strict.",
+      "fields": [
+        "kcal_total",
+        "protein_g_total",
+        "protein_g_per_serving",
+        "protein_g",
+        "fat_g",
+        "carbs_g",
+        "per_serving",
+        "confidence"
+      ]
+    },
+    "RecipeFacts": {
+      "description": "Facts-first compilation metadata for strict recipe output.",
+      "fields": [
+        "used_inventory_only",
+        "staples_used",
+        "compiler_violations"
+      ]
+    },
+    "MissingIngredient": {
+      "description": "Ingredient requested by draft recipe but unavailable in allowed inventory/staples.",
+      "fields": [
+        "name",
+        "suggested_qty",
+        "unit"
+      ]
+    },
+    "Constraints": {
+      "description": "User preference and safety constraints for recipe generation.",
+      "fields": [
+        "diet",
+        "allergens",
+        "calories_target",
+        "cuisine",
+        "time_limit_minutes",
+        "servings"
+      ]
+    },
+    "Recipe": {
+      "description": "Generated recipe response consumed by UI and agent workflows.",
+      "fields": [
+        "title",
+        "servings",
+        "time_minutes",
+        "ingredients",
+        "steps",
+        "tags"
+      ]
+    },
+    "ValidationResult": {
+      "description": "Constraint validation payload for generated recipes.",
+      "fields": [
+        "ok",
+        "violations",
+        "suggestions",
+        "estimated_calories"
+      ]
+    },
+    "RecipeCardV1": {
+      "description": "Strict facts-first recipe card contract for UI-safe rendering.",
+      "fields": [
+        "schema_version",
+        "recipe_id",
+        "title",
+        "match_pct",
+        "match_breakdown",
+        "ingredients",
+        "missing_items",
+        "nutrition",
+        "protein_badge",
+        "cooking_plan",
+        "expiry_priority",
+        "actions",
+        "missing_items_count",
+        "missing_cost_nok",
+        "explain",
+        "encoding_repaired",
+        "flags",
+        "warnings"
+      ]
+    },
+    "CookingPlanV1": {
+      "description": "Structured step-by-step cooking guide for Cooking Mode UI.",
+      "fields": [
+        "schema_version",
+        "servings",
+        "steps"
+      ]
+    },
+    "FridgeItem": {
+      "description": "Tracked inventory item in cold storage.",
+      "fields": [
+        "item_id",
+        "name",
+        "quantity",
+        "unit",
+        "expires_at",
+        "freshness_pct",
+        "category"
+      ]
+    },
+    "StoreItem": {
+      "description": "Catalog or marketplace item metadata.",
+      "fields": [
+        "item_id",
+        "sku",
+        "name",
+        "category",
+        "unit",
+        "quantity_available"
+      ]
+    },
+    "OrderItem": {
+      "description": "Line item in order workflows.",
+      "fields": [
+        "item_id",
+        "sku",
+        "name",
+        "quantity",
+        "unit",
+        "price"
+      ]
+    },
+    "OrderSummary": {
+      "description": "Aggregate order state for API and saga status updates.",
+      "fields": [
+        "order_id",
+        "saga_id",
+        "status",
+        "items",
+        "total",
+        "currency"
+      ]
+    },
+    "VisionDetectedItem": {
+      "description": "Image analysis extraction for inventory updates.",
+      "fields": [
+        "name",
+        "quantity",
+        "unit",
+        "expires_at",
+        "confidence"
+      ]
+    }
+  }
+}

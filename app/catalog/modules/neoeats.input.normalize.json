@@ -1,0 +1,143 @@
+{
+  "catalog_version": "v0",
+  "module_id": "neoeats.input.normalize",
+  "title": "NeoEats Input Normalize",
+  "description": "Normalize pantry ingredients and user constraints into a stable NeoEats request shape.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string"
+      },
+      "ingredients": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "constraints": {
+        "type": "object",
+        "properties": {
+          "diet": {
+            "type": "string"
+          },
+          "allergens": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "calories_target": {
+            "type": "integer"
+          },
+          "cuisine": {
+            "type": "string"
+          },
+          "time_limit": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          },
+          "servings": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          }
+        }
+      }
+    },
+    "required": [
+      "ingredients"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "normalized": {
+        "type": "object"
+      },
+      "normalization_notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "normalized"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "ingredients": [
+          "Eggs",
+          "Spinach",
+          "Milk"
+        ],
+        "constraints": {
+          "diet": "vegetarian",
+          "allergens": [
+            "peanuts"
+          ],
+          "servings": 2
+        }
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "user_id": {
+          "from": "user_id"
+        },
+        "ingredients": {
+          "from": "payload.ingredients",
+          "default": []
+        },
+        "constraints": {
+          "from": "payload.constraints",
+          "default": {}
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "recipe",
+    "normalization",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 10,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      100,
+      300
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "local_heuristic_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [],
+  "produces": [
+    "normalized"
+  ]
+}

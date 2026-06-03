@@ -1,0 +1,86 @@
+{
+  "catalog_version": "v0",
+  "id": "orchestration_policy_v0",
+  "title": "Model Orchestration Policy v0",
+  "model_tiers": {
+    "cheap": {
+      "objective": "low_cost",
+      "max_latency_sec": 8,
+      "recommended_for": [
+        "draft_generation",
+        "simple_validation",
+        "dry_run_summary"
+      ]
+    },
+    "balanced": {
+      "objective": "quality_latency_balance",
+      "max_latency_sec": 15,
+      "recommended_for": [
+        "blueprint_generation",
+        "domain_reasoning",
+        "repair_suggestions"
+      ]
+    },
+    "powerful": {
+      "objective": "max_quality",
+      "max_latency_sec": 30,
+      "recommended_for": [
+        "complex_orchestration",
+        "policy_audit",
+        "critical_approval_review"
+      ]
+    }
+  },
+  "selection_rules": [
+    {
+      "when": {
+        "intent": "generate_blueprint",
+        "complexity": "low",
+        "budget": "tight"
+      },
+      "prefer_tier": "cheap",
+      "fallback_tiers": [
+        "balanced"
+      ]
+    },
+    {
+      "when": {
+        "intent": "generate_blueprint",
+        "complexity": "medium"
+      },
+      "prefer_tier": "balanced",
+      "fallback_tiers": [
+        "cheap",
+        "powerful"
+      ]
+    },
+    {
+      "when": {
+        "intent": "risk_review",
+        "complexity": "high"
+      },
+      "prefer_tier": "powerful",
+      "fallback_tiers": [
+        "balanced"
+      ]
+    }
+  ],
+  "fallback_chains": {
+    "llm_generation": [
+      "cheap",
+      "balanced",
+      "powerful"
+    ],
+    "strict_review": [
+      "powerful",
+      "balanced"
+    ]
+  },
+  "hard_denies": {
+    "publish_without_validation": true,
+    "active_publish_without_admin_gate": true,
+    "unsafe_runtime_modes": [
+      "LIVE_FROM_UNTRUSTED_DRAFT"
+    ]
+  }
+}

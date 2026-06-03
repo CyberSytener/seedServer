@@ -1,0 +1,115 @@
+{
+  "catalog_version": "v0",
+  "module_id": "job_scorer",
+  "title": "Job Scorer",
+  "description": "Score a list of jobs for a user persona and optionally persist the scores.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "user_id": {
+        "type": "string",
+        "description": "User identifier."
+      },
+      "persona": {
+        "type": "object",
+        "description": "Persona and preferences."
+      },
+      "jobs": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      },
+      "scan_id": {
+        "type": "string",
+        "description": "Existing scan id."
+      },
+      "persist": {
+        "type": "boolean",
+        "description": "Persist scores to storage."
+      }
+    },
+    "required": [
+      "user_id",
+      "jobs"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "scored_count": {
+        "type": "integer"
+      },
+      "scored_jobs": {
+        "type": "array",
+        "items": {
+          "type": "object"
+        }
+      }
+    },
+    "required": [
+      "scored_count"
+    ]
+  },
+  "side_effects": [
+    "db.write:job_scores"
+  ],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "user_id": "value",
+        "jobs": []
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "user_id": {
+          "from": "payload.user_id"
+        },
+        "jobs": {
+          "from": "payload.jobs"
+        }
+      }
+    }
+  ],
+  "tags": [
+    "jobs",
+    "ranking",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 45,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      200,
+      800
+    ]
+  },
+  "cost_profile": {
+    "tier": "high",
+    "estimated_units_per_call": 5,
+    "notes": "heuristic_estimate_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "adapter:job_scorer",
+    "adapter:vector_store"
+  ],
+  "produces": [
+    "scored_count",
+    "scored_jobs"
+  ]
+}

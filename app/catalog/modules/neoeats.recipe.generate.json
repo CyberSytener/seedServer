@@ -1,0 +1,135 @@
+{
+  "catalog_version": "v0",
+  "module_id": "neoeats.recipe.generate",
+  "title": "NeoEats Recipe Generate",
+  "description": "Generate a structured draft recipe from normalized pantry input and optional inventory hints.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "normalized": {
+        "type": "object"
+      },
+      "inventory": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "required": [
+      "normalized"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "recipe": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "servings": {
+            "type": "integer"
+          },
+          "time_minutes": {
+            "type": "integer"
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "used_inventory_only": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "recipe"
+    ]
+  },
+  "side_effects": [],
+  "required_scopes": [
+    "runs:write"
+  ],
+  "stability": "stable",
+  "examples": [
+    {
+      "title": "minimal_call",
+      "input": {
+        "normalized": {
+          "user_id": "user-1",
+          "ingredients": [
+            "rice",
+            "tomato",
+            "egg"
+          ],
+          "constraints": {
+            "servings": 2,
+            "diet": "vegetarian"
+          }
+        }
+      }
+    },
+    {
+      "title": "mapped_call",
+      "input": {
+        "normalized": {
+          "from": "normalize_input.normalized"
+        },
+        "inventory": {
+          "from": "payload.inventory",
+          "default": []
+        }
+      }
+    }
+  ],
+  "tags": [
+    "neoeats",
+    "recipe",
+    "generation",
+    "saga"
+  ],
+  "run_modes_supported": [
+    "LIVE",
+    "DRY_RUN",
+    "STUB"
+  ],
+  "idempotent": true,
+  "timeout_sec": 15,
+  "retry_policy": {
+    "max_retries": 1,
+    "strategy": "exponential_backoff_jitter",
+    "backoff_ms": [
+      150,
+      450
+    ]
+  },
+  "cost_profile": {
+    "tier": "low",
+    "estimated_units_per_call": 1,
+    "notes": "deterministic_recipe_builder_v0"
+  },
+  "risk_level": "low",
+  "depends_on": [
+    "neoeats.input.normalize"
+  ],
+  "produces": [
+    "recipe"
+  ]
+}

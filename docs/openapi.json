@@ -1,0 +1,6145 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Seed Server",
+    "version": "0.5"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "summary": "Root",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/users": {
+      "post": {
+        "summary": "Create User",
+        "operationId": "create_user_v1_users_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateUserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/mode": {
+      "post": {
+        "summary": "Admin Set Mode",
+        "operationId": "admin_set_mode_v1_admin_mode_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/stream": {
+      "get": {
+        "summary": "Stream",
+        "operationId": "stream_v1_stream_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/limits": {
+      "get": {
+        "summary": "Limits",
+        "operationId": "limits_v1_limits_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/actions": {
+      "post": {
+        "summary": "Actions",
+        "operationId": "actions_v1_actions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}": {
+      "get": {
+        "summary": "Get Job",
+        "operationId": "get_job_v1_jobs__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/personas": {
+      "get": {
+        "summary": "List Personas",
+        "description": "List all available personas with metadata.\n\nReturns metadata for each persona including name, description, tags,\nand file modification timestamp. Does not include full prompt text.\n\nAuthentication: OPTIONAL - Public endpoint that works without auth.\nIf Authorization header is provided but invalid, it is ignored (no 401).\nThis allows both authenticated and unauthenticated clients to access personas.",
+        "operationId": "list_personas_v1_personas_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonasResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/{job_id}/cancel": {
+      "post": {
+        "summary": "Cancel Job",
+        "operationId": "cancel_job_v1_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lessons/generate": {
+      "post": {
+        "summary": "Generate Lesson",
+        "description": "Generate a new language learning lesson using LLM.\n\nReturns structured lesson with tasks, grading rules, and metadata.\nUses persona system for tone consistency.",
+        "operationId": "generate_lesson_v1_lessons_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lessons/submit": {
+      "post": {
+        "summary": "Submit Lesson Answer",
+        "description": "Submit an answer for a lesson task and get graded feedback.\n\nReturns grade result with feedback, or lesson summary if last task.",
+        "operationId": "submit_lesson_answer_v1_lessons_submit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GradeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lessons": {
+      "get": {
+        "tags": [
+          "lessons"
+        ],
+        "summary": "List Lessons",
+        "description": "List all lessons for the authenticated user.",
+        "operationId": "list_lessons_v1_lessons_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lessons/{lesson_id}": {
+      "get": {
+        "tags": [
+          "lessons"
+        ],
+        "summary": "Get Lesson",
+        "description": "Get a specific lesson with attempts.",
+        "operationId": "get_lesson_v1_lessons__lesson_id__get",
+        "parameters": [
+          {
+            "name": "lesson_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lesson Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonGetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "lessons"
+        ],
+        "summary": "Delete Lesson Endpoint",
+        "description": "Delete a lesson and its attempts.",
+        "operationId": "delete_lesson_endpoint_v1_lessons__lesson_id__delete",
+        "parameters": [
+          {
+            "name": "lesson_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Lesson Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/diagnostics/generate": {
+      "post": {
+        "tags": [
+          "diagnostics"
+        ],
+        "summary": "Generate Diagnostic Items",
+        "description": "Generate diagnostic test items based on blueprint.\n\nReturns structured diagnostic items following the diagnostic schema.\nEach item includes choices, answers, tags, and distractor reasons.",
+        "operationId": "generate_diagnostic_items_v1_diagnostics_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/diagnostics/specialized/tests": {
+      "get": {
+        "tags": [
+          "diagnostics"
+        ],
+        "summary": "List Specialized Tests",
+        "description": "List all available specialized diagnostic tests.\n\nReturns available test types like business_english, medical_english, etc.",
+        "operationId": "list_specialized_tests_v1_diagnostics_specialized_tests_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/diagnostics/specialized/{test_type}": {
+      "post": {
+        "tags": [
+          "diagnostics"
+        ],
+        "summary": "Generate Specialized Test",
+        "description": "Generate a specialized diagnostic test for specific domain or dialect.\n\nAvailable test types:\n- business_english: Professional communication skills\n- medical_english: Healthcare terminology and communication  \n- academic_english: University-level academic writing\n- technical_english: Engineering and IT terminology\n- british_vs_american: Dialect differences assessment",
+        "operationId": "generate_specialized_test_v1_diagnostics_specialized__test_type__post",
+        "parameters": [
+          {
+            "name": "test_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Test Type"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/diagnostic/start": {
+      "post": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Start Diagnostic Session",
+        "description": "Start a new diagnostic placement test session.\n\nCreates session, generates 25 items from blueprint, stores them.\nReturns session ID and first item in Client V1 format.\n\n**Performance Note:** This endpoint generates 25 diagnostic items using LLM,\nwhich typically takes 30-45 seconds. The request will timeout at 45 seconds.\nConsider showing a loading indicator in the UI.\n\n**Client V1 Changes:**\n- nextItem uses itemId (not id), content.*, and metadata structure\n- Backward compatible with legacy field names for 1 week\n\n**Backward Compatibility (1 week):**\n- Accepts language names (e.g., \"English\") or codes (e.g., \"en\")\n- Accepts old level names (e.g., \"beginner\") or CEFR codes (e.g., \"A1\")",
+        "operationId": "start_diagnostic_session_v1_learning_diagnostic_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticStartResponseV1"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/diagnostic/attempt": {
+      "post": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Submit Diagnostic Attempt",
+        "description": "Submit an answer for a diagnostic item.\n\nEvaluates correctness, stores attempt, returns feedback.\n\n**Client V1 Changes:**\n- Returns 'correct' instead of 'isCorrect'\n- Includes optional feedback and attemptId fields",
+        "operationId": "submit_diagnostic_attempt_v1_learning_diagnostic_attempt_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticAttemptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticAttemptResponseV1"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/diagnostic/next": {
+      "post": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Get Next Diagnostic Item",
+        "description": "Get next unanswered item in diagnostic session.\n\nReturns next item or completion status if all items answered.\n\n**Client V1 Changes:**\n- nextItem uses itemId, content.*, and metadata structure",
+        "operationId": "get_next_diagnostic_item_v1_learning_diagnostic_next_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticNextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticNextResponseV1"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/diagnostic/finish": {
+      "post": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Finish Diagnostic Session",
+        "description": "Finish diagnostic session and get results.\n\nCalculates CEFR estimate, skill scores, weak areas.\nMarks session as finished.\n\n**Client V1 Changes:**\n- skillScores maintained as map (Dict[str, int]) for consistency\n- Added detailed logging of finish payload",
+        "operationId": "finish_diagnostic_session_v1_learning_diagnostic_finish_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticFinishRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagnosticFinishResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/profile": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Get Learning Profile",
+        "description": "Get user's learning profile.\n\nReturns 404 if no profile exists yet.",
+        "operationId": "get_learning_profile_v1_learning_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLearningProfileResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Patch Learning Profile",
+        "description": "Patch user's learning profile with updated fields.\n\nMerges updates into existing profile and returns updated profile.\nCreates new profile if none exists (with defaults).",
+        "operationId": "patch_learning_profile_v1_learning_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchLearningProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetLearningProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/profile/upsert": {
+      "post": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Upsert Learning Profile",
+        "description": "Upsert (create or update) user's learning profile.\n\nStores full profile JSON for AI analysis.",
+        "operationId": "upsert_learning_profile_v1_learning_profile_upsert_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertLearningProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpsertLearningProfileResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/recommendations": {
+      "get": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Get Personalized Recommendations Endpoint",
+        "description": "Get personalized learning recommendations based on user's diagnostic history.\n\nAnalyzes user's progression, accuracy trends, and weak areas to provide:\n- Recommended starting level for next diagnostic session\n- Focus areas that need attention\n- Suggested study plan (review/advance/maintain)\n- Progression trend (improving/stable/declining)\n\nReturns default recommendations for new users with no history.",
+        "operationId": "get_personalized_recommendations_endpoint_v1_learning_recommendations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/learning/plan/generate": {
+      "post": {
+        "tags": [
+          "learning"
+        ],
+        "summary": "Generate Learning Plan Endpoint",
+        "description": "Generate structured learning plan from diagnostic results.\n\nUses diagnostic results (latest or specified session) to create\na personalized learning plan with recommended lessons and focus areas.\n\nAlso updates or creates user learning profile.\n\n**Workflow:**\n1. Resolve diagnostic results (from sessionId, latest session, or defaults)\n2. Generate focus areas from weak subskills\n3. Create 5-7 recommended lesson specs\n4. Update/create learning profile\n5. Return plan + profile + first lesson request\n\n**Client Usage:**\nAfter getting the plan, client can call /v1/lessons/generate\nwith the provided firstLessonRequest payload to start learning.",
+        "operationId": "generate_learning_plan_endpoint_v1_learning_plan_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateLearningPlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateLearningPlanResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/feedback/bug-reports": {
+      "post": {
+        "tags": [
+          "feedback"
+        ],
+        "summary": "Submit Bug Report",
+        "description": "Submit a bug report from the client.\n\nStores structured bug reports with full context for analysis.\nReports can include grading mismatches, UI bugs, content issues, etc.\n\n**Authentication:**\n- Requires valid API key / user context\n\n**Rate Limiting:**\n- Applied via standard rate limiting (if configured)\n\n**Payload:**\n- Stores full request JSON for AI-readable debugging\n- Includes context (session, item, task details)\n- Includes client metadata (app version, platform, etc.)",
+        "operationId": "submit_bug_report_v1_feedback_bug_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BugReportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BugReportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/monitoring/performance": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Get Performance Metrics",
+        "description": "Get performance metrics snapshot.\n\nQuery params:\n- hours: Time window in hours (default: 24)\n- operation: Filter by operation type (optional)",
+        "operationId": "get_performance_metrics_v1_monitoring_performance_get",
+        "parameters": [
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 24,
+              "title": "Hours"
+            }
+          },
+          {
+            "name": "operation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/monitoring/health": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Check System Health",
+        "description": "Check overall system health and detect degradation.",
+        "operationId": "check_system_health_v1_monitoring_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/monitoring/slo": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Get Slo Status",
+        "description": "Get current SLO (Service Level Objectives) compliance status.",
+        "operationId": "get_slo_status_v1_monitoring_slo_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/monitoring/slo/{slo_name}/history": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Get Slo History",
+        "description": "Get historical SLO measurements for a specific SLO.\n\nQuery params:\n- hours: Time window in hours (default: 168 = 7 days)",
+        "operationId": "get_slo_history_v1_monitoring_slo__slo_name__history_get",
+        "parameters": [
+          {
+            "name": "slo_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slo Name"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 168,
+              "title": "Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/feature-flags": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Feature Flags",
+        "description": "List all feature flags and their status.",
+        "operationId": "list_feature_flags_v1_feature_flags_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/feature-flags/{flag_name}/toggle": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Toggle Feature Flag",
+        "description": "Enable or disable a feature flag.",
+        "operationId": "toggle_feature_flag_v1_feature_flags__flag_name__toggle_post",
+        "parameters": [
+          {
+            "name": "flag_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Flag Name"
+            }
+          },
+          {
+            "name": "enabled",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean",
+              "title": "Enabled"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ab-tests/run": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Run Ab Test",
+        "description": "Run an automated A/B test comparing baseline vs optimized configurations.\n\nReturns immediate test result.",
+        "operationId": "run_ab_test_v1_ab_tests_run_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/ab-tests/{test_id}/summary": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Ab Test Summary",
+        "description": "Get summary of all runs for a specific A/B test.",
+        "operationId": "get_ab_test_summary_v1_ab_tests__test_id__summary_get",
+        "parameters": [
+          {
+            "name": "test_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Test Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/rate-limits/{user_id}": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get User Rate Limits",
+        "description": "Get current rate limit status for a user.",
+        "operationId": "get_user_rate_limits_v1_admin_rate_limits__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/rate-limits/{user_id}/reset": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Reset User Rate Limits",
+        "description": "Reset rate limits for a user (admin only).",
+        "operationId": "reset_user_rate_limits_v1_admin_rate_limits__user_id__reset_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "endpoint_category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Endpoint Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/rate-limits/cleanup": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Cleanup Rate Limits",
+        "description": "Clean up old rate limit windows (admin only).",
+        "operationId": "cleanup_rate_limits_v1_admin_rate_limits_cleanup_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/alerts": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Alerts",
+        "description": "Get system alerts.",
+        "operationId": "get_alerts_v1_admin_alerts_get",
+        "parameters": [
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Active Only"
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Severity"
+            }
+          },
+          {
+            "name": "hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 24,
+              "title": "Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/alerts/{alert_id}/resolve": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Resolve Alert",
+        "description": "Resolve an alert.",
+        "operationId": "resolve_alert_v1_admin_alerts__alert_id__resolve_post",
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/alerts/check": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Check Alerts",
+        "description": "Manually trigger alert checks.",
+        "operationId": "check_alerts_v1_admin_alerts_check_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/keys/{user_id}/revoke": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Revoke User Key",
+        "description": "Revoke user's API key (admin only).",
+        "operationId": "revoke_user_key_v1_admin_keys__user_id__revoke_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "admin_revocation",
+              "title": "Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/keys/rotate": {
+      "post": {
+        "tags": [
+          "keys"
+        ],
+        "summary": "Rotate My Key",
+        "description": "Rotate own API key (self-service).",
+        "operationId": "rotate_my_key_v1_keys_rotate_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/keys/{user_id}/rotate": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Rotate User Key",
+        "description": "Rotate user's API key (admin only).",
+        "operationId": "rotate_user_key_v1_admin_keys__user_id__rotate_post",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/keys/{user_id}/audit": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get Key Audit",
+        "description": "Get API key audit log for user (admin only).",
+        "operationId": "get_key_audit_v1_admin_keys__user_id__audit_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/lessons/generate/stream": {
+      "post": {
+        "tags": [
+          "lessons-streaming"
+        ],
+        "summary": "Generate Lesson Stream",
+        "description": "Generate lesson with progressive streaming delivery.\n\nReturns Server-Sent Events (SSE) stream with real-time updates:\n\n**Events:**\n- `started`: Generation initiated\n- `progress`: Partial content received (periodic updates)\n- `complete`: Full lesson ready with all data\n- `error`: Generation failed\n\n**Benefits:**\n- 🚀 Immediate feedback (first byte < 1s)\n- 📊 Real-time progress tracking\n- ⚡ Perceived latency reduction\n- 🔄 Can show partial results\n\n**Client Usage:**\n```javascript\nconst eventSource = new EventSource('/v1/lessons/generate/stream', {\n    headers: { 'Authorization': 'Bearer token' }\n});\n\neventSource.addEventListener('started', (e) => {\n    const data = JSON.parse(e.data);\n    console.log('Started:', data.lesson_id);\n});\n\neventSource.addEventListener('progress', (e) => {\n    const data = JSON.parse(e.data);\n    updateProgressBar(data.bytes_received);\n});\n\neventSource.addEventListener('complete', (e) => {\n    const data = JSON.parse(e.data);\n    displayLesson(data.lesson);\n    eventSource.close();\n});\n\neventSource.addEventListener('error', (e) => {\n    const data = JSON.parse(e.data);\n    showError(data.error);\n    eventSource.close();\n});\n```",
+        "operationId": "generate_lesson_stream_v1_lessons_generate_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/submit": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Submit Job",
+        "description": "Submit a background job for async processing.\n\n**Supported Job Types:**\n- `lesson_generate`: Generate a lesson (params = LessonGenerateRequest)\n- `diagnostic_generate`: Generate diagnostic items (params = DiagnosticGenerateRequest)\n\n**Queues:**\n- `q_fast`: High-priority queue (< 5s typical wait)\n- `q_batch`: Standard queue (< 30s typical wait)\n- `q_low`: Low-priority queue (< 2min typical wait)\n\n**Example:**\n```json\n{\n  \"job_type\": \"lesson_generate\",\n  \"params\": {\n    \"mode\": \"vocabulary\",\n    \"target_lang\": \"Spanish\",\n    \"native_lang\": \"English\",\n    \"level\": \"A2\",\n    \"lesson_length\": 5\n  },\n  \"priority\": 10,\n  \"queue\": \"q_fast\"\n}\n```\n\n**Returns:**\n- `job_id`: Use this to poll status or stream updates\n- `status`: Initial status (always \"queued\")\n- `estimated_wait_sec`: Rough estimate based on queue depth",
+        "operationId": "submit_job_v1_jobs_submit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobSubmitRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobSubmitResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/status/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job Status",
+        "description": "Get current status of a job.\n\n**Polling Pattern:**\n```javascript\nasync function waitForJob(jobId) {\n    while (true) {\n        const status = await fetch(`/v1/jobs/status/${jobId}`).then(r => r.json());\n        \n        if (status.status === 'done') {\n            return status.result;\n        }\n        if (status.status === 'failed') {\n            throw new Error(status.error);\n        }\n        \n        // Poll every 2 seconds\n        await new Promise(r => setTimeout(r, 2000));\n    }\n}\n```\n\n**Better: Use streaming endpoint** `/jobs/status/{job_id}/stream` for real-time updates without polling.",
+        "operationId": "get_job_status_v1_jobs_status__job_id__get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/status/{job_id}/stream": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Stream Job Status",
+        "description": "Stream job status updates in real-time using SSE.\n\n**Events:**\n- `status`: Status update (queued -> running -> done/failed)\n- `progress`: Progress information (if available)\n- `complete`: Job finished with result\n- `error`: Job failed\n\n**Client Example:**\n```javascript\nconst eventSource = new EventSource(`/v1/jobs/status/${jobId}/stream`);\n\neventSource.addEventListener('status', (e) => {\n    const data = JSON.parse(e.data);\n    console.log('Status:', data.status);\n});\n\neventSource.addEventListener('complete', (e) => {\n    const data = JSON.parse(e.data);\n    console.log('Result:', data.result);\n    eventSource.close();\n});\n```\n\nThis is more efficient than polling and provides instant updates.",
+        "operationId": "stream_job_status_v1_jobs_status__job_id__stream_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/jobs/list": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "List Jobs",
+        "description": "List user's jobs with optional filtering.\n\n**Parameters:**\n- `limit`: Max results (default 20, max 100)\n- `status`: Filter by status (queued, running, done, failed)\n\n**Returns:**\nArray of job summaries with status and timestamps.",
+        "operationId": "list_jobs_v1_jobs_list_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/diagnostics/generate/stream": {
+      "post": {
+        "tags": [
+          "diagnostics"
+        ],
+        "summary": "Generate Diagnostic Stream",
+        "description": "Generate diagnostic items with real-time streaming progress.\n\nReturns Server-Sent Events (SSE) stream with progress updates.\n\nEvents:\n- started: Generation started\n- item_progress: Progress for each item (X of Y)\n- item_complete: Individual item generated\n- complete: All items complete with full diagnostic set\n- error: Generation failed\n\nExample:\n    ```\n    const eventSource = new EventSource('/v1/diagnostics/generate/stream');\n    eventSource.addEventListener('item_progress', (e) => {\n        const data = JSON.parse(e.data);\n        console.log(`Progress: ${data.current} of ${data.total}`);\n    });\n    eventSource.addEventListener('complete', (e) => {\n        const data = JSON.parse(e.data);\n        console.log('Items:', data.diagnosticSet.items);\n    });\n    ```",
+        "operationId": "generate_diagnostic_stream_v1_diagnostics_generate_stream_post",
+        "parameters": [
+          {
+            "name": "req",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "title": "Req"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiagnosticGenerateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/unit/generate_blueprint": {
+      "post": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Generate Unit Blueprint",
+        "description": "**Phase A: Generate Unit Blueprint**\n\nCreates a Unit with 10-12 Nodes. Each Node contains only metadata (preset_json),\nnot actual lesson content. This prevents hallucinations and keeps DB lean.\n\n**Uses:**\n- Gemini 2.0 Flash with temperature=0.2 (strict, logical)\n- Seed Constants for anti-hallucination guardrails\n- Async LLM client with connection pooling\n\n**Process:**\n1. Build system prompt with available topics/grammar\n2. Call Gemini to generate blueprint JSON\n3. Validate structure with Pydantic\n4. Store Unit + Nodes in DB\n\n**Example Request:**\n```json\n{\n  \"user_profile\": {\n    \"level\": \"A2\",\n    \"interests\": [\"Business\", \"Travel\"],\n    \"mastery_score\": 0.72,\n    \"target_lang\": \"French\",\n    \"native_lang\": \"English\"\n  },\n  \"context\": \"After completing placement test\"\n}\n```\n\n**Returns:**\n- `unit_id`: Use to query unit details\n- `nodes_created`: Number of nodes generated (10-12)",
+        "operationId": "generate_unit_blueprint_v1_path_unit_generate_blueprint_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateBlueprintRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GenerateBlueprintResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/node/start": {
+      "post": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Start Node",
+        "description": "**Phase B: Start Node and Generate Content**\n\nSubmits a background job to generate 7-10 tasks for a node.\nUses the preset_json \"recipe\" stored in the DB.\n\n**Uses:**\n- Gemini 2.0 Flash with temperature=0.75 (creative, varied)\n- Job queue for async processing\n- SSE streaming for progress updates\n\n**Process:**\n1. Fetch node preset_json from DB\n2. Submit job to queue\n3. Return job_id for status polling/streaming\n4. Worker generates content asynchronously\n\n**Example Request:**\n```json\n{\n  \"node_id\": \"abc123\"\n}\n```\n\n**Returns:**\n- `job_id`: Use to poll or stream status\n- `status_url`: Direct link to job status endpoint\n\n**Client Usage:**\n```javascript\n// Submit node start\nconst { job_id } = await fetch('/v1/path/node/start', {\n  method: 'POST',\n  body: JSON.stringify({ node_id: 'abc123' })\n}).then(r => r.json());\n\n// Stream progress (recommended)\nconst es = new EventSource(`/v1/jobs/status/${job_id}/stream`);\nes.addEventListener('complete', (e) => {\n  const { result } = JSON.parse(e.data);\n  displayTasks(result.tasks);\n});\n```",
+        "operationId": "start_node_v1_path_node_start_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartNodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StartNodeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/units": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "List Units",
+        "description": "List all units for authenticated user.\n\n**Query Params:**\n- `status`: Filter by status (locked, available, in_progress, completed)\n\n**Returns:** Array of units with node counts",
+        "operationId": "list_units_v1_path_units_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/units/{unit_id}/nodes": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "List Nodes",
+        "description": "List all nodes for a unit.\n\n**Returns:** Array of nodes with status and progress",
+        "operationId": "list_nodes_v1_path_units__unit_id__nodes_get",
+        "parameters": [
+          {
+            "name": "unit_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Unit Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/nodes/{node_id}": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Get Node Details",
+        "description": "Get node details.\n\n**Query Params:**\n- `include_preset`: Include preset_json (recipe) in response\n\n**Returns:** Node details with optional preset",
+        "operationId": "get_node_details_v1_path_nodes__node_id__get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          },
+          {
+            "name": "include_preset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Preset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/node/submit": {
+      "post": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Submit Node Attempt",
+        "description": "Submit node completion results and get feedback.\n\nRecords all task attempts, calculates score, awards stars,\nand unlocks next node if successful.\n\n**Request Body:**\n```json\n{\n  \"node_id\": \"node-123\",\n  \"session_id\": \"session-abc\",\n  \"started_at\": \"2026-01-12T10:00:00Z\",\n  \"completed_at\": \"2026-01-12T10:15:00Z\",\n  \"task_attempts\": [\n    {\n      \"task_id\": \"task_1\",\n      \"task_type\": \"fill_blank\",\n      \"user_answer\": \"vais\",\n      \"correct_answer\": \"vais\",\n      \"is_correct\": true,\n      \"response_time_ms\": 3500,\n      \"hint_used\": false\n    },\n    ...\n  ],\n  \"metadata\": {}\n}\n```\n\n**Returns:**\n- Score and success status\n- Stars earned (0-3)\n- Next node ID if unlocked\n- Personalized feedback",
+        "operationId": "submit_node_attempt_v1_path_node_submit_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeAttemptSubmit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeAttemptResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/analytics/user": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Get User Analytics",
+        "description": "Get comprehensive analytics for authenticated user.\n\nReturns:\n- Overall progress (units/nodes completed)\n- Task accuracy stats\n- Time spent learning\n- Strongest/weakest task types\n- Current streak",
+        "operationId": "get_user_analytics_v1_path_analytics_user_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserLearningAnalytics"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/analytics/node/{node_id}": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Get Node Analytics",
+        "description": "Get detailed analytics for a specific node.\n\nUseful for:\n- Identifying difficult nodes\n- Finding common error patterns\n- Adjusting difficulty",
+        "operationId": "get_node_analytics_v1_path_analytics_node__node_id__get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NodeAnalyticsSummary"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/leaderboard": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Get Leaderboard",
+        "description": "Get leaderboard rankings.\n\n**Query Params:**\n- `period`: \"daily\", \"weekly\", \"all_time\"\n- `limit`: Number of entries (default: 100)",
+        "operationId": "get_leaderboard_v1_path_leaderboard_get",
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "all_time",
+              "title": "Period"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/adaptive/difficulty": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Get Adaptive Difficulty",
+        "description": "Get personalized difficulty adjustment based on recent performance.\n\nReturns:\n- Current mastery score\n- Suggested difficulty delta for next nodes\n- Reasoning\n\n**Example:**\n```bash\nGET /v1/path/adaptive/difficulty?level=A2\n```",
+        "operationId": "get_adaptive_difficulty_v1_path_adaptive_difficulty_get",
+        "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "A2",
+              "title": "Level"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DifficultyAdjustment"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/adaptive/recommendations": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Get Adaptive Recommendations",
+        "description": "Get personalized learning recommendations.\n\nAnalyzes user's:\n- Completed topics\n- Weak areas needing reinforcement\n- Strong areas ready for advancement\n\nReturns recommended next steps.",
+        "operationId": "get_adaptive_recommendations_v1_path_adaptive_recommendations_get",
+        "parameters": [
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "A2",
+              "title": "Level"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdaptiveRecommendation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/path/admin/node/{node_id}/should_regenerate": {
+      "get": {
+        "tags": [
+          "learning-path"
+        ],
+        "summary": "Check Node Regeneration",
+        "description": "Check if a node should be regenerated due to poor performance.\n\nAdmin endpoint for quality control.",
+        "operationId": "check_node_regeneration_v1_path_admin_node__node_id__should_regenerate_get",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/metrics/prometheus": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get Prometheus Metrics",
+        "description": "Get metrics in Prometheus text format\n\nUse this endpoint with Prometheus scraper:\n```yaml\nscrape_configs:\n  - job_name: 'seed_api'\n    static_configs:\n      - targets: ['localhost:8000']\n    metrics_path: '/v1/metrics/prometheus'\n```",
+        "operationId": "get_prometheus_metrics_v1_metrics_prometheus_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          }
+        }
+      }
+    },
+    "/v1/metrics/summary": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Get Metrics Summary",
+        "description": "Get human-readable metrics summary\n\nUseful for dashboards and monitoring UIs.",
+        "operationId": "get_metrics_summary_v1_metrics_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetricsSummary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/metrics/health": {
+      "get": {
+        "tags": [
+          "Metrics"
+        ],
+        "summary": "Health Check",
+        "description": "Simple health check endpoint\n\nReturns 200 if service is healthy.\nUsed by load balancers and orchestrators.",
+        "operationId": "health_check_v1_metrics_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Action": {
+        "type": "string",
+        "enum": [
+          "fix",
+          "translate",
+          "summarize",
+          "ask"
+        ],
+        "title": "Action"
+      },
+      "ActionRequest": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options"
+          },
+          "idempotency_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Idempotency Key"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "text"
+        ],
+        "title": "ActionRequest"
+      },
+      "ActionResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/Mode"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus",
+            "default": "queued"
+          },
+          "eta_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eta Hint"
+          },
+          "result_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Text"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "mode"
+        ],
+        "title": "ActionResponse"
+      },
+      "AdaptiveRecommendation": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "recommended_topics": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommended Topics"
+          },
+          "recommended_grammar": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommended Grammar"
+          },
+          "difficulty_level": {
+            "type": "string",
+            "title": "Difficulty Level"
+          },
+          "focus_areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Focus Areas"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "recommended_topics",
+          "recommended_grammar",
+          "difficulty_level",
+          "focus_areas",
+          "reasoning"
+        ],
+        "title": "AdaptiveRecommendation",
+        "description": "AI-powered recommendations for next learning steps"
+      },
+      "BugReportKind": {
+        "type": "string",
+        "enum": [
+          "grading_mismatch",
+          "ui_bug",
+          "content_bug",
+          "other"
+        ],
+        "title": "BugReportKind",
+        "description": "Kind of bug report."
+      },
+      "BugReportRequest": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/BugReportKind"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/BugReportSeverity"
+          },
+          "userMessage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usermessage"
+          },
+          "context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Context"
+          },
+          "client": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Client"
+          },
+          "debug": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debug"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "severity"
+        ],
+        "title": "BugReportRequest",
+        "description": "Request to submit a bug report."
+      },
+      "BugReportResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "reportId": {
+            "type": "string",
+            "title": "Reportid"
+          },
+          "receivedAt": {
+            "type": "string",
+            "title": "Receivedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "reportId",
+          "receivedAt"
+        ],
+        "title": "BugReportResponse",
+        "description": "Response after submitting a bug report."
+      },
+      "BugReportSeverity": {
+        "type": "string",
+        "enum": [
+          "minor",
+          "major"
+        ],
+        "title": "BugReportSeverity",
+        "description": "Severity level of bug report."
+      },
+      "CreateUserRequest": {
+        "properties": {
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "is_admin": {
+            "type": "boolean",
+            "title": "Is Admin",
+            "default": false
+          },
+          "meta": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Meta"
+          }
+        },
+        "type": "object",
+        "title": "CreateUserRequest"
+      },
+      "CreateUserResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "api_key": {
+            "type": "string",
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "api_key"
+        ],
+        "title": "CreateUserResponse"
+      },
+      "DiagnosticAnswer": {
+        "properties": {
+          "accepted": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Accepted"
+          },
+          "normalize": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalize",
+            "default": "lower_trim"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "accepted"
+        ],
+        "title": "DiagnosticAnswer",
+        "description": "Answer structure for diagnostic items."
+      },
+      "DiagnosticAttemptRequest": {
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sessionid"
+          },
+          "itemId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Itemid"
+          },
+          "userAnswerRaw": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Useranswerraw"
+          },
+          "responseTimeMs": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responsetimems"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessionId",
+          "itemId",
+          "userAnswerRaw"
+        ],
+        "title": "DiagnosticAttemptRequest",
+        "description": "Request to submit an answer for a diagnostic item."
+      },
+      "DiagnosticAttemptResponseV1": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "correct": {
+            "type": "boolean",
+            "title": "Correct"
+          },
+          "correctAnswer": {
+            "type": "string",
+            "title": "Correctanswer"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          },
+          "attemptId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attemptid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "correct",
+          "correctAnswer"
+        ],
+        "title": "DiagnosticAttemptResponseV1",
+        "description": "Client V1: attempt response with 'correct' instead of 'isCorrect'."
+      },
+      "DiagnosticBlueprint": {
+        "properties": {
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "subskill": {
+            "type": "string",
+            "title": "Subskill"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "difficulty": {
+            "type": "number",
+            "title": "Difficulty"
+          },
+          "taskType": {
+            "type": "string",
+            "title": "Tasktype"
+          },
+          "cefrBand": {
+            "type": "string",
+            "title": "Cefrband"
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain",
+            "description": "Specialized domain (business, medical, academic, technical, etc)"
+          },
+          "dialect": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dialect",
+            "description": "Language dialect/variant (british, american, canadian, etc)"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "description": "Specific context within domain (interview, presentation, email, etc)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill",
+          "subskill",
+          "topic",
+          "difficulty",
+          "taskType",
+          "cefrBand"
+        ],
+        "title": "DiagnosticBlueprint",
+        "description": "Blueprint entry for generating diagnostic items."
+      },
+      "DiagnosticContext": {
+        "properties": {
+          "sentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentence"
+          },
+          "passage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passage"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "DiagnosticContext",
+        "description": "Context information for a diagnostic item."
+      },
+      "DiagnosticFinishRequest": {
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sessionid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessionId"
+        ],
+        "title": "DiagnosticFinishRequest",
+        "description": "Request to finish diagnostic session and get results."
+      },
+      "DiagnosticFinishResponse": {
+        "properties": {
+          "estimatedCefr": {
+            "type": "string",
+            "title": "Estimatedcefr"
+          },
+          "skillScores": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Skillscores"
+          },
+          "weakSubskills": {
+            "items": {
+              "$ref": "#/components/schemas/WeakSubskill"
+            },
+            "type": "array",
+            "title": "Weaksubskills"
+          },
+          "attemptsCount": {
+            "type": "integer",
+            "title": "Attemptscount"
+          },
+          "itemsCount": {
+            "type": "integer",
+            "title": "Itemscount"
+          },
+          "totalCorrect": {
+            "type": "integer",
+            "title": "Totalcorrect"
+          },
+          "totalAttempts": {
+            "type": "integer",
+            "title": "Totalattempts"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "estimatedCefr",
+          "skillScores",
+          "weakSubskills",
+          "attemptsCount",
+          "itemsCount",
+          "totalCorrect",
+          "totalAttempts",
+          "accuracy"
+        ],
+        "title": "DiagnosticFinishResponse",
+        "description": "Final results after completing diagnostic session."
+      },
+      "DiagnosticGenerateRequest": {
+        "properties": {
+          "nativeLang": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Nativelang"
+          },
+          "targetLang": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Targetlang"
+          },
+          "blueprint": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticBlueprint"
+            },
+            "type": "array",
+            "title": "Blueprint"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "nativeLang",
+          "targetLang",
+          "blueprint"
+        ],
+        "title": "DiagnosticGenerateRequest",
+        "description": "Request to generate diagnostic items."
+      },
+      "DiagnosticHistoryEntry": {
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "title": "Sessionid"
+          },
+          "completedAt": {
+            "type": "string",
+            "title": "Completedat"
+          },
+          "estimatedCefr": {
+            "type": "string",
+            "title": "Estimatedcefr"
+          },
+          "totalCorrect": {
+            "type": "integer",
+            "title": "Totalcorrect"
+          },
+          "totalAttempts": {
+            "type": "integer",
+            "title": "Totalattempts"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessionId",
+          "completedAt",
+          "estimatedCefr",
+          "totalCorrect",
+          "totalAttempts",
+          "accuracy"
+        ],
+        "title": "DiagnosticHistoryEntry",
+        "description": "Historical diagnostic session result."
+      },
+      "DiagnosticItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "taskType": {
+            "$ref": "#/components/schemas/DiagnosticTaskType"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "context": {
+            "$ref": "#/components/schemas/DiagnosticContext"
+          },
+          "choices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choices"
+          },
+          "tokens": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens"
+          },
+          "answer": {
+            "$ref": "#/components/schemas/DiagnosticAnswer"
+          },
+          "distractorsReason": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DistractorReason"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distractorsreason"
+          },
+          "tags": {
+            "$ref": "#/components/schemas/DiagnosticTags"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "taskType",
+          "prompt",
+          "answer",
+          "tags"
+        ],
+        "title": "DiagnosticItem",
+        "description": "A single diagnostic test item."
+      },
+      "DiagnosticItemClientV1": {
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "title": "Itemid"
+          },
+          "taskType": {
+            "type": "string",
+            "title": "Tasktype"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "content": {
+            "$ref": "#/components/schemas/DiagnosticItemContentV1"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/DiagnosticItemMetadataV1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "itemId",
+          "taskType",
+          "prompt",
+          "content",
+          "metadata"
+        ],
+        "title": "DiagnosticItemClientV1",
+        "description": "Client V1: transformed diagnostic item for desktop."
+      },
+      "DiagnosticItemContentV1": {
+        "properties": {
+          "choices": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Choices"
+          },
+          "tokens": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tokens"
+          },
+          "sentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentence"
+          },
+          "sourceText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcetext"
+          },
+          "readingPassage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readingpassage"
+          },
+          "hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint"
+          }
+        },
+        "type": "object",
+        "title": "DiagnosticItemContentV1",
+        "description": "Client V1: content object containing task-type-specific fields."
+      },
+      "DiagnosticItemMetadataV1": {
+        "properties": {
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "subskill": {
+            "type": "string",
+            "title": "Subskill"
+          },
+          "difficulty": {
+            "type": "number",
+            "title": "Difficulty"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "cefrBand": {
+            "type": "string",
+            "title": "Cefrband"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill",
+          "subskill",
+          "difficulty",
+          "topic",
+          "cefrBand"
+        ],
+        "title": "DiagnosticItemMetadataV1",
+        "description": "Client V1: metadata object from tags."
+      },
+      "DiagnosticNextRequest": {
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Sessionid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessionId"
+        ],
+        "title": "DiagnosticNextRequest",
+        "description": "Request to get next item in session."
+      },
+      "DiagnosticNextResponseV1": {
+        "properties": {
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          },
+          "item": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagnosticItemClientV1"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index"
+          },
+          "totalItems": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Totalitems"
+          }
+        },
+        "type": "object",
+        "required": [
+          "complete"
+        ],
+        "title": "DiagnosticNextResponseV1",
+        "description": "Client V1: next response with transformed item."
+      },
+      "DiagnosticResponse": {
+        "properties": {
+          "diagnosticSet": {
+            "$ref": "#/components/schemas/DiagnosticSet"
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "diagnosticSet"
+        ],
+        "title": "DiagnosticResponse",
+        "description": "Response containing generated diagnostic items."
+      },
+      "DiagnosticSet": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "DiagnosticSet",
+        "description": "Container for generated diagnostic items."
+      },
+      "DiagnosticStartRequest": {
+        "properties": {
+          "nativeLanguage": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Nativelanguage"
+          },
+          "targetLanguage": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Targetlanguage"
+          },
+          "startLevelGuess": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startlevelguess",
+            "default": "A2"
+          },
+          "useAdaptive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useadaptive",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "nativeLanguage",
+          "targetLanguage"
+        ],
+        "title": "DiagnosticStartRequest",
+        "description": "Request to start a diagnostic placement test session."
+      },
+      "DiagnosticStartResponseV1": {
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "title": "Sessionid"
+          },
+          "totalItems": {
+            "type": "integer",
+            "title": "Totalitems"
+          },
+          "nextItem": {
+            "$ref": "#/components/schemas/DiagnosticItemClientV1"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sessionId",
+          "totalItems",
+          "nextItem"
+        ],
+        "title": "DiagnosticStartResponseV1",
+        "description": "Client V1: start response with transformed item."
+      },
+      "DiagnosticTags": {
+        "properties": {
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "subskill": {
+            "type": "string",
+            "title": "Subskill"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "difficulty": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Difficulty"
+          },
+          "taskType": {
+            "type": "string",
+            "title": "Tasktype"
+          },
+          "cefrBand": {
+            "type": "string",
+            "title": "Cefrband"
+          },
+          "languagePair": {
+            "type": "string",
+            "title": "Languagepair"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill",
+          "subskill",
+          "topic",
+          "difficulty",
+          "taskType",
+          "cefrBand",
+          "languagePair"
+        ],
+        "title": "DiagnosticTags",
+        "description": "Tags for diagnostic item metadata."
+      },
+      "DiagnosticTaskType": {
+        "type": "string",
+        "enum": [
+          "mcq",
+          "fill_blank",
+          "reorder_sentence",
+          "translate",
+          "reading_mcq"
+        ],
+        "title": "DiagnosticTaskType",
+        "description": "Task types for diagnostic items."
+      },
+      "DifficultyAdjustment": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "current_mastery_score": {
+            "type": "number",
+            "title": "Current Mastery Score"
+          },
+          "suggested_difficulty_delta": {
+            "type": "number",
+            "title": "Suggested Difficulty Delta"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "based_on_attempts": {
+            "type": "integer",
+            "title": "Based On Attempts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "current_mastery_score",
+          "suggested_difficulty_delta",
+          "reasoning",
+          "based_on_attempts"
+        ],
+        "title": "DifficultyAdjustment",
+        "description": "Suggested difficulty adjustment based on performance"
+      },
+      "DistractorReason": {
+        "properties": {
+          "choice": {
+            "type": "string",
+            "title": "Choice"
+          },
+          "reasonTag": {
+            "type": "string",
+            "title": "Reasontag"
+          }
+        },
+        "type": "object",
+        "required": [
+          "choice",
+          "reasonTag"
+        ],
+        "title": "DistractorReason",
+        "description": "Reason for a distractor choice."
+      },
+      "FirstLessonRequest": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "targetLanguage": {
+            "type": "string",
+            "title": "Targetlanguage"
+          },
+          "nativeLanguage": {
+            "type": "string",
+            "title": "Nativelanguage"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "lessonLength": {
+            "type": "integer",
+            "title": "Lessonlength"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode",
+          "targetLanguage",
+          "nativeLanguage",
+          "level",
+          "topic",
+          "lessonLength"
+        ],
+        "title": "FirstLessonRequest",
+        "description": "Ready-to-use request payload for /v1/lessons/generate."
+      },
+      "GenerateBlueprintRequest": {
+        "properties": {
+          "user_profile": {
+            "$ref": "#/components/schemas/UserProfile"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context",
+            "description": "Additional context (e.g., 'after completing placement test')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_profile"
+        ],
+        "title": "GenerateBlueprintRequest",
+        "description": "Request to generate Unit blueprint (Phase A)"
+      },
+      "GenerateBlueprintResponse": {
+        "properties": {
+          "unit_id": {
+            "type": "string",
+            "title": "Unit Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "level_tag": {
+            "type": "string",
+            "title": "Level Tag"
+          },
+          "nodes_created": {
+            "type": "integer",
+            "title": "Nodes Created"
+          },
+          "status": {
+            "$ref": "#/components/schemas/UnitStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unit_id",
+          "title",
+          "level_tag",
+          "nodes_created",
+          "status"
+        ],
+        "title": "GenerateBlueprintResponse",
+        "description": "Response after generating Unit blueprint"
+      },
+      "GenerateLearningPlanRequest": {
+        "properties": {
+          "targetLanguage": {
+            "type": "string",
+            "title": "Targetlanguage"
+          },
+          "nativeLanguage": {
+            "type": "string",
+            "title": "Nativelanguage"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          },
+          "sessionId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessionid"
+          },
+          "estimatedCefr": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimatedcefr"
+          },
+          "weakSubskills": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/WeakSubskill"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weaksubskills"
+          },
+          "lessonLength": {
+            "type": "integer",
+            "title": "Lessonlength",
+            "default": 5
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "targetLanguage",
+          "nativeLanguage"
+        ],
+        "title": "GenerateLearningPlanRequest",
+        "description": "Request to generate learning plan."
+      },
+      "GenerateLearningPlanResponse": {
+        "properties": {
+          "planId": {
+            "type": "string",
+            "title": "Planid"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/LearningProfile-Output"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/LearningPlan"
+          },
+          "firstLessonRequest": {
+            "$ref": "#/components/schemas/FirstLessonRequest"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planId",
+          "profile",
+          "plan",
+          "firstLessonRequest"
+        ],
+        "title": "GenerateLearningPlanResponse",
+        "description": "Response with generated learning plan."
+      },
+      "GetLearningProfileResponse": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/LearningProfile-Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile"
+        ],
+        "title": "GetLearningProfileResponse",
+        "description": "Response with user learning profile."
+      },
+      "GradeResponse": {
+        "properties": {
+          "grade": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GradeResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          }
+        },
+        "type": "object",
+        "title": "GradeResponse",
+        "description": "Response after grading a submission."
+      },
+      "GradeResult": {
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "title": "Taskid"
+          },
+          "correct": {
+            "type": "boolean",
+            "title": "Correct"
+          },
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          },
+          "correctAnswer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correctanswer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "taskId",
+          "correct",
+          "score",
+          "feedback"
+        ],
+        "title": "GradeResult",
+        "description": "Result of grading a single task submission."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "JobResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/Mode"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "queue_name": {
+            "type": "string",
+            "title": "Queue Name"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          },
+          "result_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Text"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "action",
+          "mode",
+          "status",
+          "queue_name",
+          "priority",
+          "provider",
+          "model",
+          "created_at"
+        ],
+        "title": "JobResponse"
+      },
+      "JobStatus": {
+        "type": "string",
+        "enum": [
+          "queued",
+          "running",
+          "done",
+          "failed",
+          "cancelled"
+        ],
+        "title": "JobStatus"
+      },
+      "JobStatusResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "progress": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Progress"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status"
+        ],
+        "title": "JobStatusResponse",
+        "description": "Job status information"
+      },
+      "JobSubmitRequest": {
+        "properties": {
+          "job_type": {
+            "type": "string",
+            "title": "Job Type",
+            "description": "Job type: lesson_generate, diagnostic_generate"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params",
+            "description": "Job parameters (varies by type)"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority",
+            "description": "Job priority (higher = faster)",
+            "default": 0
+          },
+          "queue": {
+            "type": "string",
+            "title": "Queue",
+            "description": "Target queue: q_fast, q_batch, q_low",
+            "default": "q_fast"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_type",
+          "params"
+        ],
+        "title": "JobSubmitRequest",
+        "description": "Request to submit a background job"
+      },
+      "JobSubmitResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "queue": {
+            "type": "string",
+            "title": "Queue"
+          },
+          "estimated_wait_sec": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Wait Sec"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "status",
+          "queue"
+        ],
+        "title": "JobSubmitResponse",
+        "description": "Response after submitting job"
+      },
+      "LeaderboardEntry": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "title": "Rank"
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "display_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Display Name"
+          },
+          "total_stars": {
+            "type": "integer",
+            "title": "Total Stars"
+          },
+          "nodes_completed": {
+            "type": "integer",
+            "title": "Nodes Completed"
+          },
+          "avg_score": {
+            "type": "number",
+            "title": "Avg Score"
+          },
+          "total_time_minutes": {
+            "type": "integer",
+            "title": "Total Time Minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rank",
+          "user_id",
+          "display_name",
+          "total_stars",
+          "nodes_completed",
+          "avg_score",
+          "total_time_minutes"
+        ],
+        "title": "LeaderboardEntry",
+        "description": "Single entry in leaderboard"
+      },
+      "LeaderboardResponse": {
+        "properties": {
+          "period": {
+            "type": "string",
+            "title": "Period"
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntry"
+            },
+            "type": "array",
+            "title": "Entries"
+          },
+          "user_rank": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Rank"
+          },
+          "total_users": {
+            "type": "integer",
+            "title": "Total Users"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "entries",
+          "total_users"
+        ],
+        "title": "LeaderboardResponse",
+        "description": "Leaderboard data"
+      },
+      "LearningHistory": {
+        "properties": {
+          "diagnostics": {
+            "items": {
+              "$ref": "#/components/schemas/DiagnosticHistoryEntry"
+            },
+            "type": "array",
+            "title": "Diagnostics"
+          }
+        },
+        "type": "object",
+        "title": "LearningHistory",
+        "description": "Historical learning data."
+      },
+      "LearningPlan": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "focusAreas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Focusareas"
+          },
+          "recommendedLessons": {
+            "items": {
+              "$ref": "#/components/schemas/LessonSpec"
+            },
+            "type": "array",
+            "title": "Recommendedlessons"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "focusAreas",
+          "recommendedLessons"
+        ],
+        "title": "LearningPlan",
+        "description": "Structured learning plan."
+      },
+      "LearningPreferences": {
+        "properties": {
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          },
+          "lessonLength": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lessonlength",
+            "default": 5
+          }
+        },
+        "type": "object",
+        "title": "LearningPreferences",
+        "description": "User learning preferences."
+      },
+      "LearningProfile-Input": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
+          "targetLanguage": {
+            "type": "string",
+            "title": "Targetlanguage"
+          },
+          "nativeLanguage": {
+            "type": "string",
+            "title": "Nativelanguage"
+          },
+          "estimatedCefr": {
+            "type": "string",
+            "title": "Estimatedcefr"
+          },
+          "skillScores": {
+            "items": {
+              "$ref": "#/components/schemas/SkillScore"
+            },
+            "type": "array",
+            "title": "Skillscores"
+          },
+          "weakSubskills": {
+            "items": {
+              "$ref": "#/components/schemas/WeakSubskill"
+            },
+            "type": "array",
+            "title": "Weaksubskills"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/LearningPreferences"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LearningHistory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "targetLanguage",
+          "nativeLanguage",
+          "estimatedCefr",
+          "updatedAt"
+        ],
+        "title": "LearningProfile",
+        "description": "User learning profile - AI-readable context."
+      },
+      "LearningProfile-Output": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "default": 1
+          },
+          "targetLanguage": {
+            "type": "string",
+            "title": "Targetlanguage"
+          },
+          "nativeLanguage": {
+            "type": "string",
+            "title": "Nativelanguage"
+          },
+          "estimatedCefr": {
+            "type": "string",
+            "title": "Estimatedcefr"
+          },
+          "skillScores": {
+            "items": {
+              "$ref": "#/components/schemas/SkillScore"
+            },
+            "type": "array",
+            "title": "Skillscores"
+          },
+          "weakSubskills": {
+            "items": {
+              "$ref": "#/components/schemas/WeakSubskill"
+            },
+            "type": "array",
+            "title": "Weaksubskills"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/LearningPreferences"
+          },
+          "history": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LearningHistory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "targetLanguage",
+          "nativeLanguage",
+          "estimatedCefr",
+          "updatedAt"
+        ],
+        "title": "LearningProfile",
+        "description": "User learning profile - AI-readable context."
+      },
+      "Lesson": {
+        "properties": {
+          "lessonId": {
+            "type": "string",
+            "title": "Lessonid"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/LessonMode"
+          },
+          "targetLang": {
+            "type": "string",
+            "title": "Targetlang"
+          },
+          "nativeLang": {
+            "type": "string",
+            "title": "Nativelang"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "tasks": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "type": "array",
+            "title": "Tasks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lessonId",
+          "mode",
+          "targetLang",
+          "nativeLang",
+          "level",
+          "title",
+          "tasks"
+        ],
+        "title": "Lesson",
+        "description": "Complete lesson structure."
+      },
+      "LessonAttemptInfo": {
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "title": "Taskid"
+          },
+          "userAnswer": {
+            "type": "string",
+            "title": "Useranswer"
+          },
+          "correct": {
+            "type": "boolean",
+            "title": "Correct"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "taskId",
+          "userAnswer",
+          "correct",
+          "score",
+          "createdAt"
+        ],
+        "title": "LessonAttemptInfo",
+        "description": "Attempt information for a task."
+      },
+      "LessonDeleteResponse": {
+        "properties": {
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          },
+          "lessonId": {
+            "type": "string",
+            "title": "Lessonid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "deleted",
+          "lessonId"
+        ],
+        "title": "LessonDeleteResponse",
+        "description": "Response for DELETE /v1/lessons/{lessonId}."
+      },
+      "LessonGenerateRequest": {
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/LessonMode"
+          },
+          "targetLang": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Targetlang"
+          },
+          "nativeLang": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 2,
+            "title": "Nativelang"
+          },
+          "level": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 2,
+            "title": "Level"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
+          },
+          "lessonLength": {
+            "type": "integer",
+            "maximum": 15.0,
+            "minimum": 3.0,
+            "title": "Lessonlength"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode",
+          "targetLang",
+          "nativeLang",
+          "level",
+          "lessonLength"
+        ],
+        "title": "LessonGenerateRequest",
+        "description": "Request to generate a new lesson."
+      },
+      "LessonGetResponse": {
+        "properties": {
+          "lesson": {
+            "$ref": "#/components/schemas/Lesson"
+          },
+          "attempts": {
+            "items": {
+              "$ref": "#/components/schemas/LessonAttemptInfo"
+            },
+            "type": "array",
+            "title": "Attempts"
+          },
+          "totalAttempts": {
+            "type": "integer",
+            "title": "Totalattempts"
+          },
+          "completedCount": {
+            "type": "integer",
+            "title": "Completedcount"
+          },
+          "totalScore": {
+            "type": "integer",
+            "title": "Totalscore"
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lesson",
+          "attempts",
+          "totalAttempts",
+          "completedCount",
+          "totalScore"
+        ],
+        "title": "LessonGetResponse",
+        "description": "Response for GET /v1/lessons/{lessonId}."
+      },
+      "LessonListItem": {
+        "properties": {
+          "lessonId": {
+            "type": "string",
+            "title": "Lessonid"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "nativeLang": {
+            "type": "string",
+            "title": "Nativelang"
+          },
+          "targetLang": {
+            "type": "string",
+            "title": "Targetlang"
+          },
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat"
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          },
+          "tasksCount": {
+            "type": "integer",
+            "title": "Taskscount"
+          },
+          "completedCount": {
+            "type": "integer",
+            "title": "Completedcount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lessonId",
+          "title",
+          "nativeLang",
+          "targetLang",
+          "level",
+          "mode",
+          "createdAt",
+          "tasksCount",
+          "completedCount"
+        ],
+        "title": "LessonListItem",
+        "description": "Minimal lesson metadata for list view."
+      },
+      "LessonListResponse": {
+        "properties": {
+          "lessons": {
+            "items": {
+              "$ref": "#/components/schemas/LessonListItem"
+            },
+            "type": "array",
+            "title": "Lessons"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lessons",
+          "total"
+        ],
+        "title": "LessonListResponse",
+        "description": "Response for GET /v1/lessons."
+      },
+      "LessonMode": {
+        "type": "string",
+        "enum": [
+          "vocabulary",
+          "grammar",
+          "mixed"
+        ],
+        "title": "LessonMode",
+        "description": "Learning mode for lesson generation."
+      },
+      "LessonResponse": {
+        "properties": {
+          "lesson": {
+            "$ref": "#/components/schemas/Lesson"
+          },
+          "personaIdUsed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaidused"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lesson"
+        ],
+        "title": "LessonResponse",
+        "description": "Response containing generated lesson."
+      },
+      "LessonSpec": {
+        "properties": {
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "lessonLength": {
+            "type": "integer",
+            "title": "Lessonlength"
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Rationale"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "order",
+          "mode",
+          "topic",
+          "lessonLength",
+          "rationale"
+        ],
+        "title": "LessonSpec",
+        "description": "Recommended lesson specification."
+      },
+      "LessonSubmitRequest": {
+        "properties": {
+          "lessonId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Lessonid"
+          },
+          "taskId": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Taskid"
+          },
+          "userAnswer": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Useranswer"
+          },
+          "personaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Personaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lessonId",
+          "taskId",
+          "userAnswer"
+        ],
+        "title": "LessonSubmitRequest",
+        "description": "Request to submit an answer for a task."
+      },
+      "LessonSummary": {
+        "properties": {
+          "lessonId": {
+            "type": "string",
+            "title": "Lessonid"
+          },
+          "totalTasks": {
+            "type": "integer",
+            "title": "Totaltasks"
+          },
+          "correctCount": {
+            "type": "integer",
+            "title": "Correctcount"
+          },
+          "scorePercentage": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Scorepercentage"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          },
+          "encouragement": {
+            "type": "string",
+            "title": "Encouragement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lessonId",
+          "totalTasks",
+          "correctCount",
+          "scorePercentage",
+          "completed",
+          "encouragement"
+        ],
+        "title": "LessonSummary",
+        "description": "Summary after completing all tasks in a lesson."
+      },
+      "MetricsSummary": {
+        "properties": {
+          "uptime_seconds": {
+            "type": "number",
+            "title": "Uptime Seconds"
+          },
+          "http_requests_total": {
+            "type": "integer",
+            "title": "Http Requests Total"
+          },
+          "http_avg_latency_ms": {
+            "type": "number",
+            "title": "Http Avg Latency Ms"
+          },
+          "http_requests_by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Http Requests By Status"
+          },
+          "llm_generations_total": {
+            "type": "integer",
+            "title": "Llm Generations Total"
+          },
+          "llm_avg_duration_seconds": {
+            "type": "number",
+            "title": "Llm Avg Duration Seconds"
+          },
+          "connection_pool_active": {
+            "type": "integer",
+            "title": "Connection Pool Active"
+          },
+          "connection_pool_idle": {
+            "type": "integer",
+            "title": "Connection Pool Idle"
+          },
+          "connection_pool_utilization": {
+            "type": "number",
+            "title": "Connection Pool Utilization"
+          },
+          "queue_depths": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Queue Depths"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uptime_seconds",
+          "http_requests_total",
+          "http_avg_latency_ms",
+          "http_requests_by_status",
+          "llm_generations_total",
+          "llm_avg_duration_seconds",
+          "connection_pool_active",
+          "connection_pool_idle",
+          "connection_pool_utilization",
+          "queue_depths"
+        ],
+        "title": "MetricsSummary",
+        "description": "Human-readable metrics summary"
+      },
+      "Mode": {
+        "type": "string",
+        "enum": [
+          "fast",
+          "hybrid",
+          "batch"
+        ],
+        "title": "Mode"
+      },
+      "NodeAnalyticsSummary": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id"
+          },
+          "unit_id": {
+            "type": "string",
+            "title": "Unit Id"
+          },
+          "node_type": {
+            "type": "string",
+            "title": "Node Type"
+          },
+          "total_attempts": {
+            "type": "integer",
+            "title": "Total Attempts"
+          },
+          "unique_users": {
+            "type": "integer",
+            "title": "Unique Users"
+          },
+          "avg_score": {
+            "type": "number",
+            "title": "Avg Score"
+          },
+          "success_rate": {
+            "type": "number",
+            "title": "Success Rate"
+          },
+          "avg_duration_seconds": {
+            "type": "number",
+            "title": "Avg Duration Seconds"
+          },
+          "completion_rate": {
+            "type": "number",
+            "title": "Completion Rate"
+          },
+          "task_type_breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/TaskTypeStats"
+            },
+            "type": "array",
+            "title": "Task Type Breakdown"
+          },
+          "common_errors": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Common Errors"
+          },
+          "difficulty_rating": {
+            "type": "string",
+            "title": "Difficulty Rating"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id",
+          "unit_id",
+          "node_type",
+          "total_attempts",
+          "unique_users",
+          "avg_score",
+          "success_rate",
+          "avg_duration_seconds",
+          "completion_rate",
+          "task_type_breakdown",
+          "common_errors",
+          "difficulty_rating"
+        ],
+        "title": "NodeAnalyticsSummary",
+        "description": "Detailed analytics for a specific node"
+      },
+      "NodeAttemptResponse": {
+        "properties": {
+          "attempt_id": {
+            "type": "integer",
+            "title": "Attempt Id"
+          },
+          "node_id": {
+            "type": "string",
+            "title": "Node Id"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "stars_earned": {
+            "type": "integer",
+            "title": "Stars Earned"
+          },
+          "next_node_unlocked": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Node Unlocked"
+          },
+          "feedback": {
+            "type": "string",
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attempt_id",
+          "node_id",
+          "score",
+          "success",
+          "stars_earned",
+          "feedback"
+        ],
+        "title": "NodeAttemptResponse",
+        "description": "Response after submitting node attempt"
+      },
+      "NodeAttemptSubmit": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id",
+            "description": "Node ID"
+          },
+          "session_id": {
+            "type": "string",
+            "title": "Session Id",
+            "description": "Client-side session ID for tracking"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At",
+            "description": "ISO timestamp when node started"
+          },
+          "completed_at": {
+            "type": "string",
+            "title": "Completed At",
+            "description": "ISO timestamp when node completed"
+          },
+          "task_attempts": {
+            "items": {
+              "$ref": "#/components/schemas/TaskAttemptSubmit"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Task Attempts",
+            "description": "All task attempts"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Metadata",
+            "description": "Additional metadata"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id",
+          "session_id",
+          "started_at",
+          "completed_at",
+          "task_attempts"
+        ],
+        "title": "NodeAttemptSubmit",
+        "description": "Submit complete node attempt results"
+      },
+      "PatchLearningProfileRequest": {
+        "properties": {
+          "targetLanguage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetlanguage"
+          },
+          "nativeLanguage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nativelanguage"
+          },
+          "preferences": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LearningPreferences"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "PatchLearningProfileRequest",
+        "description": "Request to patch learning profile fields."
+      },
+      "PersonaInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "promptSource": {
+            "type": "string",
+            "title": "Promptsource"
+          },
+          "promptUpdatedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promptupdatedat"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "title": "Isdefault"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "description",
+          "tags",
+          "promptSource",
+          "isDefault"
+        ],
+        "title": "PersonaInfo",
+        "description": "Metadata for a single persona (used in GET /v1/personas response)."
+      },
+      "PersonasResponse": {
+        "properties": {
+          "personas": {
+            "items": {
+              "$ref": "#/components/schemas/PersonaInfo"
+            },
+            "type": "array",
+            "title": "Personas"
+          },
+          "defaultPersonaId": {
+            "type": "string",
+            "title": "Defaultpersonaid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "personas",
+          "defaultPersonaId"
+        ],
+        "title": "PersonasResponse",
+        "description": "Response for GET /v1/personas endpoint."
+      },
+      "SkillScore": {
+        "properties": {
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "score": {
+            "type": "integer",
+            "title": "Score"
+          },
+          "itemCount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemcount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "skill",
+          "score"
+        ],
+        "title": "SkillScore",
+        "description": "Skill score with metadata."
+      },
+      "StartNodeRequest": {
+        "properties": {
+          "node_id": {
+            "type": "string",
+            "title": "Node Id",
+            "description": "Node ID from blueprint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "node_id"
+        ],
+        "title": "StartNodeRequest",
+        "description": "Request to start node and generate content (Phase B)"
+      },
+      "StartNodeResponse": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          },
+          "node_id": {
+            "type": "string",
+            "title": "Node Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "default": "queued"
+          },
+          "status_url": {
+            "type": "string",
+            "title": "Status Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "node_id",
+          "status_url"
+        ],
+        "title": "StartNodeResponse",
+        "description": "Response after starting node content generation"
+      },
+      "Task": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "difficulty": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Difficulty"
+          },
+          "content": {
+            "$ref": "#/components/schemas/TaskContent"
+          },
+          "grading": {
+            "$ref": "#/components/schemas/TaskGrading"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "prompt",
+          "skill",
+          "difficulty",
+          "content",
+          "grading"
+        ],
+        "title": "Task",
+        "description": "A single lesson task."
+      },
+      "TaskAttemptSubmit": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id",
+            "description": "Task ID from generated content"
+          },
+          "task_type": {
+            "type": "string",
+            "title": "Task Type",
+            "description": "Task type: fill_blank, translate, choice, etc."
+          },
+          "user_answer": {
+            "type": "string",
+            "title": "User Answer",
+            "description": "User's answer"
+          },
+          "correct_answer": {
+            "type": "string",
+            "title": "Correct Answer",
+            "description": "Expected correct answer"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct",
+            "description": "Whether answer was correct"
+          },
+          "response_time_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Time Ms",
+            "description": "Time taken to answer (milliseconds)"
+          },
+          "hint_used": {
+            "type": "boolean",
+            "title": "Hint Used",
+            "description": "Whether user used a hint",
+            "default": false
+          },
+          "attempts_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Attempts Count",
+            "description": "Number of attempts for this task",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "task_type",
+          "user_answer",
+          "correct_answer",
+          "is_correct"
+        ],
+        "title": "TaskAttemptSubmit",
+        "description": "Single task attempt data"
+      },
+      "TaskContent": {
+        "properties": {
+          "question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "words": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Words"
+          },
+          "sentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentence"
+          },
+          "sourceSentence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourcesentence"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "TaskContent",
+        "description": "Content structure for a lesson task."
+      },
+      "TaskGrading": {
+        "properties": {
+          "correctAnswer": {
+            "type": "string",
+            "title": "Correctanswer"
+          },
+          "correctChoiceIndex": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correctchoiceindex"
+          },
+          "acceptedVariants": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Acceptedvariants"
+          },
+          "partialCreditKeywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Partialcreditkeywords"
+          },
+          "tip": {
+            "type": "string",
+            "title": "Tip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "correctAnswer",
+          "tip"
+        ],
+        "title": "TaskGrading",
+        "description": "Grading rules for a task."
+      },
+      "TaskType": {
+        "type": "string",
+        "enum": [
+          "mcq",
+          "translate",
+          "fill_blank",
+          "word_order"
+        ],
+        "title": "TaskType",
+        "description": "Supported task types for lessons."
+      },
+      "TaskTypeStats": {
+        "properties": {
+          "task_type": {
+            "type": "string",
+            "title": "Task Type"
+          },
+          "total_attempts": {
+            "type": "integer",
+            "title": "Total Attempts"
+          },
+          "correct_attempts": {
+            "type": "integer",
+            "title": "Correct Attempts"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          },
+          "avg_response_time_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Response Time Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_type",
+          "total_attempts",
+          "correct_attempts",
+          "accuracy",
+          "avg_response_time_ms"
+        ],
+        "title": "TaskTypeStats",
+        "description": "Statistics for a specific task type"
+      },
+      "UnitStatus": {
+        "type": "string",
+        "enum": [
+          "locked",
+          "available",
+          "in_progress",
+          "completed"
+        ],
+        "title": "UnitStatus",
+        "description": "Unit completion status"
+      },
+      "UpsertLearningProfileRequest": {
+        "properties": {
+          "profile": {
+            "$ref": "#/components/schemas/LearningProfile-Input"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile"
+        ],
+        "title": "UpsertLearningProfileRequest",
+        "description": "Request to upsert learning profile."
+      },
+      "UpsertLearningProfileResponse": {
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "title": "Ok"
+          },
+          "updatedAt": {
+            "type": "string",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ok",
+          "updatedAt"
+        ],
+        "title": "UpsertLearningProfileResponse",
+        "description": "Response after upserting learning profile."
+      },
+      "UserLearningAnalytics": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "units_started": {
+            "type": "integer",
+            "title": "Units Started"
+          },
+          "units_completed": {
+            "type": "integer",
+            "title": "Units Completed"
+          },
+          "nodes_attempted": {
+            "type": "integer",
+            "title": "Nodes Attempted"
+          },
+          "nodes_completed": {
+            "type": "integer",
+            "title": "Nodes Completed"
+          },
+          "total_tasks_attempted": {
+            "type": "integer",
+            "title": "Total Tasks Attempted"
+          },
+          "total_tasks_correct": {
+            "type": "integer",
+            "title": "Total Tasks Correct"
+          },
+          "overall_accuracy": {
+            "type": "number",
+            "title": "Overall Accuracy"
+          },
+          "total_time_minutes": {
+            "type": "integer",
+            "title": "Total Time Minutes"
+          },
+          "avg_session_duration_minutes": {
+            "type": "number",
+            "title": "Avg Session Duration Minutes"
+          },
+          "strongest_task_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Strongest Task Types"
+          },
+          "weakest_task_types": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Weakest Task Types"
+          },
+          "current_streak_days": {
+            "type": "integer",
+            "title": "Current Streak Days"
+          },
+          "total_stars_earned": {
+            "type": "integer",
+            "title": "Total Stars Earned"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "units_started",
+          "units_completed",
+          "nodes_attempted",
+          "nodes_completed",
+          "total_tasks_attempted",
+          "total_tasks_correct",
+          "overall_accuracy",
+          "total_time_minutes",
+          "avg_session_duration_minutes",
+          "strongest_task_types",
+          "weakest_task_types",
+          "current_streak_days",
+          "total_stars_earned"
+        ],
+        "title": "UserLearningAnalytics",
+        "description": "User's overall learning analytics"
+      },
+      "UserProfile": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level",
+            "description": "CEFR level: A1, A2, B1, B2, C1, C2"
+          },
+          "interests": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Interests",
+            "description": "Topics of interest"
+          },
+          "mastery_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Mastery Score",
+            "description": "Current mastery score",
+            "default": 0.5
+          },
+          "weak_areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Weak Areas",
+            "description": "Topics needing reinforcement"
+          },
+          "target_lang": {
+            "type": "string",
+            "title": "Target Lang",
+            "description": "Target language being learned"
+          },
+          "native_lang": {
+            "type": "string",
+            "title": "Native Lang",
+            "description": "Native language",
+            "default": "English"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "target_lang"
+        ],
+        "title": "UserProfile",
+        "description": "User profile for personalized curriculum generation"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WeakSubskill": {
+        "properties": {
+          "subskill": {
+            "type": "string",
+            "title": "Subskill"
+          },
+          "skill": {
+            "type": "string",
+            "title": "Skill"
+          },
+          "accuracy": {
+            "type": "number",
+            "title": "Accuracy"
+          },
+          "suggestedFocus": {
+            "type": "string",
+            "title": "Suggestedfocus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subskill",
+          "skill",
+          "accuracy",
+          "suggestedFocus"
+        ],
+        "title": "WeakSubskill",
+        "description": "Weak subskill recommendation."
+      }
+    }
+  }
+}
