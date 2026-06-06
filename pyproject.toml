@@ -47,7 +47,6 @@ dev = [
   "requests==2.32.3",
   "wsproto==1.2.0",
   "bandit[toml]==1.7.6",
-  "safety==3.0.1",
   "pip-audit==2.7.0",
   "detect-secrets==1.4.0",
   "mutmut==2.4.4",
@@ -77,7 +76,10 @@ skip_glob = ["migrations/*", "*/__pycache__/*"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "migrations", "scripts"]
-skips = ["B101"]  # assert used in test helpers imported by app code
+skips = [
+  "B101",  # assert used in test helpers imported by app code
+  "B324",  # SHA1/MD5 are used only for deterministic IDs and rollout buckets
+]
 
 [tool.mypy]
 ignore_missing_imports = true

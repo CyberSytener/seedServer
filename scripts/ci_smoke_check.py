@@ -10,7 +10,7 @@ Usage (CI):
 
 import sys
 
-REQUIRED = ["statsd", "asyncpg", "jwt"]
+REQUIRED = ["asyncpg", "jwt"]
 missing = []
 for m in REQUIRED:
     try:

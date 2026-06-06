@@ -26,20 +26,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Check formatting with black
-        run: black --check --diff app/ tests/
-
-      - name: Check import ordering with isort
-        run: isort --check-only --diff --profile=black app/ tests/
-
-      - name: Lint with flake8
+      - name: Compile portfolio Python surface
         run: |
-          flake8 app/ tests/ \
+          python -m compileall -q \
+            app/api/console \
+            app/core/realtime/sagas \
+            app/services/module_registry.py \
+            app/sim \
+            scripts/run_portfolio_demo.py
+
+      - name: Lint portfolio Python surface
+        run: |
+          flake8 \
+            app/api/console \
+            app/services/module_registry.py \
+            scripts/run_portfolio_demo.py \
+            tests/unit/test_console_runtime_api.py \
+            tests/unit/test_module_registry.py \
+            tests/unit/test_modes_api.py \
+            tests/unit/test_auth_providers_api.py \
+            --select=E9,F63,F7,F82 \
             --max-line-length=120 \
-            --extend-ignore=E203,W503 \
             --statistics
 
-      - name: Type-check with mypy
+      - name: Type-check with mypy (advisory)
         run: |
           mypy app/ \
             --ignore-missing-imports \

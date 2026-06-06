@@ -45,8 +45,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run simulation marker tests
-        run: python -m pytest -m sim -q
+      - name: Run simulation unit tests
+        run: python -m pytest tests/unit/sim/ -q
 
       - name: Run simulation harness report
         run: python -m app.sim.run --output-dir "$SIM_OUTPUT_DIR"

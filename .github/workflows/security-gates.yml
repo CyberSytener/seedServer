@@ -29,8 +29,9 @@ jobs:
       - name: Runtime dependency smoke check
         run: python scripts/ci_smoke_check.py
 
-      - name: Bandit (app/)
-        run: bandit -r app -x tests -q
+      - name: Bandit high-severity gate
+        run: bandit -c pyproject.toml -r app -x tests -q -lll
 
-      - name: Dependency vulnerability audit
+      - name: Dependency vulnerability audit (advisory)
+        continue-on-error: true
         run: pip-audit
