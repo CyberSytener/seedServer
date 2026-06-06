@@ -9,7 +9,9 @@ def test_module_registry_loads_default_module() -> None:
     registry = ModuleRegistry()
     modules = registry.list_modules()
 
-    assert any(item["mode_id"] == "general_assistant" for item in modules)
+    assistant = next(item for item in modules if item["mode_id"] == "general_assistant")
+    assert assistant["contract_version"] == "1.0.0"
+    assert assistant["contract_valid"] is True
 
 
 def test_module_registry_detects_unauthorized_capability(tmp_path: Path) -> None:
@@ -80,3 +82,72 @@ output_schema:
     )
 
     assert "prompt_injection_marker_detected" in errors
+
+
+def test_module_registry_rejects_incompatible_connection(tmp_path: Path) -> None:
+    source = """
+contract_version: 1.0.0
+mode_id: {mode_id}
+module_version: 1.0.0
+title: Demo
+description: Demo module.
+owner: {{team: test}}
+lifecycle: draft
+pipeline: llm_pipeline
+task_type: general
+capabilities: []
+input_schema:
+  type: object
+  required: [{required_field}]
+  properties:
+    {required_field}: {{type: {input_type}}}
+output_schema:
+  type: object
+  required: [answer]
+  properties:
+    answer: {{type: {output_type}}}
+errors:
+  - {{code: demo_error, retryable: false, description: Demo error.}}
+execution: {{timeout_seconds: 10, max_retries: 0, idempotent: true, deterministic: true}}
+effects: {{side_effects: false, compensation_supported: false, network_access: none, filesystem_access: none}}
+security: {{trust_level: internal, secret_refs: []}}
+resources: {{memory_mb: 64, max_concurrency: 1, max_cost_units: 1, providers: [stub]}}
+compatibility: {{accepts_contract_versions: [1.x], module_dependencies: []}}
+evidence: {{documentation: [docs/demo.md], examples: [tests/demo.py]}}
+breaking_changes: false
+migrations: []
+prompt_versions: [demo.prompt.v1]
+rubric_versions: [demo.rubric.v1]
+tests:
+  golden:
+    - input: {{{required_field}: demo}}
+      expect_fields: [answer]
+  cost_regression: {{max_avg_cost_units: 1}}
+"""
+    (tmp_path / "producer.yaml").write_text(
+        source.format(mode_id="producer", required_field="request", input_type="string", output_type="number"),
+        encoding="utf-8",
+    )
+    (tmp_path / "consumer.yaml").write_text(
+        source.format(mode_id="consumer", required_field="answer", input_type="string", output_type="string"),
+        encoding="utf-8",
+    )
+
+    issues = ModuleRegistry(root=tmp_path).validate_connection("producer", "consumer")
+
+    assert any(issue.code == "compatibility.type_mismatch" for issue in issues)
+
+
+def test_module_registry_refuses_invalid_v1_contract_at_runtime() -> None:
+    registry = ModuleRegistry()
+    spec = registry.get_module("general_assistant")
+    assert spec is not None
+    spec.pop("execution")
+
+    errors = registry.validate_run_request(
+        spec=spec,
+        control={"requested_capabilities": []},
+        data={"user_request": "hello"},
+    )
+
+    assert any("[contract.required] $.execution:" in error for error in errors)

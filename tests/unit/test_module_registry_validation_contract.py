@@ -2,30 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import yaml
+
 from scripts import validate_modules as vm
 
 
+ROOT = Path(__file__).resolve().parents[2]
+
+
 def _base_spec() -> dict:
-    return {
-        "mode_id": "general_assistant",
-        "pipeline": "llm_pipeline",
-        "input_schema": {"type": "object", "properties": {"user_request": {"type": "string"}}},
-        "output_schema": {"type": "object", "properties": {"answer": {"type": "string"}}},
-        "module_version": "1.2.3",
-        "breaking_changes": False,
-        "migrations": [],
-        "prompt_versions": ["general_assistant.prompt.v1"],
-        "rubric_versions": ["general_assistant.rubric.v1"],
-        "tests": {
-            "golden": [
-                {
-                    "input": {"user_request": "Summarize this text"},
-                    "expect_fields": ["answer"],
-                }
-            ],
-            "cost_regression": {"max_avg_cost_units": 3.0},
-        },
-    }
+    return yaml.safe_load((ROOT / "modules" / "general_assistant.yaml").read_text(encoding="utf-8"))
 
 
 def test_module_registry_contract_accepts_valid_spec():
@@ -37,21 +23,21 @@ def test_module_registry_contract_requires_semver_key():
     spec = _base_spec()
     spec.pop("module_version")
     errors = vm._validate(Path("modules/general_assistant.yaml"), spec)
-    assert any("missing key: module_version" in err for err in errors)
+    assert any("[contract.required] $.module_version:" in error for error in errors)
 
 
 def test_module_registry_contract_rejects_invalid_semver_value():
     spec = _base_spec()
     spec["module_version"] = "1.2"
     errors = vm._validate(Path("modules/general_assistant.yaml"), spec)
-    assert "module_version must be valid semver (e.g. 1.2.3)" in errors
+    assert any("[contract.pattern] $.module_version:" in error for error in errors)
 
 
 def test_module_registry_contract_requires_boolean_breaking_changes():
     spec = _base_spec()
     spec["breaking_changes"] = "false"
     errors = vm._validate(Path("modules/general_assistant.yaml"), spec)
-    assert "breaking_changes must be boolean" in errors
+    assert any("$.breaking_changes:" in error for error in errors)
 
 
 def test_module_registry_contract_requires_prompt_and_rubric_versions():
@@ -59,12 +45,12 @@ def test_module_registry_contract_requires_prompt_and_rubric_versions():
     spec["prompt_versions"] = []
     spec["rubric_versions"] = [""]
     errors = vm._validate(Path("modules/general_assistant.yaml"), spec)
-    assert "prompt_versions must be non-empty list" in errors
-    assert "rubric_versions[0] must be non-empty string" in errors
+    assert any("$.prompt_versions:" in error for error in errors)
+    assert any("$.rubric_versions.0:" in error for error in errors)
 
 
 def test_module_registry_contract_requires_migration_entries_to_be_objects():
     spec = _base_spec()
     spec["migrations"] = ["001_initial"]
     errors = vm._validate(Path("modules/general_assistant.yaml"), spec)
-    assert "migrations[0] must be object" in errors
+    assert any("$.migrations.0:" in error for error in errors)

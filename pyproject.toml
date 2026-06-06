@@ -69,6 +69,9 @@ test = [
 [tool.setuptools]
 package-dir = {"" = "."}
 
+[tool.setuptools.package-data]
+"app.contracts" = ["*.json"]
+
 [tool.isort]
 profile = "black"
 line_length = 120

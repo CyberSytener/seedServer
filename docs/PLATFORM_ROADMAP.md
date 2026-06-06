@@ -46,6 +46,8 @@ to demonstrate.
 **Goal:** create a predictable development baseline before adding a new module
 contract or AI-generated code.
 
+**Status:** Complete.
+
 ### Scope
 
 - Establish GitHub `main` as the canonical source and use a clean local clone
@@ -77,6 +79,10 @@ contract or AI-generated code.
 
 **Goal:** describe not only module data shapes, but also execution behavior,
 permissions, operational limits, and compatibility.
+
+**Status:** In progress. The first vertical slice provides the Contract v1
+schema, Python validation model, legacy adapter, registry integration, and
+input/output compatibility checks.
 
 ### Contract Areas
 
@@ -250,4 +256,3 @@ UI.
 - contract migration tooling;
 - multi-agent generation and review;
 - signed third-party module packages.
-

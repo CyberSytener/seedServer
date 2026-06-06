@@ -137,6 +137,7 @@ cd saga-console && npm run build
 ## Development Direction
 
 - [Platform roadmap](docs/PLATFORM_ROADMAP.md)
+- [Module Contract v1](docs/MODULE_CONTRACT_V1.md)
 - [Active platform scope](docs/ACTIVE_PLATFORM_SCOPE.md)
 - [Test and quality strategy](docs/TEST_STRATEGY.md)
 - [Architecture decisions](docs/adr/README.md)

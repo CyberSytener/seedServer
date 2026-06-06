@@ -1,6 +1,13 @@
+contract_version: 1.0.0
 mode_id: general_assistant
 pipeline: llm_pipeline
 module_version: 1.0.0
+title: General Assistant
+description: Produces a structured answer for a general-purpose user request.
+owner:
+  team: seed-platform
+  contact: maintainers@seed-platform.local
+lifecycle: published
 breaking_changes: false
 migrations: []
 prompt_versions:
@@ -15,6 +22,43 @@ required_fields:
 capabilities:
   - llm.read
   - llm.generate
+errors:
+  - code: invalid_request
+    retryable: false
+    description: The module input does not satisfy its declared schema.
+  - code: provider_unavailable
+    retryable: true
+    description: No declared LLM provider is currently available.
+execution:
+  timeout_seconds: 120
+  max_retries: 2
+  idempotent: true
+  deterministic: false
+effects:
+  side_effects: false
+  compensation_supported: false
+  network_access: provider_only
+  filesystem_access: none
+security:
+  trust_level: internal
+  secret_refs: []
+resources:
+  memory_mb: 256
+  max_concurrency: 4
+  max_cost_units: 3.0
+  providers:
+    - stub
+    - openai
+    - gemini
+compatibility:
+  accepts_contract_versions:
+    - 1.x
+  module_dependencies: []
+evidence:
+  documentation:
+    - docs/MODULE_CONTRACT_V1.md
+  examples:
+    - tests/unit/test_module_registry.py
 input_schema:
   type: object
   required: [user_request]

@@ -2,12 +2,9 @@ from __future__ import annotations
 import logging
 
 import uuid
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Request
-
-from scripts import validate_modules as module_contract
 
 from app.api.console.utils import (
     ModuleValidateRequest,
@@ -94,12 +91,11 @@ async def validate_module(module_id: str, payload: ModuleValidateRequest, reques
         control={"requested_capabilities": payload.requested_capabilities},
         data=payload.sample_input,
         policy={"tool_security": spec.get("tool_security") if isinstance(spec.get("tool_security"), dict) else {}},
+        include_contract=False,
     )
 
-    contract_errors: List[str] = []
-    spec_path = spec.get("_path")
-    if isinstance(spec_path, str) and spec_path.strip():
-        contract_errors = module_contract._validate(Path(spec_path), spec)
+    contract_issues = module_registry.validate_contract(spec)
+    contract_errors = [issue.as_message() for issue in contract_issues]
 
     all_errors = [*schema_errors, *runtime_errors, *contract_errors]
     return {
@@ -107,7 +103,11 @@ async def validate_module(module_id: str, payload: ModuleValidateRequest, reques
         "checks": {
             "schema": {"ok": len(schema_errors) == 0, "errors": schema_errors},
             "runtime": {"ok": len(runtime_errors) == 0, "errors": runtime_errors},
-            "contract": {"ok": len(contract_errors) == 0, "errors": contract_errors},
+            "contract": {
+                "ok": len(contract_errors) == 0,
+                "errors": contract_errors,
+                "issues": [issue.model_dump() for issue in contract_issues],
+            },
             "golden": {"status": "not_executed"},
             "cost_regression": {"status": "not_executed"},
         },

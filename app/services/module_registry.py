@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from app.contracts import ContractIssue, check_module_compatibility, validate_module_contract
+
 try:
     from jsonschema import Draft202012Validator
 except Exception:  # pragma: no cover
@@ -83,6 +85,8 @@ class ModuleRegistry:
             modules.append(
                 {
                     "mode_id": mode_id,
+                    "contract_version": str(spec.get("contract_version") or ""),
+                    "contract_valid": len(validate_module_contract(spec)) == 0,
                     "pipeline": str(spec.get("pipeline") or "llm_pipeline"),
                     "task_type": str(spec.get("task_type") or "general"),
                     "path": str(path),
@@ -101,6 +105,33 @@ class ModuleRegistry:
                 return {**spec, "_path": str(path)}
         return None
 
+    def validate_contract(self, spec: Dict[str, Any]) -> List[ContractIssue]:
+        return validate_module_contract(spec)
+
+    def validate_connection(self, producer_mode_id: str, consumer_mode_id: str) -> List[ContractIssue]:
+        producer = self.get_module(producer_mode_id)
+        consumer = self.get_module(consumer_mode_id)
+        issues: List[ContractIssue] = []
+        if producer is None:
+            issues.append(
+                ContractIssue(
+                    code="registry.module_not_found",
+                    path="$.producer",
+                    message=f"producer module '{producer_mode_id}' was not found",
+                )
+            )
+        if consumer is None:
+            issues.append(
+                ContractIssue(
+                    code="registry.module_not_found",
+                    path="$.consumer",
+                    message=f"consumer module '{consumer_mode_id}' was not found",
+                )
+            )
+        if issues:
+            return issues
+        return check_module_compatibility(producer or {}, consumer or {})
+
     def validate_run_request(
         self,
         *,
@@ -108,8 +139,12 @@ class ModuleRegistry:
         control: Dict[str, Any],
         data: Dict[str, Any],
         policy: Optional[Dict[str, Any]] = None,
+        include_contract: bool = True,
     ) -> List[str]:
         errors: List[str] = []
+
+        if include_contract and spec.get("contract_version"):
+            errors.extend(issue.as_message() for issue in self.validate_contract(spec))
 
         input_schema = spec.get("input_schema") if isinstance(spec.get("input_schema"), dict) else {}
         errors.extend(_validate_payload(input_schema, data))

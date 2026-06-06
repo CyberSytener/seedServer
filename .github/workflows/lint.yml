@@ -30,6 +30,7 @@ jobs:
         run: |
           python -m compileall -q \
             app/api/console \
+            app/contracts \
             app/core/realtime/sagas \
             app/services/module_registry.py \
             app/sim \
@@ -39,8 +40,11 @@ jobs:
         run: |
           flake8 \
             app/api/console \
+            app/contracts \
             app/services/module_registry.py \
+            scripts/validate_modules.py \
             scripts/run_portfolio_demo.py \
+            tests/unit/test_module_contract_v1.py \
             tests/unit/test_console_runtime_api.py \
             tests/unit/test_module_registry.py \
             tests/unit/test_modes_api.py \

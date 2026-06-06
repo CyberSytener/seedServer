@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seed-platform.local/contracts/module-contract-v1.schema.json",
+  "title": "Seed Platform Module Contract v1",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "mode_id",
+    "module_version",
+    "title",
+    "description",
+    "owner",
+    "lifecycle",
+    "pipeline",
+    "task_type",
+    "capabilities",
+    "input_schema",
+    "output_schema",
+    "errors",
+    "execution",
+    "effects",
+    "security",
+    "resources",
+    "compatibility",
+    "evidence",
+    "breaking_changes",
+    "migrations",
+    "prompt_versions",
+    "rubric_versions",
+    "tests"
+  ],
+  "properties": {
+    "contract_version": {"type": "string", "pattern": "^1\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"},
+    "mode_id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$"},
+    "module_version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": "string", "minLength": 1},
+    "owner": {
+      "type": "object",
+      "required": ["team"],
+      "properties": {
+        "team": {"type": "string", "minLength": 1},
+        "contact": {"type": "string"}
+      }
+    },
+    "lifecycle": {
+      "enum": ["draft", "validated", "tested", "sandboxed", "approved", "published", "deprecated"]
+    },
+    "pipeline": {"const": "llm_pipeline"},
+    "task_type": {"type": "string", "minLength": 1},
+    "capabilities": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "input_schema": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {"type": {"const": "object"}}
+    },
+    "output_schema": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {"type": {"const": "object"}}
+    },
+    "errors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["code", "retryable", "description"],
+        "properties": {
+          "code": {"type": "string", "pattern": "^[a-z][a-z0-9_]{1,63}$"},
+          "retryable": {"type": "boolean"},
+          "description": {"type": "string", "minLength": 1},
+          "payload_schema": {"type": "object"}
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["timeout_seconds", "max_retries", "idempotent", "deterministic"],
+      "properties": {
+        "timeout_seconds": {"type": "integer", "minimum": 1, "maximum": 3600},
+        "max_retries": {"type": "integer", "minimum": 0, "maximum": 10},
+        "idempotent": {"type": "boolean"},
+        "deterministic": {"type": "boolean"}
+      }
+    },
+    "effects": {
+      "type": "object",
+      "required": ["side_effects", "compensation_supported", "network_access", "filesystem_access"],
+      "properties": {
+        "side_effects": {"type": "boolean"},
+        "compensation_supported": {"type": "boolean"},
+        "network_access": {"enum": ["none", "provider_only", "allowlist"]},
+        "filesystem_access": {"enum": ["none", "read_only", "sandbox"]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"compensation_supported": {"const": true}}},
+          "then": {"properties": {"side_effects": {"const": true}}}
+        }
+      ]
+    },
+    "security": {
+      "type": "object",
+      "required": ["trust_level", "secret_refs"],
+      "properties": {
+        "trust_level": {"enum": ["internal", "verified", "third_party", "untrusted"]},
+        "secret_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "resources": {
+      "type": "object",
+      "required": ["memory_mb", "max_concurrency", "max_cost_units", "providers"],
+      "properties": {
+        "memory_mb": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "max_cost_units": {"type": "number", "exclusiveMinimum": 0},
+        "providers": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "required": ["accepts_contract_versions", "module_dependencies"],
+      "properties": {
+        "accepts_contract_versions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "module_dependencies": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["documentation", "examples"],
+      "properties": {
+        "documentation": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "examples": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "breaking_changes": {"type": "boolean"},
+    "migrations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from_version", "to_version", "description"],
+        "properties": {
+          "from_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+          },
+          "to_version": {
+            "type": "string",
+            "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+          },
+          "description": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "prompt_versions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "rubric_versions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "tests": {
+      "type": "object",
+      "required": ["golden", "cost_regression"],
+      "properties": {
+        "golden": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["input", "expect_fields"],
+            "properties": {
+              "input": {"type": "object"},
+              "expect_fields": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        },
+        "cost_regression": {
+          "type": "object",
+          "required": ["max_avg_cost_units"],
+          "properties": {
+            "max_avg_cost_units": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      }
+    }
+  }
+}

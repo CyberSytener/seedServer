@@ -36,9 +36,6 @@ from app.core.saga_blueprints import (
 )
 from app.services.module_registry import ModuleRegistry
 from app.services.saga_architect import SagaArchitect
-from scripts import validate_modules as module_contract
-
-
 module_registry = ModuleRegistry()
 
 _CONTEXT_ROOTS = {"payload", "request", "user_id", "persona", "scan_id"}
@@ -427,6 +424,9 @@ def _module_document(spec: Dict[str, Any]) -> Dict[str, Any]:
         "tags": [str(tag) for tag in (spec.get("tags") or []) if str(tag).strip()],
         "status": status,
         "version": str(spec.get("module_version") or "0.0.0"),
+        "contract_version": str(spec.get("contract_version") or ""),
+        "lifecycle": str(spec.get("lifecycle") or "draft"),
+        "contract_valid": len(module_registry.validate_contract(spec)) == 0,
         "pipeline": str(spec.get("pipeline") or "llm_pipeline"),
         "task_type": str(spec.get("task_type") or module_id),
         "input_schema": spec.get("input_schema") if isinstance(spec.get("input_schema"), dict) else {},
