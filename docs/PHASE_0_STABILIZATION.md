@@ -1,6 +1,6 @@
 # Phase 0: Platform Foundation Stabilization
 
-Status: In progress  
+Status: Complete
 Started: 2026-06-06
 
 ## Objective
@@ -63,7 +63,7 @@ Do not bulk-copy the recovery worktree into canonical `main`.
 - [x] Portfolio quality gate passes from the clean clone.
 - [x] Integration quality gate passes locally and is wired into CI.
 - [x] Demo smoke passes from the clean clone.
-- [ ] Mandatory GitHub Actions are green.
+- [x] Mandatory GitHub Actions are green.
 
 ## Next Phase
 
