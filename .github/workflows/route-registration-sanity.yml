@@ -1,6 +1,7 @@
 name: route-registration-sanity
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "app/main.py"
