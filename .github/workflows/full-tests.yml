@@ -51,20 +51,4 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run portfolio unit test suite
-        run: |
-          pytest -q --timeout=120 \
-            tests/unit/test_console_runtime_api.py \
-            tests/unit/test_auth_providers_api.py \
-            tests/unit/test_module_registry.py \
-            tests/unit/test_modes_api.py \
-            tests/unit/test_security_hardening.py \
-            tests/unit/test_llm_router_openai_regression.py \
-            tests/unit/sim/ \
-            --junitxml=junit.xml
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: junit.xml
+        run: python scripts/run_quality_gate.py portfolio

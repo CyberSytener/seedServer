@@ -1,46 +1,44 @@
 # Source Of Truth
 
-Last updated: 2026-05-19
+Last updated: 2026-06-06
 
-## Canonical Root
+## Canonical Source
 
-- Canonical server repository path: `seed_server/`.
-- Archive and snapshot path: `../_archive/`.
-- Active backend development should happen inside `seed_server/`.
-- The separate NeoEats frontend snapshot currently lives at `../front-neoeats-snapshot/` and is not part of the `seed_server` git repository.
+- Canonical repository: `https://github.com/CyberSytener/seedServer`.
+- Canonical branch: `main`.
+- New development must start from a clean clone of canonical `main`.
+- Dirty historical worktrees are recovery sources, not commit sources.
+- Generated artifacts, local databases, secrets, and archive bundles do not
+  belong in the canonical repository.
 
 ## Current Documentation Entrypoints
 
 - Project setup and quick status: `README.md`.
-- Current analysis and development plan: `docs/SYSTEM_ANALYSIS_AND_DEVELOPMENT_PLAN_2026-05-19.md`.
-- Current state mark: `docs/STATE_MARK_2026-05-19.md`.
-- Current project classification: `docs/PROJECT_CLASSIFICATION_2026-05-19.md`.
-- Current cleanup inventory: `docs/CLEANUP_INVENTORY_2026-05-19.md`.
-- Current import cleanup audit: `docs/VERIFY_IMPORTS_AUDIT_2026-05-20.md`.
-- Current active review buckets: `docs/ACTIVE_REVIEW_BUCKETS_2026-05-20.md`.
-- Current deleted-test coverage map: `docs/TEST_COVERAGE_CLEANUP_2026-05-20.md`.
-- Public runtime runbook: `docs/PUBLIC_RUNTIME_RUNBOOK_2026-05-19.md`.
-- Previous product outlook and next development plan: `docs/PROJECT_OUTLOOK_AND_NEXT_STEPS_2026-05-06.md`.
-- Previous broad analysis and recommendations: `docs/CURRENT_PROJECT_ANALYSIS_2026-05-06.md`.
-- NeoEats public routing and real-data readiness: `docs/NEOEATS_PUBLIC_AND_REAL_DATA_READINESS_2026-05-06.md`.
-- Current backlog: `PROBLEMS_AND_TASKS.md`.
-- Documentation index: `docs/guides/DOCUMENTATION_INDEX.md`.
-- Historical phase tracker: `TASKS.md`.
+- Product direction and phases: `docs/PLATFORM_ROADMAP.md`.
+- Maintained platform boundary: `docs/ACTIVE_PLATFORM_SCOPE.md`.
+- Test and CI commitments: `docs/TEST_STRATEGY.md`.
+- Architectural decisions: `docs/adr/`.
+- Reviewer setup and demo: `README.md` and `DEMO.md`.
+- Historical plans and dated audits remain useful context, but they are not
+  current sources of truth.
 
 ## Active-Scope Rules
 
-- Do not keep archive folders, copy roots or zip bundles inside `seed_server/`.
+- Do not keep archive folders, copy roots, or zip bundles inside the repository.
 - Move snapshots, exported bundles and old copies to `../_archive/`.
 - Keep generated runtime artifacts out of commits unless they are intentionally versioned fixtures.
-- Before starting a feature, make sure `git status --short` is understandable and scoped.
+- Before starting a feature, make sure `git status --short` is empty or
+  understandable and scoped.
+- Changes to the active surface must pass the portfolio quality gate.
+- Candidate and experimental surfaces become active only through an ADR and
+  focused release-blocking tests.
 
 ## Branch And Worktree Policy
 
-- `chore/archive-cleanup-canonical-root`: archive hygiene only.
-- `refactor/code-fixes-baseline`: code fixes and refactoring only.
-- `feature/phase0-followup`: current active feature/stabilization branch.
-
-Keep archive cleanup, code fixes, documentation updates and product features in separate branches or separate commits.
+- `main` must remain demoable and pass mandatory CI.
+- Use focused branches and commits for architecture, cleanup, and product work.
+- Never repair a massively dirty historical worktree by force-resetting it.
+  Preserve it and import valuable changes intentionally into a clean clone.
 
 ## Verification Commands
 
@@ -54,12 +52,12 @@ git status --short
 git worktree list
 ```
 
-Backend:
+Mandatory active-platform gate:
 
 ```powershell
-python -m pytest -q tests/test_ci_smoke.py tests/test_auth_verify_user_context.py tests/unit/test_security_hardening.py tests/unit/test_llm_router_openai_regression.py
-python -m pytest -q tests/unit --maxfail=1
-python -m pytest -q tests/integration --maxfail=1
+python scripts/run_quality_gate.py portfolio
+python scripts/run_quality_gate.py integration
+python scripts/run_portfolio_demo.py --smoke-test --no-open
 ```
 
 Frontend:
@@ -69,22 +67,8 @@ Set-Location .\saga-console
 npm run build
 ```
 
-NeoEats frontend snapshot:
+Broad historical unit checks remain available through:
 
 ```powershell
-Set-Location ..\front-neoeats-snapshot
-npm run test:unit
-npm run build
-npm run smoke:server -- --port 5174
-npm run smoke:flow
-```
-
-Public runtime check:
-
-```powershell
-Invoke-WebRequest -Uri https://neoeats.no/ -UseBasicParsing -TimeoutSec 10
-Invoke-WebRequest -Uri https://api.neoeats.no/health -UseBasicParsing -TimeoutSec 10
-docker compose -p seed_public -f docker-compose.public.yml --env-file .env.public ps
-.\scripts\restore_public_runtime.ps1 -SkipDocker -SkipTunnel -SkipSmoke
-.\scripts\smoke_public_neoeats.ps1
+python scripts/run_quality_gate.py experimental
 ```

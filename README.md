@@ -4,6 +4,10 @@ FastAPI AI orchestration backend with a React Saga Console for building, sandbox
 
 This repository is prepared as a portfolio demo. It is not presented as a perfect production product; it is a compact showcase of backend architecture, workflow orchestration, runtime safety, and an operator-facing UI.
 
+The longer-term platform thesis is contract-first extensibility: independently
+described modules share one runtime contract, while AI can propose and repair
+new modules through validation, sandboxing, and human-gated publication.
+
 ## What To Review
 
 - Saga workflow runtime with typed modules, flow graphs, sandbox runs, run history, and artifacts.
@@ -123,10 +127,20 @@ docs/                  portfolio brief and deeper notes
 
 ```bash
 python scripts/run_portfolio_demo.py --smoke-test --no-open
+python scripts/run_quality_gate.py portfolio
+python scripts/run_quality_gate.py integration
 python -m pytest -q tests/unit/test_console_runtime_api.py
 python -m pytest -q tests/unit/test_module_registry.py tests/unit/test_modes_api.py
 cd saga-console && npm run build
 ```
+
+## Development Direction
+
+- [Platform roadmap](docs/PLATFORM_ROADMAP.md)
+- [Active platform scope](docs/ACTIVE_PLATFORM_SCOPE.md)
+- [Test and quality strategy](docs/TEST_STRATEGY.md)
+- [Architecture decisions](docs/adr/README.md)
+- [Canonical source and worktree policy](SOURCE_OF_TRUTH.md)
 
 ## Portfolio Notes
 
@@ -148,4 +162,5 @@ Known demo boundaries:
 
 - The demo defaults to deterministic stub providers, not real paid LLM calls.
 - Some deeper production surfaces are included to show engineering range, but the reviewer path should focus on Saga Console and the console runtime API.
-- The worktree may contain historical/generated artifacts during local development; publish from a cleaned branch or release archive.
+- Historical and experimental surfaces remain in the repository, but only the
+  declared active scope is treated as the supported release contract.

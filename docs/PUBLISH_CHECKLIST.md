@@ -6,8 +6,8 @@ Use this checklist before sharing the repository link with reviewers.
 
 ```bash
 python scripts/run_portfolio_demo.py --smoke-test --no-open
+python scripts/run_quality_gate.py portfolio
 cd saga-console && npm run build
-python -m pytest -q tests/unit/test_console_runtime_api.py tests/unit/test_auth_providers_api.py tests/unit/test_module_registry.py tests/unit/test_modes_api.py
 ```
 
 Expected:
@@ -15,6 +15,7 @@ Expected:
 - demo smoke prints `Smoke test passed`;
 - Saga Console build completes without chunk-size warnings;
 - backend focused tests pass.
+- the documented portfolio quality gate passes.
 
 ## Reviewer Path
 
@@ -66,3 +67,5 @@ Seed Server is a portfolio demo of an AI workflow control plane: FastAPI backend
 - Real LLM calls require provider keys and are intentionally outside the reviewer path.
 - Docker Compose remains available, but the portfolio demo does not require Docker.
 - Some deeper architecture documents are historical. Prefer `README.md`, `DEMO.md`, and `docs/PORTFOLIO_GITHUB_BRIEF.md` as public entry points.
+- Platform development direction is defined in `docs/PLATFORM_ROADMAP.md`; active
+  commitments are defined in `docs/ACTIVE_PLATFORM_SCOPE.md`.

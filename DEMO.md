@@ -73,3 +73,6 @@ If a port is busy, the launcher selects the next available local port and prints
 If you want to run the services manually, see `saga-console/README.md`.
 
 Before publishing the repository, use `docs/PUBLISH_CHECKLIST.md`.
+
+For the platform development direction beyond the reviewer demo, see
+`docs/PLATFORM_ROADMAP.md`.

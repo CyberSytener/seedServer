@@ -1,7 +1,7 @@
 PYTHON ?= python
 ADMIN_KEY ?= dev-only-change-before-deploy
 
-.PHONY: run setup dev dev-down dev-logs dev-detach dev-seed demo demo-smoke test clean lint typecheck security format coverage migrate docker-build console console-build
+.PHONY: run setup dev dev-down dev-logs dev-detach dev-seed demo demo-smoke quality quality-integration quality-experimental test clean lint typecheck security format coverage migrate docker-build console console-build
 
 # Portfolio demo: backend + Saga Console, stub LLM, no Docker and no real API keys.
 demo:
@@ -9,6 +9,15 @@ demo:
 
 demo-smoke:
 	$(PYTHON) scripts/run_portfolio_demo.py --smoke-test --no-open
+
+quality:
+	$(PYTHON) scripts/run_quality_gate.py portfolio
+
+quality-integration:
+	$(PYTHON) scripts/run_quality_gate.py integration
+
+quality-experimental:
+	$(PYTHON) scripts/run_quality_gate.py experimental
 
 # Start minimal Docker dev stack (postgres + redis + api with stub LLM).
 dev:
