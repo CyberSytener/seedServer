@@ -6,6 +6,7 @@ import type {
   ConsoleModule,
   ConsoleFlow,
   ConsoleRun,
+  FlowContractValidation,
   ProviderProfile,
   AuthLoginResponse,
   MeResponse,
@@ -276,6 +277,7 @@ export const api = {
       flow_id: string;
       version: string;
       compiled_mode_payload_ref: Record<string, unknown>;
+      contract_validation: FlowContractValidation;
     }>('/v1/flows/compile', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -291,7 +293,14 @@ export const api = {
     ),
 
   validateFlow: (flowId: string) =>
-    request<{ ok: boolean; errors: string[] }>(
+    request<{
+      ok: boolean;
+      errors: string[];
+      checks: {
+        graph_contract: { ok: boolean; errors: string[] };
+        contract_compatibility: FlowContractValidation;
+      };
+    }>(
       `/v1/flows/${encodeURIComponent(flowId)}/validate`,
       {
         method: 'POST',
@@ -424,6 +433,8 @@ export const api = {
       owner_id: flow.owner_id ?? 'system',
       status: toLegacyBlueprintStatus(flow.status),
       created_at: flow.created_at ?? flow.updated_at ?? new Date().toISOString(),
+      contract_ok: flow.contract_validation?.ok,
+      contract_issue_count: flow.contract_validation?.issues.length ?? 0,
     }));
     return { blueprints };
   },

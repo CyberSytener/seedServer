@@ -14,6 +14,7 @@ PORTFOLIO_TESTS = [
     "tests/unit/test_module_registry.py",
     "tests/unit/test_module_contract_v1.py",
     "tests/unit/test_module_registry_validation_contract.py",
+    "tests/unit/test_flow_contract_validator.py",
     "tests/unit/test_modes_api.py",
     "tests/unit/test_security_hardening.py",
     "tests/unit/test_llm_router_openai_regression.py",

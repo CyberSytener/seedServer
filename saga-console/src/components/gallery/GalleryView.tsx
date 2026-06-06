@@ -14,6 +14,7 @@ import {
   Loader2,
   CheckCircle,
   ShieldCheck,
+  ShieldAlert,
   Clock3,
   ArrowRight,
   PlayCircle,
@@ -372,10 +373,10 @@ export function GalleryView() {
           {blueprintsList.map((bp) => {
             const badge = STATUS_BADGE[bp.status] ?? STATUS_BADGE.DRAFT;
             return (
-              <button
+              <article
                 key={bp.name}
                 onClick={() => openBlueprint(bp.name)}
-                className="text-left p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-900/80 transition-all group"
+                className="cursor-pointer text-left p-4 rounded-xl bg-zinc-900/50 border border-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-900/80 transition-all group"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2 min-w-0">
@@ -406,7 +407,29 @@ export function GalleryView() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span
+                    title={
+                      bp.contract_ok
+                        ? 'All mapped module inputs and outputs are compatible'
+                        : 'Fix contract issues before sandboxing or release'
+                    }
+                    className={cn(
+                      'flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-medium',
+                      bp.contract_ok
+                        ? 'bg-emerald-500/10 text-emerald-400'
+                        : 'bg-red-500/10 text-red-400',
+                    )}
+                  >
+                    {bp.contract_ok ? (
+                      <ShieldCheck className="w-3 h-3" />
+                    ) : (
+                      <ShieldAlert className="w-3 h-3" />
+                    )}
+                    {bp.contract_ok
+                      ? 'Contract OK'
+                      : `${bp.contract_issue_count ?? 0} contract issue${bp.contract_issue_count === 1 ? '' : 's'}`}
+                  </span>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -423,7 +446,9 @@ export function GalleryView() {
                 {bp.status === 'DRAFT' && (
                   <button
                     onClick={(e) => handleSandbox(e, bp)}
-                    className="mt-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors"
+                    disabled={bp.contract_ok === false || sandboxing === bp.name}
+                    title={bp.contract_ok === false ? 'Fix contract issues before sandboxing' : 'Run in sandbox'}
+                    className="mt-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {sandboxing === bp.name ? (
                       <Loader2 className="w-3 h-3 animate-spin" />
@@ -438,13 +463,15 @@ export function GalleryView() {
                 {bp.status === 'SANDBOXED' && (
                   <button
                     onClick={(e) => handleApprove(e, bp)}
-                    className="mt-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+                    disabled={bp.contract_ok === false}
+                    title={bp.contract_ok === false ? 'Fix contract issues before approval' : 'Approve flow'}
+                    className="mt-3 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ShieldCheck className="w-3 h-3" />
                     Approve
                   </button>
                 )}
-              </button>
+              </article>
             );
           })}
         </div>

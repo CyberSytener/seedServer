@@ -82,7 +82,8 @@ permissions, operational limits, and compatibility.
 
 **Status:** In progress. The first vertical slice provides the Contract v1
 schema, Python validation model, legacy adapter, registry integration, and
-input/output compatibility checks.
+input/output compatibility checks. The second vertical slice applies those
+checks to flow compile, validation, sandbox, run, and release gates.
 
 ### Contract Areas
 

@@ -36,6 +36,7 @@ export type ConsoleFlow = {
     to: string;
     mapping?: Record<string, unknown>;
   }>;
+  contract_validation?: FlowContractValidation;
   raw_blueprint?: {
     name?: string;
     version?: string;
@@ -46,6 +47,21 @@ export type ConsoleFlow = {
       params?: Record<string, unknown>;
     }>;
   };
+};
+
+export type ContractIssue = {
+  code: string;
+  path: string;
+  message: string;
+};
+
+export type FlowContractValidation = {
+  ok: boolean;
+  checked_nodes: number;
+  checked_edges: number;
+  sources: Record<string, string>;
+  issues: ContractIssue[];
+  errors: string[];
 };
 
 export type ConsoleRun = {

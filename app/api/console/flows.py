@@ -27,6 +27,8 @@ from app.api.console.utils import (
     _now_iso,
     _require_any_scope,
     _require_scope,
+    _validate_flow_contract_blueprint,
+    _validate_flow_contract_graph,
     _write_release_record,
     module_registry,
 )
@@ -99,6 +101,18 @@ async def compile_flow(payload: FlowCompileRequest, request: Request) -> Dict[st
             },
         }
 
+    contract_validation = _validate_flow_contract_graph(graph_nodes, graph_edges)
+    if not contract_validation.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "incompatible_flow_contract",
+                "issues": contract_validation.get("issues", []),
+                "errors": contract_validation.get("errors", []),
+            },
+        )
+    raw_blueprint["contract_validation"] = contract_validation
+
     compiled_payload = {
         "flow_id": flow_id,
         "version": version,
@@ -112,6 +126,7 @@ async def compile_flow(payload: FlowCompileRequest, request: Request) -> Dict[st
         "entrypoint_schema": payload.entrypoint_schema,
         "assertions": payload.assertions,
         "observability": payload.observability,
+        "contract_validation": contract_validation,
         "compiled_at": _now_iso(),
         "compiled_by": ctx.user_id,
     }
@@ -137,6 +152,7 @@ async def compile_flow(payload: FlowCompileRequest, request: Request) -> Dict[st
         "version": version,
         "compiled_mode_payload_ref": artifact_ref,
         "saved": payload.save,
+        "contract_validation": contract_validation,
         "flow": {
             "flow_id": flow_id,
             "version": version,
@@ -164,17 +180,21 @@ async def validate_flow(flow_id: str, request: Request) -> Dict[str, Any]:
     _validate_errors = []
     if not validation.get("ok"):
         _validate_errors = [str(err) for err in (validation.get("errors") or [])]
+    blueprint = record.data if isinstance(record.data, dict) else {}
+    contract_validation = _validate_flow_contract_blueprint(blueprint)
+    contract_errors = [str(error) for error in (contract_validation.get("errors") or [])]
 
     return {
-        "ok": len(_validate_errors) == 0,
+        "ok": len(_validate_errors) == 0 and len(contract_errors) == 0,
         "checks": {
             "graph_contract": {
                 "ok": len(_validate_errors) == 0,
                 "errors": _validate_errors,
             },
+            "contract_compatibility": contract_validation,
             "assertions": {"status": "not_executed"},
         },
-        "errors": _validate_errors,
+        "errors": [*_validate_errors, *contract_errors],
     }
 
 
@@ -203,6 +223,17 @@ async def sandbox_flow(flow_id: str, request: Request) -> Dict[str, Any]:
         raise HTTPException(
             status_code=400,
             detail={"error": "invalid_flow", "details": validation.get("errors", [])},
+        )
+    blueprint = record.data if isinstance(record.data, dict) else {}
+    contract_validation = _validate_flow_contract_blueprint(blueprint)
+    if not contract_validation.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "incompatible_flow_contract",
+                "issues": contract_validation.get("issues", []),
+                "errors": contract_validation.get("errors", []),
+            },
         )
 
     dry_run: Dict[str, Any] = {}
@@ -257,6 +288,18 @@ async def release_flow(
     record = await store.get_record(flow_id)
     if not record:
         raise HTTPException(status_code=404, detail="flow_not_found")
+
+    blueprint = record.data if isinstance(record.data, dict) else {}
+    contract_validation = _validate_flow_contract_blueprint(blueprint)
+    if not contract_validation.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "incompatible_flow_contract",
+                "issues": contract_validation.get("issues", []),
+                "errors": contract_validation.get("errors", []),
+            },
+        )
 
     try:
         await store.update_status(flow_id, BlueprintStatus.ACTIVE)

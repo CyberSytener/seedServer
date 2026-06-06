@@ -36,6 +36,8 @@ export interface BlueprintListItem {
   owner_id: string;
   status: 'DRAFT' | 'SANDBOXED' | 'ACTIVE' | 'ARCHIVED';
   created_at: string;
+  contract_ok?: boolean;
+  contract_issue_count?: number;
 }
 
 export interface BlueprintInfoResponse {

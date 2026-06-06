@@ -35,6 +35,7 @@ from app.core.saga_blueprints import (
     run_store as default_run_store,
 )
 from app.services.module_registry import ModuleRegistry
+from app.services.flow_contract_validator import FlowContractValidator
 from app.services.saga_architect import SagaArchitect
 module_registry = ModuleRegistry()
 
@@ -406,6 +407,22 @@ def _graph_to_blueprint_steps(
     return steps
 
 
+def _validate_flow_contract_graph(
+    nodes: List[Dict[str, Any]],
+    edges: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    return FlowContractValidator(module_registry=module_registry).validate_graph(nodes, edges)
+
+
+def _validate_flow_contract_blueprint(blueprint: Dict[str, Any]) -> Dict[str, Any]:
+    graph = blueprint.get("graph") if isinstance(blueprint.get("graph"), dict) else {}
+    nodes = graph.get("nodes") if isinstance(graph.get("nodes"), list) else []
+    edges = graph.get("edges") if isinstance(graph.get("edges"), list) else []
+    if not nodes:
+        nodes, edges = _blueprint_to_flow_graph(blueprint)
+    return _validate_flow_contract_graph(nodes, edges)
+
+
 def _module_document(spec: Dict[str, Any]) -> Dict[str, Any]:
     module_id = str(spec.get("mode_id") or "").strip()
     latest_release = _latest_release("modules", module_id) if module_id else None
@@ -470,6 +487,7 @@ def _flow_document(record: Any) -> Dict[str, Any]:
         "owner_id": str(getattr(record, "owner_id", "system")),
         "nodes": nodes,
         "edges": edges,
+        "contract_validation": _validate_flow_contract_graph(nodes, edges),
         "entrypoint_schema": payload.get("entrypoint_schema")
         if isinstance(payload.get("entrypoint_schema"), dict)
         else {},
@@ -1149,6 +1167,16 @@ async def _create_flow_run(
     graph_edges = graph.get("edges") if isinstance(graph.get("edges"), list) else []
     if not graph_nodes:
         graph_nodes, graph_edges = _blueprint_to_flow_graph(blueprint_payload)
+    contract_validation = _validate_flow_contract_blueprint(blueprint_payload)
+    if not contract_validation.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "incompatible_flow_contract",
+                "issues": contract_validation.get("issues", []),
+                "errors": contract_validation.get("errors", []),
+            },
+        )
 
     runtime_payload = {
         "graph": {

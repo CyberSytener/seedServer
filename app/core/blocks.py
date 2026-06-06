@@ -274,7 +274,7 @@ class JobScorerBlock(BlockBase):
             "scored_count": {"type": "integer"},
             "scored_jobs": {"type": "array", "items": {"type": "object"}},
         },
-        "required": ["scored_count"],
+        "required": ["scored_count", "scored_jobs"],
     }
 
     async def execute(self, context: Dict[str, Any], inputs: Dict[str, Any]) -> Dict[str, Any]:
@@ -291,7 +291,7 @@ class JobScorerBlock(BlockBase):
         if not user_id:
             raise ValueError("JobScorerBlock requires user_id")
         if not jobs:
-            return {"scored_count": 0}
+            return {"scored_count": 0, "scored_jobs": []}
 
         scorer = self._resolve_scorer()
         scored = await scorer.score_batch(

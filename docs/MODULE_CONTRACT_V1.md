@@ -59,6 +59,23 @@ The registry exposes this through
 Incompatible connections return machine-readable issues and must be rejected
 before execution.
 
+## Flow Contract Gate
+
+`FlowContractValidator` applies the same schema guarantees to graph edges. It
+resolves schemas from:
+
+- Module Contract v1 manifests in the module registry;
+- active legacy block metadata during the migration period.
+
+Every edge must declare an explicit target-to-source field mapping. Compile,
+validate, sandbox, run, and release operations reject missing fields,
+unguaranteed required outputs, incompatible types, unknown modules, and
+modules without a flow execution adapter. The Console API exposes the report as
+`contract_validation` or `checks.contract_compatibility`.
+
+This adapter keeps the existing Gallery demo operational while making its
+connections enforceable before all blocks have full Contract v1 manifests.
+
 ## Legacy Migration
 
 `migrate_legacy_module()` converts an old YAML mapping into a valid draft

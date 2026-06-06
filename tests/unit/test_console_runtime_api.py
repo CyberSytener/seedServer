@@ -322,12 +322,15 @@ def test_compile_flow_creates_compiled_artifact_and_persists_flow() -> None:
     assert payload["version"] == "v2"
     assert payload["compiled_mode_payload_ref"]["uri"].startswith("artifact://")
     assert payload["saved"] is True
+    assert payload["contract_validation"]["ok"] is True
+    assert payload["contract_validation"]["checked_edges"] == 1
 
     flow_response = client.get("/v1/flows/compiled_demo", headers=_headers())
     assert flow_response.status_code == 200
     flow = flow_response.json()
     assert flow["flow_id"] == "compiled_demo"
     assert len(flow["nodes"]) == 2
+    assert flow["contract_validation"]["ok"] is True
 
 
 def test_compile_flow_from_blueprint_preserves_inputs_and_params() -> None:
@@ -375,6 +378,92 @@ def test_compile_flow_from_blueprint_preserves_inputs_and_params() -> None:
     assert flow["edges"] == [
         {"from": "market_scanner_1", "to": "job_scorer_1", "mapping": {"jobs": "jobs"}}
     ]
+
+
+def test_compile_flow_rejects_incompatible_contract_mapping() -> None:
+    client, _ = _build_client()
+
+    response = client.post(
+        "/v1/flows/compile",
+        headers=_headers(),
+        json={
+            "flow_id": "incompatible_contract_demo",
+            "graph": {
+                "nodes": [
+                    {"node_id": "scan", "module_id": "market_scanner"},
+                    {"node_id": "score", "module_id": "job_scorer"},
+                ],
+                "edges": [
+                    {
+                        "from": "scan",
+                        "to": "score",
+                        "mapping": {"jobs": "scan_id"},
+                    }
+                ],
+            },
+        },
+    )
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert detail["error"] == "incompatible_flow_contract"
+    assert any(issue["code"] == "flow.field_type_mismatch" for issue in detail["issues"])
+
+
+def test_flow_validate_and_run_report_incompatible_contract() -> None:
+    client, app = _build_client()
+    asyncio.run(
+        app.state.console_blueprint_store.save(
+            "invalid_contract_flow",
+            {
+                "name": "invalid_contract_flow",
+                "version": "v1",
+                "steps": [
+                    {
+                        "id": "scan",
+                        "block": "market_scanner",
+                        "inputs": {"user_id": {"from": "user_id"}},
+                    },
+                    {
+                        "id": "score",
+                        "block": "job_scorer",
+                        "inputs": {
+                            "user_id": {"from": "user_id"},
+                            "jobs": {"from": "scan.scan_id"},
+                        },
+                    },
+                ],
+            },
+            owner_id="admin",
+            status=BlueprintStatus.DRAFT,
+        )
+    )
+
+    validation = client.post("/v1/flows/invalid_contract_flow/validate", headers=_headers())
+    assert validation.status_code == 200
+    assert validation.json()["ok"] is False
+    issues = validation.json()["checks"]["contract_compatibility"]["issues"]
+    assert any(issue["code"] == "flow.field_type_mismatch" for issue in issues)
+
+    run = client.post(
+        "/v1/runs",
+        headers=_headers(),
+        json={
+            "target": {"type": "flow", "id": "invalid_contract_flow"},
+            "mode": "stub",
+            "input": {"user_id": "u1"},
+        },
+    )
+    assert run.status_code == 400
+    assert run.json()["detail"]["error"] == "incompatible_flow_contract"
+
+    release = client.post(
+        "/v1/flows/invalid_contract_flow/release",
+        headers=_headers(),
+        json={"version": "v1"},
+    )
+    assert release.status_code == 400
+    assert release.json()["detail"]["error"] == "incompatible_flow_contract"
 
 
 def test_flow_sandbox_marks_saved_flow_as_sandboxed() -> None:
