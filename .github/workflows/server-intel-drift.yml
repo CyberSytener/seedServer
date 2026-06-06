@@ -16,7 +16,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: pip
 
       - name: Verify server_intel drift
         if: ${{ hashFiles('archive/data/server_intel.json') != '' }}
