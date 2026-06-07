@@ -42,6 +42,7 @@ class Owner(ContractModel):
 
 
 class ExecutionPolicy(ContractModel):
+    adapter: Literal["saga_orchestrator", "block_registry"]
     timeout_seconds: int = Field(gt=0, le=3600)
     max_retries: int = Field(ge=0, le=10)
     idempotent: StrictBool
@@ -118,7 +119,7 @@ class ModuleContractV1(ContractModel):
     description: str = Field(min_length=1)
     owner: Owner
     lifecycle: Literal["draft", "validated", "tested", "sandboxed", "approved", "published", "deprecated"]
-    pipeline: Literal["llm_pipeline"]
+    pipeline: Literal["llm_pipeline", "flow_block"]
     task_type: str = Field(min_length=1)
     capabilities: List[NonEmptyString]
     input_schema: Dict[str, Any]
@@ -207,6 +208,23 @@ def validate_module_contract(spec: Mapping[str, Any]) -> List[ContractIssue]:
                 )
             )
 
+    pipeline = str(spec.get("pipeline") or "").strip()
+    execution = spec.get("execution") if isinstance(spec.get("execution"), dict) else {}
+    adapter = str(execution.get("adapter") or "").strip()
+    expected_adapters = {
+        "llm_pipeline": "saga_orchestrator",
+        "flow_block": "block_registry",
+    }
+    expected_adapter = expected_adapters.get(pipeline)
+    if expected_adapter and adapter and adapter != expected_adapter:
+        issues.append(
+            ContractIssue(
+                code="execution.adapter_mismatch",
+                path="$.execution.adapter",
+                message=f"pipeline '{pipeline}' requires execution adapter '{expected_adapter}'",
+            )
+        )
+
     return sorted(issues, key=lambda issue: (issue.path, issue.code, issue.message))
 
 
@@ -239,7 +257,13 @@ def migrate_legacy_module(spec: Mapping[str, Any]) -> Dict[str, Any]:
             ],
             "execution": migrated.get("execution")
             if isinstance(migrated.get("execution"), dict)
-            else {"timeout_seconds": 120, "max_retries": 0, "idempotent": False, "deterministic": False},
+            else {
+                "adapter": "saga_orchestrator",
+                "timeout_seconds": 120,
+                "max_retries": 0,
+                "idempotent": False,
+                "deterministic": False,
+            },
             "effects": migrated.get("effects")
             if isinstance(migrated.get("effects"), dict)
             else {
@@ -267,6 +291,12 @@ def migrate_legacy_module(spec: Mapping[str, Any]) -> Dict[str, Any]:
             else {"documentation": ["migration-required"], "examples": ["legacy-manifest"]},
         }
     )
+    execution = dict(migrated.get("execution") or {})
+    execution.setdefault(
+        "adapter",
+        "block_registry" if migrated.get("pipeline") == "flow_block" else "saga_orchestrator",
+    )
+    migrated["execution"] = execution
     return migrated
 
 

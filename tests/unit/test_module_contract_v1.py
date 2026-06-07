@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 import yaml
 from jsonschema import Draft202012Validator
 
@@ -16,14 +17,25 @@ def _module() -> dict:
     return yaml.safe_load((ROOT / "modules" / "general_assistant.yaml").read_text(encoding="utf-8"))
 
 
+def _module_by_id(module_id: str) -> dict:
+    return yaml.safe_load((ROOT / "modules" / f"{module_id}.yaml").read_text(encoding="utf-8"))
+
+
 def test_committed_contract_schema_is_valid_json_schema() -> None:
     schema = json.loads((ROOT / "app" / "contracts" / "module_contract_v1.schema.json").read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
-    assert list(Draft202012Validator(schema).iter_errors(_module())) == []
+    validator = Draft202012Validator(schema)
+    for path in sorted((ROOT / "modules").glob("*.yaml")):
+        spec = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert list(validator.iter_errors(spec)) == [], path.name
 
 
-def test_general_assistant_satisfies_module_contract_v1() -> None:
-    assert validate_module_contract(_module()) == []
+@pytest.mark.parametrize(
+    "module_id",
+    ["general_assistant", "market_scanner", "job_scorer", "notification_block"],
+)
+def test_committed_modules_satisfy_module_contract_v1(module_id: str) -> None:
+    assert validate_module_contract(_module_by_id(module_id)) == []
 
 
 def test_contract_errors_are_machine_readable() -> None:
@@ -42,6 +54,15 @@ def test_contract_rejects_invalid_json_schema() -> None:
     issues = validate_module_contract(spec)
 
     assert any(issue.code == "schema.root_type" and issue.path == "$.input_schema.type" for issue in issues)
+
+
+def test_contract_rejects_pipeline_adapter_mismatch() -> None:
+    spec = _module()
+    spec["execution"]["adapter"] = "block_registry"
+
+    issues = validate_module_contract(spec)
+
+    assert any(issue.code == "execution.adapter_mismatch" for issue in issues)
 
 
 def test_legacy_adapter_produces_valid_draft_contract() -> None:

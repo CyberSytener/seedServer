@@ -30,6 +30,7 @@ errors:
     retryable: true
     description: No declared LLM provider is currently available.
 execution:
+  adapter: saga_orchestrator
   timeout_seconds: 120
   max_retries: 2
   idempotent: true

@@ -42,6 +42,26 @@ def test_list_modes_returns_default_module() -> None:
     assert response.status_code == 200
     payload = response.json()
     assert any(item["mode_id"] == "general_assistant" for item in payload["modes"])
+    assert all(item["pipeline"] == "llm_pipeline" for item in payload["modes"])
+    assert not any(item["mode_id"] == "market_scanner" for item in payload["modes"])
+
+
+def test_run_mode_rejects_flow_block_as_direct_mode() -> None:
+    client, orchestrator = _build_client()
+
+    response = client.post(
+        "/v1/modes/market_scanner/run",
+        headers={"X-Admin-Key": "test_admin", "Authorization": "Bearer seed_dummy"},
+        json={"data": {"user_id": "demo-user"}},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == {
+        "error": "module_not_directly_runnable",
+        "pipeline": "flow_block",
+        "execution_adapter": "block_registry",
+    }
+    assert orchestrator.calls == []
 
 
 def test_run_mode_starts_llm_pipeline_saga() -> None:

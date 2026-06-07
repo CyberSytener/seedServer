@@ -1,6 +1,6 @@
 # Module Contract v1
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 Module Contract v1 is the active extension boundary for Seed Platform. It gives
 humans, AI builders, the registry, and Saga Console one declarative description
@@ -12,6 +12,8 @@ of what a module accepts, produces, may access, and costs to execute.
 - Python models and diagnostics: `app/contracts/module_contract.py`
 - Runtime registry integration: `app/services/module_registry.py`
 - Reference module: `modules/general_assistant.yaml`
+- Reference flow blocks: `modules/market_scanner.yaml`,
+  `modules/job_scorer.yaml`, and `modules/notification_block.yaml`
 - CLI validation: `python scripts/validate_modules.py modules`
 
 The Python validator is the runtime source of truth. The committed JSON Schema
@@ -23,7 +25,7 @@ is a portable artifact for editors, generators, and external tooling.
 | --- | --- | --- |
 | Identity | `contract_version`, `mode_id`, `module_version`, `owner`, `lifecycle` | stable naming, ownership, and state |
 | Data | `input_schema`, `output_schema`, `errors` | typed request, result, and failure envelopes |
-| Execution | `pipeline`, `execution` | timeout, retry, idempotency, and determinism |
+| Execution | `pipeline`, `execution.adapter`, execution limits | runtime route, timeout, retry, idempotency, and determinism |
 | Effects | `effects` | declared side effects, compensation, network, and filesystem access |
 | Security | `capabilities`, `security` | least-privilege capabilities, secrets, and trust level |
 | Resources | `resources` | memory, concurrency, cost, and provider limits |
@@ -59,6 +61,20 @@ The registry exposes this through
 Incompatible connections return machine-readable issues and must be rejected
 before execution.
 
+## Execution Routes
+
+Contract v1 separates the module's product role from its runtime adapter:
+
+| `pipeline` | Required `execution.adapter` | Direct `/v1/modes` run | Flow graph |
+| --- | --- | --- | --- |
+| `llm_pipeline` | `saga_orchestrator` | yes | no |
+| `flow_block` | `block_registry` | no | yes, when the block is registered |
+
+Mismatched declarations fail with `execution.adapter_mismatch`. Saga Console
+lists both kinds for inspection, while `/v1/modes` lists only directly runnable
+LLM modes. A direct run request for a flow block returns
+`module_not_directly_runnable`.
+
 ## Flow Contract Gate
 
 `FlowContractValidator` applies the same schema guarantees to graph edges. It
@@ -73,8 +89,11 @@ unguaranteed required outputs, incompatible types, unknown modules, and
 modules without a flow execution adapter. The Console API exposes the report as
 `contract_validation` or `checks.contract_compatibility`.
 
-This adapter keeps the existing Gallery demo operational while making its
-connections enforceable before all blocks have full Contract v1 manifests.
+The active Gallery path (`market_scanner` -> `job_scorer` ->
+`notification_block`) now resolves from Contract v1 manifests. A drift test
+requires their declared schemas to match the registered runtime block metadata.
+The legacy metadata adapter remains available for blocks that have not yet been
+migrated.
 
 ## Legacy Migration
 
@@ -92,7 +111,8 @@ lifecycle.
 
 ## Current Boundaries
 
-- Only the existing `llm_pipeline` execution pipeline is supported.
+- Contract v1 supports the active `llm_pipeline` and `flow_block` execution
+  routes; other runtime families still require an explicit adapter design.
 - Compatibility checks cover object properties and primitive JSON types, not
   every possible JSON Schema relation.
 - Declared effects are validated but observed-vs-declared enforcement belongs

@@ -39,6 +39,7 @@ Phase 1 must provide:
 - a Module Contract v1 schema;
 - Python validation models;
 - migration of `general_assistant.yaml`;
+- explicit execution adapter declarations;
+- Contract v1 manifests for the active Gallery flow blocks;
 - negative contract tests;
-- compatibility checks.
-
+- compatibility and runtime-schema drift checks.

@@ -40,10 +40,14 @@ class FlowContractValidator:
     def resolve_module(self, module_id: str) -> Optional[ResolvedFlowModule]:
         module_spec = self.module_registry.get_module(module_id)
         if module_spec is not None:
+            execution_adapter = self.module_registry.execution_adapter(module_spec)
             return ResolvedFlowModule(
                 module_id=module_id,
                 source="module_contract_v1",
-                executable_in_flow=module_id in self.block_registry.list_blocks(),
+                executable_in_flow=(
+                    execution_adapter == "block_registry"
+                    and module_id in self.block_registry.list_blocks()
+                ),
                 input_schema=module_spec.get("input_schema")
                 if isinstance(module_spec.get("input_schema"), dict)
                 else {},

@@ -12,6 +12,24 @@ def test_module_registry_loads_default_module() -> None:
     assistant = next(item for item in modules if item["mode_id"] == "general_assistant")
     assert assistant["contract_version"] == "1.0.0"
     assert assistant["contract_valid"] is True
+    assert assistant["execution_adapter"] == "saga_orchestrator"
+    assert assistant["directly_runnable"] is True
+
+
+def test_module_registry_filters_direct_mode_pipeline() -> None:
+    registry = ModuleRegistry()
+
+    direct_modes = registry.list_modules(pipeline="llm_pipeline")
+    flow_blocks = registry.list_modules(pipeline="flow_block")
+
+    assert [item["mode_id"] for item in direct_modes] == ["general_assistant"]
+    assert {item["mode_id"] for item in flow_blocks} >= {
+        "market_scanner",
+        "job_scorer",
+        "notification_block",
+    }
+    assert all(item["execution_adapter"] == "block_registry" for item in flow_blocks)
+    assert all(item["directly_runnable"] is False for item in flow_blocks)
 
 
 def test_module_registry_detects_unauthorized_capability(tmp_path: Path) -> None:
@@ -108,7 +126,7 @@ output_schema:
     answer: {{type: {output_type}}}
 errors:
   - {{code: demo_error, retryable: false, description: Demo error.}}
-execution: {{timeout_seconds: 10, max_retries: 0, idempotent: true, deterministic: true}}
+execution: {{adapter: saga_orchestrator, timeout_seconds: 10, max_retries: 0, idempotent: true, deterministic: true}}
 effects: {{side_effects: false, compensation_supported: false, network_access: none, filesystem_access: none}}
 security: {{trust_level: internal, secret_refs: []}}
 resources: {{memory_mb: 64, max_concurrency: 1, max_cost_units: 1, providers: [stub]}}

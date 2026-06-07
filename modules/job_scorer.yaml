@@ -1,0 +1,93 @@
+contract_version: 1.0.0
+mode_id: job_scorer
+pipeline: flow_block
+module_version: 1.0.0
+title: Job Scorer
+description: Scores jobs for a user persona and can persist the resulting rankings.
+owner:
+  team: seed-platform
+  contact: maintainers@seed-platform.local
+lifecycle: published
+breaking_changes: false
+migrations: []
+prompt_versions:
+  - job_scorer.execution.v1
+rubric_versions:
+  - job_scorer.contract-rubric.v1
+task_type: job_scoring
+capabilities:
+  - jobs.scores.write
+errors:
+  - code: invalid_request
+    retryable: false
+    description: The block input does not satisfy its declared schema.
+  - code: scoring_failed
+    retryable: true
+    description: The scoring engine could not rank the supplied jobs.
+execution:
+  adapter: block_registry
+  timeout_seconds: 120
+  max_retries: 1
+  idempotent: false
+  deterministic: false
+effects:
+  side_effects: true
+  compensation_supported: false
+  network_access: none
+  filesystem_access: none
+security:
+  trust_level: internal
+  secret_refs: []
+resources:
+  memory_mb: 512
+  max_concurrency: 2
+  max_cost_units: 2.0
+  providers:
+    - block_registry
+compatibility:
+  accepts_contract_versions:
+    - 1.x
+  module_dependencies: []
+evidence:
+  documentation:
+    - docs/MODULE_CONTRACT_V1.md
+  examples:
+    - app/services/blueprint_gallery.py
+input_schema:
+  type: object
+  properties:
+    user_id:
+      type: string
+      description: User identifier.
+    persona:
+      type: object
+      description: Persona and preferences.
+    jobs:
+      type: array
+      items:
+        type: object
+    scan_id:
+      type: string
+      description: Existing scan id.
+    persist:
+      type: boolean
+      description: Persist scores to storage.
+  required: [user_id, jobs]
+output_schema:
+  type: object
+  properties:
+    scored_count:
+      type: integer
+    scored_jobs:
+      type: array
+      items:
+        type: object
+  required: [scored_count, scored_jobs]
+tests:
+  golden:
+    - input:
+        user_id: demo-user
+        jobs: []
+      expect_fields: [scored_count, scored_jobs]
+  cost_regression:
+    max_avg_cost_units: 2.0

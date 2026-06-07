@@ -75,19 +75,24 @@ class ModuleRegistry:
         files = list(self.root.glob("**/*.yaml")) + list(self.root.glob("**/*.yml"))
         return sorted(files)
 
-    def list_modules(self) -> List[Dict[str, Any]]:
+    def list_modules(self, *, pipeline: Optional[str] = None) -> List[Dict[str, Any]]:
         modules: List[Dict[str, Any]] = []
         for path in self._iter_module_files():
             spec = _load_yaml(path)
             mode_id = str(spec.get("mode_id") or "").strip()
             if not mode_id:
                 continue
+            module_pipeline = str(spec.get("pipeline") or "llm_pipeline")
+            if pipeline is not None and module_pipeline != pipeline:
+                continue
             modules.append(
                 {
                     "mode_id": mode_id,
                     "contract_version": str(spec.get("contract_version") or ""),
                     "contract_valid": len(validate_module_contract(spec)) == 0,
-                    "pipeline": str(spec.get("pipeline") or "llm_pipeline"),
+                    "pipeline": module_pipeline,
+                    "execution_adapter": self.execution_adapter(spec),
+                    "directly_runnable": self.is_directly_runnable(spec),
                     "task_type": str(spec.get("task_type") or "general"),
                     "path": str(path),
                     "capabilities": [str(cap) for cap in (spec.get("capabilities") or []) if str(cap).strip()],
@@ -95,6 +100,18 @@ class ModuleRegistry:
                 }
             )
         return modules
+
+    @staticmethod
+    def execution_adapter(spec: Dict[str, Any]) -> str:
+        execution = spec.get("execution") if isinstance(spec.get("execution"), dict) else {}
+        return str(execution.get("adapter") or "")
+
+    @classmethod
+    def is_directly_runnable(cls, spec: Dict[str, Any]) -> bool:
+        return (
+            str(spec.get("pipeline") or "llm_pipeline") == "llm_pipeline"
+            and cls.execution_adapter(spec) == "saga_orchestrator"
+        )
 
     def get_module(self, mode_id: str) -> Optional[Dict[str, Any]]:
         target = mode_id.strip().lower()

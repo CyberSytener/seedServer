@@ -445,6 +445,8 @@ def _module_document(spec: Dict[str, Any]) -> Dict[str, Any]:
         "lifecycle": str(spec.get("lifecycle") or "draft"),
         "contract_valid": len(module_registry.validate_contract(spec)) == 0,
         "pipeline": str(spec.get("pipeline") or "llm_pipeline"),
+        "execution_adapter": module_registry.execution_adapter(spec),
+        "directly_runnable": module_registry.is_directly_runnable(spec),
         "task_type": str(spec.get("task_type") or module_id),
         "input_schema": spec.get("input_schema") if isinstance(spec.get("input_schema"), dict) else {},
         "output_schema": spec.get("output_schema") if isinstance(spec.get("output_schema"), dict) else {},
@@ -1051,6 +1053,19 @@ def _enforce_real_run_gate(
     return profile_id
 
 async def _create_module_run(run_req: RunCreateRequest, request: Request) -> Dict[str, Any]:
+    spec = module_registry.get_module(run_req.target.id)
+    if not spec:
+        raise HTTPException(status_code=404, detail="module_not_found")
+    if not module_registry.is_directly_runnable(spec):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "module_not_directly_runnable",
+                "pipeline": str(spec.get("pipeline") or ""),
+                "execution_adapter": module_registry.execution_adapter(spec),
+            },
+        )
+
     control_payload = {
         **run_req.control,
         "mode": _module_mode_from_run_mode(run_req.mode),
@@ -1074,9 +1089,6 @@ async def _create_module_run(run_req: RunCreateRequest, request: Request) -> Dic
         if exc.status_code != 503 or run_req.mode != "stub":
             raise
 
-        spec = module_registry.get_module(run_req.target.id)
-        if not spec:
-            raise HTTPException(status_code=404, detail="module_not_found") from exc
         control = mode_request.control.model_dump()
         errors = module_registry.validate_run_request(
             spec=spec,

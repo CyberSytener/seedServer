@@ -1,0 +1,91 @@
+contract_version: 1.0.0
+mode_id: notification_block
+pipeline: flow_block
+module_version: 1.0.0
+title: Notification Block
+description: Renders and optionally delivers a notification from ranked items.
+owner:
+  team: seed-platform
+  contact: maintainers@seed-platform.local
+lifecycle: published
+breaking_changes: false
+migrations: []
+prompt_versions:
+  - notification_block.execution.v1
+rubric_versions:
+  - notification_block.contract-rubric.v1
+task_type: notification_delivery
+capabilities:
+  - notifications.deliver
+errors:
+  - code: invalid_request
+    retryable: false
+    description: The block input does not satisfy its declared schema.
+  - code: delivery_failed
+    retryable: true
+    description: The selected notification channel could not deliver the message.
+execution:
+  adapter: block_registry
+  timeout_seconds: 30
+  max_retries: 1
+  idempotent: false
+  deterministic: true
+effects:
+  side_effects: true
+  compensation_supported: false
+  network_access: allowlist
+  filesystem_access: none
+security:
+  trust_level: internal
+  secret_refs:
+    - notification_delivery_credentials
+resources:
+  memory_mb: 128
+  max_concurrency: 4
+  max_cost_units: 1.0
+  providers:
+    - block_registry
+compatibility:
+  accepts_contract_versions:
+    - 1.x
+  module_dependencies: []
+evidence:
+  documentation:
+    - docs/MODULE_CONTRACT_V1.md
+  examples:
+    - app/services/blueprint_gallery.py
+input_schema:
+  type: object
+  properties:
+    channel:
+      type: string
+      description: "Delivery channel: webhook, email, slack, telegram."
+    message_body:
+      type: string
+      description: Optional prebuilt message.
+    recipient_info:
+      type: object
+      description: Delivery metadata.
+    items:
+      type: array
+      items:
+        type: object
+    timeout_sec:
+      type: number
+      description: Webhook timeout override.
+  required: [items]
+output_schema:
+  type: object
+  properties:
+    notified_count:
+      type: integer
+    notification_preview:
+      type: string
+  required: [notified_count]
+tests:
+  golden:
+    - input:
+        items: []
+      expect_fields: [notified_count]
+  cost_regression:
+    max_avg_cost_units: 1.0

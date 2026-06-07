@@ -1,0 +1,86 @@
+contract_version: 1.0.0
+mode_id: market_scanner
+pipeline: flow_block
+module_version: 1.0.0
+title: Market Scanner
+description: Scans configured job sources for a user persona and returns matched jobs.
+owner:
+  team: seed-platform
+  contact: maintainers@seed-platform.local
+lifecycle: published
+breaking_changes: false
+migrations: []
+prompt_versions:
+  - market_scanner.execution.v1
+rubric_versions:
+  - market_scanner.contract-rubric.v1
+task_type: job_market_scan
+capabilities:
+  - jobs.sources.read
+errors:
+  - code: invalid_request
+    retryable: false
+    description: The block input does not satisfy its declared schema.
+  - code: job_source_unavailable
+    retryable: true
+    description: A configured job source is unavailable.
+execution:
+  adapter: block_registry
+  timeout_seconds: 60
+  max_retries: 2
+  idempotent: true
+  deterministic: false
+effects:
+  side_effects: false
+  compensation_supported: false
+  network_access: allowlist
+  filesystem_access: none
+security:
+  trust_level: internal
+  secret_refs: []
+resources:
+  memory_mb: 256
+  max_concurrency: 4
+  max_cost_units: 1.0
+  providers:
+    - block_registry
+compatibility:
+  accepts_contract_versions:
+    - 1.x
+  module_dependencies: []
+evidence:
+  documentation:
+    - docs/MODULE_CONTRACT_V1.md
+  examples:
+    - app/services/blueprint_gallery.py
+input_schema:
+  type: object
+  properties:
+    user_id:
+      type: string
+      description: User identifier.
+    persona:
+      type: object
+      description: Persona and preferences.
+  required: [user_id]
+output_schema:
+  type: object
+  properties:
+    scan_id:
+      type: string
+    jobs:
+      type: array
+      items:
+        type: object
+    source_counts:
+      type: object
+      additionalProperties:
+        type: integer
+  required: [scan_id, jobs, source_counts]
+tests:
+  golden:
+    - input:
+        user_id: demo-user
+      expect_fields: [scan_id, jobs, source_counts]
+  cost_regression:
+    max_avg_cost_units: 1.0

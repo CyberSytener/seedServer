@@ -61,7 +61,11 @@ class RunModeResponse(BaseModel):
 
 @router.get("", response_model=ModesListResponse)
 async def list_modes() -> ModesListResponse:
-    rows = registry.list_modules()
+    rows = [
+        row
+        for row in registry.list_modules(pipeline="llm_pipeline")
+        if row.get("contract_valid") and row.get("directly_runnable")
+    ]
     return ModesListResponse(
         modes=[
             ModeSummary(
@@ -81,16 +85,23 @@ async def run_mode(mode_id: str, req: RunModeRequest, request: Request, db: DB =
     ctx = require_scope(request, db, "runs:write")
     marketplace = _build_marketplace_service(db)
 
-    orchestrator = getattr(request.app.state, "saga_orchestrator", None)
-    if orchestrator is None:
-        raise HTTPException(status_code=503, detail="saga_orchestrator_unavailable")
-
     spec = registry.get_module(mode_id)
     if not spec:
         raise HTTPException(status_code=404, detail="mode_not_found")
 
-    if str(spec.get("pipeline") or "llm_pipeline") != "llm_pipeline":
-        raise HTTPException(status_code=400, detail="unsupported_pipeline")
+    if not registry.is_directly_runnable(spec):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "module_not_directly_runnable",
+                "pipeline": str(spec.get("pipeline") or ""),
+                "execution_adapter": registry.execution_adapter(spec),
+            },
+        )
+
+    orchestrator = getattr(request.app.state, "saga_orchestrator", None)
+    if orchestrator is None:
+        raise HTTPException(status_code=503, detail="saga_orchestrator_unavailable")
 
     control = req.control.model_dump() if hasattr(req.control, "model_dump") else dict(req.control)
 

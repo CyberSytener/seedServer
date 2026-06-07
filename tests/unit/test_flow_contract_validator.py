@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+import yaml
 
 from app.core.blocks import JobScorerBlock, build_default_registry
 from app.services.flow_contract_validator import FlowContractValidator
@@ -23,7 +24,21 @@ def test_flow_contract_validator_accepts_compatible_block_edge() -> None:
     assert report["ok"] is True
     assert report["checked_nodes"] == 2
     assert report["checked_edges"] == 1
-    assert report["sources"] == {"scan": "block_metadata", "score": "block_metadata"}
+    assert report["sources"] == {"scan": "module_contract_v1", "score": "module_contract_v1"}
+
+
+def test_flow_block_contract_schemas_match_registered_block_metadata() -> None:
+    registry = ModuleRegistry()
+    blocks = build_default_registry()
+
+    for module_id in ("market_scanner", "job_scorer", "notification_block"):
+        spec = registry.get_module(module_id)
+        metadata = blocks.get_metadata(module_id)
+
+        assert spec is not None
+        assert spec["execution"]["adapter"] == "block_registry"
+        assert spec["input_schema"] == metadata.input_schema
+        assert spec["output_schema"] == metadata.output_schema
 
 
 def test_flow_contract_validator_rejects_field_type_mismatch() -> None:
@@ -61,6 +76,25 @@ def test_flow_contract_validator_reports_module_without_flow_adapter() -> None:
     )
 
     assert any(issue["code"] == "flow.module_not_executable" for issue in report["issues"])
+
+
+def test_flow_contract_validator_requires_declared_block_registry_adapter(tmp_path) -> None:
+    spec = ModuleRegistry().get_module("market_scanner")
+    assert spec is not None
+    spec["execution"]["adapter"] = "saga_orchestrator"
+    spec.pop("_path", None)
+    (tmp_path / "market_scanner.yaml").write_text(
+        yaml.safe_dump(spec, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    report = FlowContractValidator(module_registry=ModuleRegistry(root=tmp_path)).validate_graph(
+        [{"node_id": "scan", "module_id": "market_scanner"}],
+        [],
+    )
+
+    assert any(issue["code"] == "flow.module_not_executable" for issue in report["issues"])
+    assert any(issue["code"] == "flow.module_contract_invalid" for issue in report["issues"])
 
 
 def test_flow_contract_validator_rejects_invalid_module_contract(tmp_path) -> None:

@@ -1,6 +1,6 @@
 # Active Platform Scope
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 This document defines what Seed Platform currently promises to maintain. The
 repository contains a broad historical system, but not every file represents an
@@ -105,10 +105,11 @@ reach into FastAPI application state or infrastructure internals directly.
 The next active development area is Module Contract v1:
 
 - `modules/`
+- `app/contracts/module_contract.py`
 - `app/services/module_registry.py`
-- new contract models and schemas
+- `app/services/flow_contract_validator.py`
+- contract models and schemas
 - contract-focused tests
 - console module views when required
 
 Changes outside that boundary require a clear reason and focused verification.
-

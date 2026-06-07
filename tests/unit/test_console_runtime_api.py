@@ -155,6 +155,10 @@ def test_modules_endpoints_list_and_get() -> None:
     assert list_response.status_code == 200
     modules = list_response.json()["modules"]
     assert any(item["module_id"] == "general_assistant" for item in modules)
+    flow_block = next(item for item in modules if item["module_id"] == "market_scanner")
+    assert flow_block["pipeline"] == "flow_block"
+    assert flow_block["execution_adapter"] == "block_registry"
+    assert flow_block["directly_runnable"] is False
 
     detail_response = client.get("/v1/modules/general_assistant", headers=_headers())
     assert detail_response.status_code == 200
@@ -162,6 +166,23 @@ def test_modules_endpoints_list_and_get() -> None:
     assert payload["module_id"] == "general_assistant"
     assert isinstance(payload["input_schema"], dict)
     assert isinstance(payload["output_schema"], dict)
+
+
+def test_console_rejects_direct_flow_block_run() -> None:
+    client, _ = _build_client()
+
+    response = client.post(
+        "/v1/runs",
+        headers=_headers(),
+        json={
+            "target": {"type": "module", "id": "market_scanner"},
+            "mode": "stub",
+            "input": {"user_id": "demo-user"},
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"]["error"] == "module_not_directly_runnable"
 
 
 def test_module_run_lifecycle_and_artifacts() -> None:

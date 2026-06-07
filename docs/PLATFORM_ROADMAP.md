@@ -83,13 +83,16 @@ permissions, operational limits, and compatibility.
 **Status:** In progress. The first vertical slice provides the Contract v1
 schema, Python validation model, legacy adapter, registry integration, and
 input/output compatibility checks. The second vertical slice applies those
-checks to flow compile, validation, sandbox, run, and release gates.
+checks to flow compile, validation, sandbox, run, and release gates. The third
+vertical slice adds explicit execution adapters and migrates the active Gallery
+blocks to full Contract v1 manifests with runtime-schema drift protection.
 
 ### Contract Areas
 
 - Identity: stable ID, semantic version, contract version, ownership.
 - Data: JSON Schema input, output, and typed error payloads.
-- Execution: timeout, retry policy, idempotency, determinism.
+- Execution: pipeline, runtime adapter, timeout, retry policy, idempotency,
+  determinism.
 - Effects: side effects, compensation support, network and filesystem access.
 - Security: required capabilities, secret references, trust level.
 - Resources: memory, concurrency, cost units, provider requirements.
@@ -103,11 +106,13 @@ checks to flow compile, validation, sandbox, run, and release gates.
 - migration adapter for the existing `general_assistant.yaml`.
 - compatibility checker for connected module inputs and outputs.
 - contract-focused unit tests and documentation.
+- full Contract v1 manifests for the active Gallery flow blocks.
+- direct-run and flow-adapter routing guards.
 
 ### Exit Criteria
 
 - Invalid manifests fail with precise machine-readable errors.
-- Existing demo modules can be represented using Contract v1.
+- Existing demo modules are represented using Contract v1.
 - The runtime refuses undeclared capabilities and incompatible connections.
 - Contract versions can evolve without silently breaking existing modules.
 
