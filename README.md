@@ -12,7 +12,8 @@ new modules through validation, sandboxing, and human-gated publication.
 
 - Saga workflow runtime with typed modules, flow graphs, sandbox runs, run history, and artifacts.
 - Contract-first Module SDK and CLI for generating, validating, testing,
-  container-sandboxing, qualifying, and publishing extension packages.
+  container-sandboxing, observing capability use, qualifying, and publishing
+  extension packages.
 - React Saga Console with gallery, canvas, modules, providers, and run inspection.
 - Deterministic stub mode so reviewers can run the demo without Gemini, OpenAI, Redis, or PostgreSQL credentials.
 - NeoEats/domain blocks and broader API surface showing how a vertical product can be wired into the same runtime.

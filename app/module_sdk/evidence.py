@@ -386,6 +386,11 @@ def assess_module_readiness(
     sandbox_evidence = sandbox_report.get("evidence") if isinstance(sandbox_report.get("evidence"), dict) else {}
     runtime = sandbox_evidence.get("runtime") if isinstance(sandbox_evidence.get("runtime"), dict) else {}
     limits = sandbox_evidence.get("limits") if isinstance(sandbox_evidence.get("limits"), dict) else {}
+    capability_report = (
+        sandbox_evidence.get("capability_report")
+        if isinstance(sandbox_evidence.get("capability_report"), dict)
+        else {}
+    )
     if sandbox_record.get("signature_status") != "valid":
         publication_blockers.append(
             {
@@ -420,6 +425,38 @@ def assess_module_readiness(
                     "message": f"hardened {label} evidence is required before publication",
                 }
             )
+    if capability_report.get("enforcement") != "python_audit_hook":
+        publication_blockers.append(
+            {
+                "code": "sandbox.capability_observation_missing",
+                "path": "$.checks.sandbox.capability_report.enforcement",
+                "message": "publication requires operation-level capability observation evidence",
+            }
+        )
+    capability_violation_count = capability_report.get("violation_count")
+    if (
+        capability_report.get("enforcement") == "python_audit_hook"
+        and (
+            not isinstance(capability_violation_count, int)
+            or isinstance(capability_violation_count, bool)
+            or capability_violation_count < 0
+        )
+    ):
+        publication_blockers.append(
+            {
+                "code": "sandbox.capability_observation_invalid",
+                "path": "$.checks.sandbox.capability_report.violation_count",
+                "message": "publication requires a valid capability violation count",
+            }
+        )
+    elif isinstance(capability_violation_count, int) and capability_violation_count > 0:
+        publication_blockers.append(
+            {
+                "code": "sandbox.capability_violations_detected",
+                "path": "$.checks.sandbox.capability_report.violation_count",
+                "message": "publication rejects sandbox evidence containing capability violations",
+            }
+        )
     if not approval_ready:
         publication_blockers.extend(diagnostics)
 

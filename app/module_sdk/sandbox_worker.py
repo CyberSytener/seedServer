@@ -10,8 +10,9 @@ import time
 from pathlib import Path
 from typing import Any, Dict
 
+from app.module_sdk.capability_policy import CapabilityObserver
 from app.module_sdk.package import _load_handler, resolve_module_package
-from app.module_sdk.runtime import ModuleExecutionContext, execute_module
+from app.module_sdk.runtime import ModuleExecutionContext, ModuleResult, ModuleSDKError, execute_module
 from app.module_sdk.sandbox import MAX_CAPTURE_CHARS, SANDBOX_PROTOCOL_VERSION
 
 
@@ -58,10 +59,30 @@ def _write_response(path: Path, report: Dict[str, Any]) -> None:
     path.write_text(json.dumps(report, sort_keys=True), encoding="utf-8")
 
 
+async def _execute_with_capability_policy(
+    observer: CapabilityObserver,
+    handler: Any,
+    *,
+    context: ModuleExecutionContext,
+    inputs: Dict[str, Any],
+    input_schema: Dict[str, Any],
+    output_schema: Dict[str, Any],
+) -> Any:
+    with observer.enforce():
+        return await execute_module(
+            handler,
+            context=context,
+            inputs=inputs,
+            input_schema=input_schema,
+            output_schema=output_schema,
+        )
+
+
 def _run(request: Dict[str, Any]) -> Dict[str, Any]:
     if request.get("protocol_version") != SANDBOX_PROTOCOL_VERSION:
         raise ValueError("unsupported sandbox protocol version")
 
+    sys.dont_write_bytecode = True
     package = resolve_module_package(Path(str(request["manifest_path"])))
     manifest = package.load_manifest()
     limits = _apply_resource_limits(
@@ -70,30 +91,44 @@ def _run(request: Dict[str, Any]) -> Dict[str, Any]:
     )
     stdout = _LimitedTextBuffer()
     stderr = _LimitedTextBuffer()
+    observer = CapabilityObserver(manifest)
     started = time.monotonic()
     with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-        handler = _load_handler(Path(str(request["handler_path"])))
-        context = ModuleExecutionContext(
-            module_id=str(manifest.get("mode_id") or "unknown"),
-            run_id=str(request.get("sandbox_id") or "sdk-sandbox"),
-            execution_mode="sandbox",
-            capabilities=[str(item) for item in manifest.get("capabilities") or []],
-            metadata={"sandbox_protocol": SANDBOX_PROTOCOL_VERSION},
-        )
-        result = asyncio.run(
-            execute_module(
-                handler,
-                context=context,
-                inputs=request.get("inputs") if isinstance(request.get("inputs"), dict) else {},
-                input_schema=manifest.get("input_schema") if isinstance(manifest.get("input_schema"), dict) else {},
-                output_schema=manifest.get("output_schema") if isinstance(manifest.get("output_schema"), dict) else {},
+        try:
+            with observer.enforce(import_phase=True):
+                handler = _load_handler(Path(str(request["handler_path"])))
+        except ModuleSDKError as exc:
+            result = ModuleResult.failure(
+                code=exc.code,
+                message=exc.message,
+                retryable=exc.retryable,
+                details=exc.details,
             )
-        )
+        else:
+            context = ModuleExecutionContext(
+                module_id=str(manifest.get("mode_id") or "unknown"),
+                run_id=str(request.get("sandbox_id") or "sdk-sandbox"),
+                execution_mode="sandbox",
+                capabilities=[str(item) for item in manifest.get("capabilities") or []],
+                metadata={"sandbox_protocol": SANDBOX_PROTOCOL_VERSION},
+            )
+            result = asyncio.run(
+                _execute_with_capability_policy(
+                    observer,
+                    handler,
+                    context=context,
+                    inputs=request.get("inputs") if isinstance(request.get("inputs"), dict) else {},
+                    input_schema=manifest.get("input_schema") if isinstance(manifest.get("input_schema"), dict) else {},
+                    output_schema=manifest.get("output_schema") if isinstance(manifest.get("output_schema"), dict) else {},
+                )
+            )
+    diagnostics = [item.model_dump() for item in result.diagnostics]
+    diagnostics.extend(observer.diagnostics())
     return {
         "ok": result.status == "succeeded",
         "status": result.status,
         "result": result.model_dump(),
-        "diagnostics": [item.model_dump() for item in result.diagnostics],
+        "diagnostics": diagnostics,
         "evidence": {
             "worker_duration_ms": round((time.monotonic() - started) * 1000, 2),
             "handler_stdout": stdout.getvalue(),
@@ -101,6 +136,7 @@ def _run(request: Dict[str, Any]) -> Dict[str, Any]:
             "handler_stdout_truncated": stdout.truncated,
             "handler_stderr_truncated": stderr.truncated,
             "limits": limits,
+            "capability_report": observer.report(),
         },
     }
 

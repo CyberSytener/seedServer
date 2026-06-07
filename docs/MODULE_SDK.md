@@ -111,6 +111,34 @@ Docker is optional for normal local development. If the CLI or engine is
 unavailable, the command returns `sandbox.docker_unavailable`; it never falls
 back to subprocess execution while claiming hardened evidence.
 
+## Operation-Level Capability Enforcement
+
+The one-shot sandbox worker installs a Python audit hook and activates it while
+loading the handler and executing it through the stable SDK wrapper. The
+observer records allowed operations and blocks undeclared:
+
+- network access;
+- filesystem reads and writes;
+- child-process creation and execution.
+
+`effects.filesystem_access: none` blocks reads and writes, `read_only` permits
+reads, and `sandbox` permits reads and writes inside the runtime containment
+boundary. Network operations require a declared non-`none` network policy.
+Process access is always blocked because Module Contract v1 has no process
+capability declaration.
+
+The sandbox evidence includes the effective policy, bounded operation records,
+violation count, and `python_audit_hook` enforcement marker. Capability
+violations become structured `sandbox.capability_violation` failures. The
+publish gate requires this report and rejects any report containing violations.
+
+The observer covers handler import and execution. Import-loader code and
+bytecode reads are explicitly allowed so declared dependencies can load, while
+arbitrary file reads and all other import-time side effects remain blocked.
+Worker startup, protocol I/O, and event-loop setup happen outside the observed
+window. Environment reads are not covered by Python audit events; the sandbox
+continues to rely on its sanitized environment and secret policy declarations.
+
 ## Qualification And Evidence
 
 `seed module qualify` runs validation, golden tests, and the selected sandbox
@@ -159,6 +187,8 @@ to `draft`, then qualify the new fingerprint again.
 - requires passing evidence for the current package fingerprint;
 - requires the latest sandbox report to assert enforced network and filesystem
   isolation;
+- requires a clean operation-level capability report from the Python audit
+  observer;
 - requires that sandbox report to carry a valid HMAC-SHA256 authority
   signature;
 - requires the approval transition to reference the exact evidence envelope
@@ -193,9 +223,11 @@ for trusted local development and are not sandbox evidence.
 
 The subprocess sandbox is a stronger local evidence tier, but it does not
 enforce network or full filesystem isolation. The Docker adapter adds a useful
-container containment boundary, but it is not a VM, remote attestation service,
-or proof that every undeclared filesystem operation was observed. Reports
-expose these limits instead of hiding them.
+container containment boundary, while the Python audit hook observes and blocks
+supported Python-level network, filesystem, and process events. This is not a
+VM, remote attestation service, kernel syscall tracer, or proof that native
+extensions cannot perform unobserved operations. Reports expose these limits
+instead of hiding them.
 
 The local evidence store is append-only by command behavior and detects report
 tampering through integrity hashes. Normal qualification and transition records

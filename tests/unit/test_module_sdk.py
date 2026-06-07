@@ -42,6 +42,22 @@ def _hardened_limits(report: dict) -> None:
             "process_limit_enforced": True,
         }
     )
+    report["evidence"]["capability_report"] = {
+        "enforcement": "python_audit_hook",
+        "policy": {},
+        "operations": [],
+        "operation_count": 0,
+        "violation_count": 0,
+        "truncated": False,
+    }
+
+
+def _observed_operation(report: dict, operation: str, outcome: str) -> dict:
+    return next(
+        item
+        for item in report["evidence"]["capability_report"]["operations"]
+        if item["operation"] == operation and item["outcome"] == outcome
+    )
 
 
 def _fake_docker_run(command: list[str], **_kwargs) -> subprocess.CompletedProcess[str]:
@@ -66,6 +82,14 @@ def _fake_docker_run(command: list[str], **_kwargs) -> subprocess.CompletedProce
                 "evidence": {
                     "worker_duration_ms": 1.0,
                     "limits": {"cpu_enforced": True, "memory_enforced": True},
+                    "capability_report": {
+                        "enforcement": "python_audit_hook",
+                        "policy": {},
+                        "operations": [],
+                        "operation_count": 0,
+                        "violation_count": 0,
+                        "truncated": False,
+                    },
                 },
             }
         ),
@@ -328,6 +352,178 @@ class Handler:
     assert report["ok"] is True
     assert report["result"]["output"] == {"result": "None"}
     assert report["evidence"]["handler_stdout"].splitlines() == ["handler-log"]
+
+
+def test_sandbox_blocks_undeclared_filesystem_write(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_fs_block", registry_root=tmp_path)
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        """
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        with open("blocked.txt", "w", encoding="utf-8") as handle:
+            handle.write("blocked")
+        return {"result": "unexpected"}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is False
+    assert report["result"]["error"]["code"] == "sandbox.capability_violation"
+    assert report["evidence"]["capability_report"]["violation_count"] == 1
+    assert _observed_operation(report, "filesystem.write", "blocked")
+    assert any(item["code"] == "sandbox.capability_violation" for item in report["diagnostics"])
+
+
+def test_sandbox_allows_declared_read_only_filesystem_access(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_fs_read", registry_root=tmp_path)
+    assert package.handler_path is not None
+    (package.root / "fixture.txt").write_text("allowed", encoding="utf-8")
+    manifest = package.load_manifest()
+    manifest["effects"]["filesystem_access"] = "read_only"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    package.handler_path.write_text(
+        """
+from pathlib import Path
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        return {"result": Path(__file__).with_name("fixture.txt").read_text(encoding="utf-8")}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is True
+    assert report["result"]["output"] == {"result": "allowed"}
+    capability = report["evidence"]["capability_report"]
+    assert capability["violation_count"] == 0
+    assert any(item["operation"] == "filesystem.read" and item["outcome"] == "allowed" for item in capability["operations"])
+
+
+def test_sandbox_blocks_undeclared_network_access(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_network_block", registry_root=tmp_path)
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        """
+import socket
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        with socket.socket() as client:
+            client.connect(("127.0.0.1", 9))
+        return {"result": "unexpected"}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is False
+    operation = _observed_operation(report, "network", "blocked")
+    assert operation["operation"] == "network"
+    assert operation["outcome"] == "blocked"
+
+
+def test_sandbox_blocks_import_time_network_access(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_import_network_block", registry_root=tmp_path)
+    assert package.handler_path is not None
+    manifest = package.load_manifest()
+    manifest["effects"]["network_access"] = "allowlist"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    package.handler_path.write_text(
+        """
+import socket
+
+with socket.socket() as client:
+    client.connect(("127.0.0.1", 9))
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        return {"result": "unexpected"}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is False
+    assert report["result"]["error"]["code"] == "sandbox.capability_violation"
+    operation = _observed_operation(report, "network", "blocked")
+    assert operation["operation"] == "network"
+    assert operation["outcome"] == "blocked"
+
+
+def test_sandbox_blocks_import_time_arbitrary_file_read(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_import_fs_block", registry_root=tmp_path)
+    assert package.handler_path is not None
+    (package.root / "fixture.txt").write_text("blocked", encoding="utf-8")
+    manifest = package.load_manifest()
+    manifest["effects"]["filesystem_access"] = "read_only"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    package.handler_path.write_text(
+        """
+from pathlib import Path
+
+VALUE = Path(__file__).with_name("fixture.txt").read_text(encoding="utf-8")
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        return {"result": VALUE}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is False
+    assert report["result"]["error"]["code"] == "sandbox.capability_violation"
+    operation = _observed_operation(report, "filesystem.read", "blocked")
+    assert operation["target"].endswith("fixture.txt")
+
+
+def test_sandbox_blocks_child_process_execution(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_process_block", registry_root=tmp_path)
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        """
+import subprocess
+import sys
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        subprocess.run([sys.executable, "-c", "pass"], check=True)
+        return {"result": "unexpected"}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is False
+    operation = _observed_operation(report, "process", "blocked")
+    assert operation["operation"] == "process"
+    assert operation["outcome"] == "blocked"
 
 
 def test_sandbox_module_package_enforces_wall_timeout(tmp_path: Path) -> None:
@@ -706,6 +902,89 @@ def test_publish_gate_rejects_incomplete_docker_hardening_profile(tmp_path: Path
 
     assert report["ok"] is False
     assert any(item["code"] == "sandbox.root_filesystem_isolation_missing" for item in report["diagnostics"])
+
+
+def test_publish_gate_requires_capability_observation(tmp_path: Path) -> None:
+    package = create_module_package("publish_missing_observation", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    _hardened_limits(hardened)
+    hardened["evidence"].pop("capability_report")
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt release without capability observation",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "sandbox.capability_observation_missing" for item in report["diagnostics"])
+
+
+def test_publish_gate_rejects_observed_capability_violations(tmp_path: Path) -> None:
+    package = create_module_package("publish_capability_violation", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    _hardened_limits(hardened)
+    hardened["evidence"]["capability_report"]["violation_count"] = 1
+    hardened["evidence"]["capability_report"]["operations"] = [
+        {
+            "event": "socket.connect",
+            "operation": "network",
+            "target": "example.invalid:443",
+            "outcome": "blocked",
+            "policy": "network_access=none",
+        }
+    ]
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt release with observed capability violation",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "sandbox.capability_violations_detected" for item in report["diagnostics"])
 
 
 def test_publish_gate_allows_signed_hardened_sandbox_evidence(tmp_path: Path, monkeypatch) -> None:

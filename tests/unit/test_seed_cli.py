@@ -248,6 +248,14 @@ def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path
             "process_limit_enforced": True,
         }
     )
+    hardened["evidence"]["capability_report"] = {
+        "enforcement": "python_audit_hook",
+        "policy": {},
+        "operations": [],
+        "operation_count": 0,
+        "violation_count": 0,
+        "truncated": False,
+    }
     record_module_evidence(
         package,
         kind="sandbox",

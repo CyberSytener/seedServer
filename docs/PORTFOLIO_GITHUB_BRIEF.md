@@ -52,7 +52,7 @@ vite
 - Extension tooling: Contract v1 manifests, a shared Module SDK, structured CLI
   diagnostics, subprocess sandbox evidence, package fingerprints, and guarded
   lifecycle transitions with an optional Docker hardened sandbox and signed
-  publication gate.
+  publication gate that rejects observed Python-level capability violations.
 - Saga depth: version registry, typed flow handlers, retry/timeouts,
   idempotency, distributed locking, compensation-oriented state model.
 - Domain proof: NeoEats uses the runtime for pantry, recipes, receipt

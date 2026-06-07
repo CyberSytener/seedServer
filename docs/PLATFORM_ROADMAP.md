@@ -222,9 +222,10 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 **Goal:** verify declared behavior against observed behavior before approval.
 
 **Status:** In progress. The publish policy, signed decision format, and
-optional Docker hardened adapter are implemented. Fine-grained observed
-capability violations, dependency installation policy, remote attestation, and
-stronger secret isolation remain open.
+optional Docker hardened adapter are implemented. Python-level operation
+observation now blocks undeclared filesystem, network, and process events and
+feeds the publish gate. Native/syscall observation, dependency installation
+policy, remote attestation, and stronger secret isolation remain open.
 
 ### Deliverables
 
@@ -233,13 +234,14 @@ stronger secret isolation remain open.
 - [x] time, memory, process, and CPU limits;
 - dependency and secret allowlists;
 - [x] declared-vs-enforced capability report;
-- observed operation-level capability report;
+- [x] observed Python operation-level capability report;
 - deterministic test fixtures;
 - [x] signed publication recommendation.
 
 ### Exit Criteria
 
-- Undeclared network, filesystem, or secret access causes rejection.
+- Undeclared Python-level network and filesystem access causes rejection;
+  secret and native/syscall enforcement remain open.
 - Timeouts and resource violations are visible in the report.
 - The publish gate explains why a module is accepted or rejected.
 
