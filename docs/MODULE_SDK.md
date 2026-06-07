@@ -84,10 +84,38 @@ Use `--input '{"request":"hello"}'` where shell quoting is convenient, or
 either option, the first declared golden input is used. `--timeout-seconds`
 may reduce, but never increase, the manifest timeout.
 
+## Docker Hardened Sandbox
+
+Build the minimal SDK runtime image once:
+
+```bash
+docker build -f Dockerfile.module-sandbox -t seed-module-sandbox:local .
+```
+
+Then run or qualify a package through the hardened adapter:
+
+```bash
+seed module sandbox text_normalizer --runtime docker
+seed module qualify text_normalizer --runtime docker
+```
+
+The image can be selected with `--image` or
+`SEED_MODULE_SANDBOX_IMAGE`. The adapter invokes Docker with no network,
+a read-only root filesystem and package mount, dropped capabilities,
+no-new-privileges, a non-root user, bounded memory/CPU/process counts, and a
+small writable I/O mount used by the versioned worker protocol. The evidence
+records the requested image, Docker engine version, declared capability policy,
+and which hardening controls were actually applied.
+
+Docker is optional for normal local development. If the CLI or engine is
+unavailable, the command returns `sandbox.docker_unavailable`; it never falls
+back to subprocess execution while claiming hardened evidence.
+
 ## Qualification And Evidence
 
-`seed module qualify` runs validation, golden tests, and the subprocess sandbox,
-then writes append-only JSON evidence under `.seed_artifacts/module_evidence/`.
+`seed module qualify` runs validation, golden tests, and the selected sandbox
+runtime, then writes append-only JSON evidence under
+`.seed_artifacts/module_evidence/`.
 Each record contains:
 
 - the module ID and semantic version;
@@ -147,22 +175,27 @@ The authority key is read from `SEED_MODULE_EVIDENCE_SIGNING_KEY` by default
 and must contain at least 32 UTF-8 bytes. The key is never accepted as a CLI
 argument and must never be committed. A different environment variable name
 may be selected with `--signing-key-env`.
+When `seed module qualify --runtime docker` is run with the authority key in
+the host environment, the resulting evidence is signed after the container
+finishes. The key is not passed into the container.
 Inspecting an already published lifecycle also requires the same authority key
 so `seed module status` can verify the signed publish decision.
 
 The local subprocess sandbox deliberately reports network and filesystem
 isolation as unenforced. Therefore normal local qualification reaches
-`approved`, but `seed module publish` blocks it. A future hardened runtime
-adapter must produce and sign the qualifying sandbox report.
+`approved`, but `seed module publish` blocks it. Publication additionally
+requires a signed Docker sandbox report with the complete hardening profile.
 
 ## Current Safety Boundary
 
 SDK tests load and execute local Python code in the developer process. They are
 for trusted local development and are not sandbox evidence.
 
-The subprocess sandbox is a stronger local evidence tier, but it does not yet
-enforce network or full filesystem isolation and is not production-grade
-untrusted-code containment. Reports expose these limits instead of hiding them.
+The subprocess sandbox is a stronger local evidence tier, but it does not
+enforce network or full filesystem isolation. The Docker adapter adds a useful
+container containment boundary, but it is not a VM, remote attestation service,
+or proof that every undeclared filesystem operation was observed. Reports
+expose these limits instead of hiding them.
 
 The local evidence store is append-only by command behavior and detects report
 tampering through integrity hashes. Normal qualification and transition records
@@ -176,5 +209,5 @@ transparency logging, or protection if that shared key is compromised.
 
 An `sdk_module` remains visible to the registry and Saga Console for inspection,
 but is intentionally not directly runnable through `/v1/modes` or executable in
-a flow. A later runtime adapter must add hardened containment before generated
-handlers can enter runtime flows.
+a flow. A later flow-runtime integration must reuse a hardened execution
+boundary before generated handlers can enter runtime flows.

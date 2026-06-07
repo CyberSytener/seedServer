@@ -1,0 +1,20 @@
+FROM python:3.12-slim
+
+WORKDIR /opt/seed
+
+RUN pip install --no-cache-dir \
+    jsonschema==4.26.0 \
+    pydantic==2.6.4 \
+    PyYAML==6.0.1
+
+COPY app/__init__.py /opt/seed/app/__init__.py
+COPY app/contracts /opt/seed/app/contracts
+COPY app/module_sdk /opt/seed/app/module_sdk
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/opt/seed
+
+USER 65534:65534
+
+ENTRYPOINT ["python", "-m", "app.module_sdk.sandbox_worker"]

@@ -41,6 +41,14 @@ _TRANSITION_REQUIREMENTS = {
     "approved": REQUIRED_EVIDENCE_KINDS,
     "deprecated": (),
 }
+_HARDENED_SANDBOX_LIMITS = {
+    "read_only_rootfs": ("sandbox.root_filesystem_isolation_missing", "read-only root filesystem"),
+    "capabilities_dropped": ("sandbox.capabilities_drop_missing", "dropped Linux capabilities"),
+    "no_new_privileges": ("sandbox.no_new_privileges_missing", "no-new-privileges enforcement"),
+    "non_root_user": ("sandbox.non_root_user_missing", "non-root container user"),
+    "memory_enforced": ("sandbox.memory_limit_missing", "memory limit"),
+    "process_limit_enforced": ("sandbox.process_limit_missing", "process limit"),
+}
 
 
 def _json_bytes(value: Any) -> bytes:
@@ -376,6 +384,7 @@ def assess_module_readiness(
     sandbox_record = latest.get("sandbox") or {}
     sandbox_report = sandbox_record.get("report") if isinstance(sandbox_record.get("report"), dict) else {}
     sandbox_evidence = sandbox_report.get("evidence") if isinstance(sandbox_report.get("evidence"), dict) else {}
+    runtime = sandbox_evidence.get("runtime") if isinstance(sandbox_evidence.get("runtime"), dict) else {}
     limits = sandbox_evidence.get("limits") if isinstance(sandbox_evidence.get("limits"), dict) else {}
     if sandbox_record.get("signature_status") != "valid":
         publication_blockers.append(
@@ -385,6 +394,14 @@ def assess_module_readiness(
                 "message": "publication requires sandbox evidence signed by the configured evidence authority",
             }
         )
+    if runtime.get("adapter") != "docker":
+        publication_blockers.append(
+            {
+                "code": "sandbox.hardened_adapter_required",
+                "path": "$.checks.sandbox.runtime.adapter",
+                "message": "publication requires evidence from the Docker hardened runtime adapter",
+            }
+        )
     for name in ("network", "filesystem"):
         if not bool(limits.get(f"{name}_enforced")):
             publication_blockers.append(
@@ -392,6 +409,15 @@ def assess_module_readiness(
                     "code": f"sandbox.{name}_isolation_missing",
                     "path": f"$.checks.sandbox.limits.{name}_enforced",
                     "message": f"hardened {name} isolation evidence is required before publication",
+                }
+            )
+    for field, (code, label) in _HARDENED_SANDBOX_LIMITS.items():
+        if not bool(limits.get(field)):
+            publication_blockers.append(
+                {
+                    "code": code,
+                    "path": f"$.checks.sandbox.limits.{field}",
+                    "message": f"hardened {label} evidence is required before publication",
                 }
             )
     if not approval_ready:
@@ -448,17 +474,34 @@ def qualify_module_package(
     inputs: Optional[Dict[str, Any]] = None,
     timeout_seconds: Optional[float] = None,
     evidence_root: Path = DEFAULT_EVIDENCE_ROOT,
+    sandbox_runtime: str = "subprocess",
+    sandbox_image: Optional[str] = None,
+    docker_executable: str = "docker",
+    signing_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     reports = {
         "validation": validate_module_package(package),
         "test": run_module_package_tests(package),
-        "sandbox": sandbox_module_package(package, inputs=inputs, timeout_seconds=timeout_seconds),
+        "sandbox": sandbox_module_package(
+            package,
+            inputs=inputs,
+            timeout_seconds=timeout_seconds,
+            runtime=sandbox_runtime,
+            image=sandbox_image,
+            docker_executable=docker_executable,
+        ),
     }
     records = [
-        record_module_evidence(package, kind=kind, report=report, evidence_root=evidence_root)
+        record_module_evidence(
+            package,
+            kind=kind,
+            report=report,
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
         for kind, report in reports.items()
     ]
-    assessment = assess_module_readiness(package, evidence_root=evidence_root)
+    assessment = assess_module_readiness(package, evidence_root=evidence_root, signing_key=signing_key)
     return {
         **assessment,
         "qualification_records": [

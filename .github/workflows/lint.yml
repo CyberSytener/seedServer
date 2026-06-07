@@ -90,3 +90,34 @@ jobs:
       - name: Type-check and build
         working-directory: saga-console
         run: npm run build
+
+  module-sandbox-build:
+    name: Module sandbox image build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install host-side SDK dependencies
+        run: pip install pydantic==2.6.4 PyYAML==6.0.1 jsonschema==4.26.0
+
+      - name: Build minimal module sandbox image
+        run: docker build -f Dockerfile.module-sandbox -t seed-module-sandbox:ci .
+
+      - name: Verify sandbox worker import
+        run: docker run --rm --entrypoint python seed-module-sandbox:ci -c "import app.module_sdk.sandbox_worker"
+
+      - name: Run SDK module through Docker adapter
+        run: |
+          python -m app.cli module create ci_docker_module --root .seed_artifacts/ci-modules --json
+          python -m app.cli module sandbox ci_docker_module \
+            --root .seed_artifacts/ci-modules \
+            --runtime docker \
+            --image seed-module-sandbox:ci \
+            --json > .seed_artifacts/docker-sandbox-report.json
+          python -c "import json; r=json.load(open('.seed_artifacts/docker-sandbox-report.json')); assert r['ok']; assert r['evidence']['limits']['network_enforced']; assert r['evidence']['limits']['filesystem_enforced']"

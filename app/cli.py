@@ -85,6 +85,9 @@ def _module_sandbox(args: argparse.Namespace) -> int:
         package,
         inputs=_load_sandbox_input(args),
         timeout_seconds=args.timeout_seconds,
+        runtime=args.runtime,
+        image=args.image,
+        docker_executable=args.docker_executable,
     )
     _print_report(report, as_json=args.json)
     return 0 if report["ok"] else 1
@@ -97,6 +100,10 @@ def _module_qualify(args: argparse.Namespace) -> int:
         inputs=_load_sandbox_input(args),
         timeout_seconds=args.timeout_seconds,
         evidence_root=Path(args.evidence_root),
+        sandbox_runtime=args.runtime,
+        sandbox_image=args.image,
+        docker_executable=args.docker_executable,
+        signing_key=os.getenv(args.signing_key_env),
     )
     _print_report(report, as_json=args.json)
     return 0 if report["ok"] else 1
@@ -144,6 +151,9 @@ def _add_sandbox_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--input", dest="input_json")
     parser.add_argument("--input-file")
     parser.add_argument("--timeout-seconds", type=float)
+    parser.add_argument("--runtime", choices=("subprocess", "docker"), default="subprocess")
+    parser.add_argument("--image")
+    parser.add_argument("--docker-executable", default="docker")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -182,6 +192,7 @@ def build_parser() -> argparse.ArgumentParser:
     qualify.add_argument("target")
     qualify.add_argument("--root", default="modules")
     qualify.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    qualify.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
     _add_sandbox_arguments(qualify)
     qualify.add_argument("--json", action="store_true")
     qualify.set_defaults(handler=_module_qualify)

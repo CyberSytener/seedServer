@@ -95,6 +95,40 @@ def test_seed_module_sandbox_accepts_utf8_bom_input_file(tmp_path: Path, capsys)
     assert report["result"]["output"] == {"result": "from file"}
 
 
+def test_seed_module_sandbox_selects_docker_runtime(tmp_path: Path, capsys, monkeypatch) -> None:
+    assert main(["module", "create", "cli_docker", "--root", str(tmp_path), "--json"]) == 0
+    capsys.readouterr()
+    captured = {}
+
+    def fake_sandbox(_package, **kwargs):
+        captured.update(kwargs)
+        return {"ok": True, "module_id": "cli_docker", "diagnostics": []}
+
+    monkeypatch.setattr("app.cli.sandbox_module_package", fake_sandbox)
+
+    assert (
+        main(
+            [
+                "module",
+                "sandbox",
+                "cli_docker",
+                "--root",
+                str(tmp_path),
+                "--runtime",
+                "docker",
+                "--image",
+                "custom-sandbox:test",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    capsys.readouterr()
+
+    assert captured["runtime"] == "docker"
+    assert captured["image"] == "custom-sandbox:test"
+
+
 def test_seed_module_qualify_and_status_use_matching_evidence(tmp_path: Path, capsys) -> None:
     modules_root = tmp_path / "modules"
     evidence_root = tmp_path / "evidence"
@@ -201,8 +235,19 @@ def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path
     package = create_module_package("cli_publish", registry_root=modules_root)
     qualify_module_package(package, evidence_root=evidence_root)
     hardened = sandbox_module_package(package, inputs={"request": "hardened"})
-    hardened["evidence"]["limits"]["network_enforced"] = True
-    hardened["evidence"]["limits"]["filesystem_enforced"] = True
+    hardened["evidence"]["runtime"] = {"adapter": "docker", "image": "fixture", "engine_version": "fixture"}
+    hardened["evidence"]["limits"].update(
+        {
+            "network_enforced": True,
+            "filesystem_enforced": True,
+            "read_only_rootfs": True,
+            "capabilities_dropped": True,
+            "no_new_privileges": True,
+            "non_root_user": True,
+            "memory_enforced": True,
+            "process_limit_enforced": True,
+        }
+    )
     record_module_evidence(
         package,
         kind="sandbox",

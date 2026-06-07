@@ -102,8 +102,8 @@ reach into FastAPI application state or infrastructure internals directly.
 
 ## Current Development Boundary
 
-The next active development area is hardened runtime isolation, durable module
-version history, and public-key publication evidence:
+The next active development area is operation-level capability observation,
+durable module version history, and public-key publication evidence:
 
 - `modules/`
 - `app/contracts/module_contract.py`

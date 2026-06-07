@@ -18,15 +18,17 @@ python scripts/run_quality_gate.py portfolio
 
 This is the mandatory local gate for active platform work. It validates the
 active documentation links, module registry, Module SDK/CLI, subprocess
-sandbox, lifecycle evidence and transition guards, console runtime, modes, auth
-provider facade, signed publication gates, security regressions, LLM routing
-regression, and simulation unit tests.
+sandbox, Docker adapter command policy, lifecycle evidence and transition
+guards, console runtime, modes, auth provider facade, signed publication gates,
+security regressions, LLM routing regression, and simulation unit tests.
 
 Expected properties:
 
 - deterministic;
 - no paid provider keys;
 - no PostgreSQL or Redis requirement;
+- no Docker daemon requirement; hardened adapter tests use a deterministic
+  command-runner fixture;
 - fast enough to run before every commit;
 - failure blocks publication.
 
@@ -75,7 +77,7 @@ focused active tests when a surface is promoted.
 
 | Workflow | Responsibility | Blocking |
 | --- | --- | --- |
-| `lint` | active Python syntax/critical lint and Saga Console build | yes |
+| `lint` | active Python syntax/critical lint, Saga Console build, and Docker module sandbox build/smoke | yes |
 | `full-tests` | portfolio unit gate | yes |
 | `integration-tests` | supported integration scenarios | yes |
 | `smoke-tests` | auth/security/runtime regression smoke | yes |

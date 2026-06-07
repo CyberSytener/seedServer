@@ -23,6 +23,7 @@ from app.module_sdk.runtime import (
     execute_module,
 )
 from app.module_sdk.publication import publish_module_package
+from app.module_sdk.docker_sandbox import docker_sandbox_module_package
 from app.module_sdk.sandbox import sandbox_module_package
 
 __all__ = [
@@ -35,6 +36,7 @@ __all__ = [
     "DEFAULT_EVIDENCE_ROOT",
     "assess_module_readiness",
     "create_module_package",
+    "docker_sandbox_module_package",
     "execute_module",
     "fingerprint_module_package",
     "load_module_evidence",

@@ -11,7 +11,8 @@ new modules through validation, sandboxing, and human-gated publication.
 ## What To Review
 
 - Saga workflow runtime with typed modules, flow graphs, sandbox runs, run history, and artifacts.
-- Contract-first Module SDK and CLI for generating, validating, testing, sandboxing, and qualifying extension packages.
+- Contract-first Module SDK and CLI for generating, validating, testing,
+  container-sandboxing, qualifying, and publishing extension packages.
 - React Saga Console with gallery, canvas, modules, providers, and run inspection.
 - Deterministic stub mode so reviewers can run the demo without Gemini, OpenAI, Redis, or PostgreSQL credentials.
 - NeoEats/domain blocks and broader API surface showing how a vertical product can be wired into the same runtime.
@@ -107,7 +108,9 @@ For a fuller local stack:
 docker compose -f docker-compose.dev.yml up --build
 ```
 
-The portfolio demo does not require Docker. Docker remains useful for testing the larger stack with Redis/PostgreSQL.
+The portfolio demo does not require Docker. Docker remains useful for testing
+the larger stack with Redis/PostgreSQL and for producing hardened Module SDK
+sandbox evidence.
 
 ## Project Structure
 
@@ -138,6 +141,8 @@ seed module sandbox text_normalizer --input-file sample-input.json
 seed module qualify text_normalizer
 seed module status text_normalizer
 seed module publish text_normalizer --actor reviewer --reason "approved release"
+docker build -f Dockerfile.module-sandbox -t seed-module-sandbox:local .
+seed module qualify text_normalizer --runtime docker
 python -m pytest -q tests/unit/test_console_runtime_api.py
 python -m pytest -q tests/unit/test_module_registry.py tests/unit/test_modes_api.py
 cd saga-console && npm run build

@@ -36,8 +36,8 @@ manifest lifecycle.
   justified an allowed decision.
 - HMAC uses a shared secret. It does not provide asymmetric identity,
   transparency logging, remote durability, or safety after key compromise.
-- A future hardened runtime adapter must hold or access the authority key and
-  sign its sandbox attestation.
+- The Docker adapter introduced by ADR 0008 leaves the authority key on the
+  host and signs its sandbox attestation after container execution.
 
 ## Verification
 

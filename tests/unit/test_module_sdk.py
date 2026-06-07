@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import subprocess
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
@@ -25,6 +26,52 @@ from app.module_sdk import (
 )
 from app.module_sdk.package import resolve_module_package
 from app.module_sdk.package import validate_handler_dependencies
+
+
+def _hardened_limits(report: dict) -> None:
+    report["evidence"]["runtime"] = {"adapter": "docker", "image": "fixture", "engine_version": "fixture"}
+    report["evidence"]["limits"].update(
+        {
+            "network_enforced": True,
+            "filesystem_enforced": True,
+            "read_only_rootfs": True,
+            "capabilities_dropped": True,
+            "no_new_privileges": True,
+            "non_root_user": True,
+            "memory_enforced": True,
+            "process_limit_enforced": True,
+        }
+    )
+
+
+def _fake_docker_run(command: list[str], **_kwargs) -> subprocess.CompletedProcess[str]:
+    if len(command) > 1 and command[1] == "version":
+        return subprocess.CompletedProcess(command, 0, stdout="29.1.3\n", stderr="")
+    if len(command) > 1 and command[1] == "rm":
+        return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+    io_mount = next(value for value in command if isinstance(value, str) and "target=/io" in value)
+    io_root = Path(io_mount.split("source=", 1)[1].split(",target=/io", 1)[0])
+    (io_root / "response.json").write_text(
+        json.dumps(
+            {
+                "ok": True,
+                "status": "succeeded",
+                "result": {
+                    "status": "succeeded",
+                    "output": {"result": "docker"},
+                    "error": None,
+                    "diagnostics": [],
+                },
+                "diagnostics": [],
+                "evidence": {
+                    "worker_duration_ms": 1.0,
+                    "limits": {"cpu_enforced": True, "memory_enforced": True},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
 
 
 class _EchoHandler:
@@ -188,6 +235,68 @@ def test_sandbox_module_package_runs_in_isolated_subprocess(tmp_path: Path) -> N
     assert report["evidence"]["limits"]["network_enforced"] is False
     assert report["evidence"]["limits"]["filesystem_enforced"] is False
     assert report["evidence"]["exit_code"] == 0
+    assert report["evidence"]["runtime"]["adapter"] == "subprocess"
+
+
+def test_docker_sandbox_enforces_hardened_container_profile(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("sandbox_docker", registry_root=tmp_path)
+    commands = []
+    authority_key = "must-not-enter-container-" + "a" * 32
+
+    def capture_run(command: list[str], **kwargs):
+        commands.append(command)
+        return _fake_docker_run(command, **kwargs)
+
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.shutil.which", lambda _name: "docker")
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.subprocess.run", capture_run)
+    monkeypatch.setenv("SEED_MODULE_EVIDENCE_SIGNING_KEY", authority_key)
+
+    report = sandbox_module_package(package, inputs={"request": "docker"}, runtime="docker")
+
+    assert report["ok"] is True
+    assert report["result"]["output"] == {"result": "docker"}
+    assert report["evidence"]["runtime"]["adapter"] == "docker"
+    assert report["evidence"]["limits"]["network_enforced"] is True
+    assert report["evidence"]["limits"]["filesystem_enforced"] is True
+    run_command = next(command for command in commands if len(command) > 1 and command[1] == "run")
+    assert ["--network", "none"] == run_command[run_command.index("--network") : run_command.index("--network") + 2]
+    assert "--read-only" in run_command
+    assert ["--cap-drop", "ALL"] == run_command[run_command.index("--cap-drop") : run_command.index("--cap-drop") + 2]
+    assert ["--user", "65534:65534"] == run_command[run_command.index("--user") : run_command.index("--user") + 2]
+    assert all(authority_key not in item for item in run_command)
+
+
+def test_docker_sandbox_returns_structured_error_when_engine_is_unavailable(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("sandbox_no_docker", registry_root=tmp_path)
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.shutil.which", lambda _name: None)
+
+    report = sandbox_module_package(package, inputs={"request": "docker"}, runtime="docker")
+
+    assert report["ok"] is False
+    assert report["evidence"]["runtime"]["adapter"] == "docker"
+    assert report["evidence"]["limits"]["network_enforced"] is False
+    assert report["evidence"]["policy"]["enforced"] is None
+    assert any(item["code"] == "sandbox.docker_unavailable" for item in report["diagnostics"])
+
+
+def test_docker_qualification_records_signed_hardened_evidence(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("docker_qualified", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "docker-qualification-" + "a" * 32
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.shutil.which", lambda _name: "docker")
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.subprocess.run", _fake_docker_run)
+
+    report = qualify_module_package(
+        package,
+        evidence_root=evidence_root,
+        sandbox_runtime="docker",
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is True
+    assert report["checks"]["sandbox"]["signature_status"] == "valid"
+    blocker_codes = {item["code"] for item in report["publication"]["blockers"]}
+    assert blocker_codes == {"lifecycle.approval_required"}
 
 
 def test_sandbox_module_package_sanitizes_environment_and_captures_output(
@@ -557,22 +666,58 @@ def test_publish_gate_blocks_local_subprocess_sandbox(tmp_path: Path) -> None:
     assert report["lifecycle"] == "approved"
     assert report["publish_evidence"]["signature"]["algorithm"] == "hmac-sha256"
     assert any(item["code"] == "evidence.sandbox_signature_required" for item in report["diagnostics"])
+    assert any(item["code"] == "sandbox.hardened_adapter_required" for item in report["diagnostics"])
     assert any(item["code"] == "sandbox.network_isolation_missing" for item in report["diagnostics"])
 
 
-def test_publish_gate_allows_signed_hardened_sandbox_evidence(tmp_path: Path) -> None:
-    package = create_module_package("publish_allowed", registry_root=tmp_path / "modules")
+def test_publish_gate_rejects_incomplete_docker_hardening_profile(tmp_path: Path) -> None:
+    package = create_module_package("publish_partial_hardening", registry_root=tmp_path / "modules")
     evidence_root = tmp_path / "evidence"
     signing_key = "publish-authority-" + "a" * 32
     qualify_module_package(package, evidence_root=evidence_root)
-    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
-    hardened["evidence"]["limits"]["network_enforced"] = True
-    hardened["evidence"]["limits"]["filesystem_enforced"] = True
+    partial = sandbox_module_package(package, inputs={"request": "partial"})
+    partial["evidence"]["runtime"] = {"adapter": "docker", "image": "fixture", "engine_version": "fixture"}
+    partial["evidence"]["limits"]["network_enforced"] = True
+    partial["evidence"]["limits"]["filesystem_enforced"] = True
     record_module_evidence(
         package,
         kind="sandbox",
-        report=hardened,
+        report=partial,
         evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt incomplete hardening release",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "sandbox.root_filesystem_isolation_missing" for item in report["diagnostics"])
+
+
+def test_publish_gate_allows_signed_hardened_sandbox_evidence(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("publish_allowed", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.shutil.which", lambda _name: "docker")
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.subprocess.run", _fake_docker_run)
+    qualify_module_package(
+        package,
+        evidence_root=evidence_root,
+        sandbox_runtime="docker",
         signing_key=signing_key,
     )
     for target in ("validated", "tested", "sandboxed", "approved"):
@@ -617,8 +762,7 @@ def test_publish_gate_rejects_evidence_added_after_approval(tmp_path: Path) -> N
             evidence_root=evidence_root,
         )
     hardened = sandbox_module_package(package, inputs={"request": "hardened"})
-    hardened["evidence"]["limits"]["network_enforced"] = True
-    hardened["evidence"]["limits"]["filesystem_enforced"] = True
+    _hardened_limits(hardened)
     record_module_evidence(
         package,
         kind="sandbox",

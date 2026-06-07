@@ -67,6 +67,8 @@ Seed Server is a portfolio demo of an AI workflow control plane: FastAPI backend
 - The default demo uses deterministic stub providers.
 - Real LLM calls require provider keys and are intentionally outside the reviewer path.
 - Docker Compose remains available, but the portfolio demo does not require Docker.
+- The optional Module SDK Docker adapter is built and smoke-tested in CI; local
+  use requires a running Docker engine.
 - Some deeper architecture documents are historical. Prefer `README.md`, `DEMO.md`, and `docs/PORTFOLIO_GITHUB_BRIEF.md` as public entry points.
 - Platform development direction is defined in `docs/PLATFORM_ROADMAP.md`; active
   commitments are defined in `docs/ACTIVE_PLATFORM_SCOPE.md`.

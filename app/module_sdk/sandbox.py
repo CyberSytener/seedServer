@@ -68,7 +68,7 @@ def _failure_report(
     }
 
 
-def sandbox_module_package(
+def _subprocess_sandbox_module_package(
     package: ModulePackage,
     *,
     inputs: Optional[Dict[str, Any]] = None,
@@ -162,6 +162,7 @@ def sandbox_module_package(
             process_stderr, process_stderr_truncated = _truncate(str(exc.stderr or ""))
             evidence = {
                 "protocol_version": SANDBOX_PROTOCOL_VERSION,
+                "runtime": {"adapter": "subprocess"},
                 "duration_ms": duration_ms,
                 "exit_code": None,
                 "timed_out": True,
@@ -198,6 +199,7 @@ def sandbox_module_package(
         process_stderr, process_stderr_truncated = _truncate(process.stderr)
         base_evidence = {
             "protocol_version": SANDBOX_PROTOCOL_VERSION,
+            "runtime": {"adapter": "subprocess"},
             "duration_ms": duration_ms,
             "exit_code": process.returncode,
             "timed_out": timed_out,
@@ -260,3 +262,32 @@ def sandbox_module_package(
                 },
             },
         }
+
+
+def sandbox_module_package(
+    package: ModulePackage,
+    *,
+    inputs: Optional[Dict[str, Any]] = None,
+    timeout_seconds: Optional[float] = None,
+    runtime: str = "subprocess",
+    image: Optional[str] = None,
+    docker_executable: str = "docker",
+) -> Dict[str, Any]:
+    normalized_runtime = runtime.strip().lower()
+    if normalized_runtime == "subprocess":
+        return _subprocess_sandbox_module_package(
+            package,
+            inputs=inputs,
+            timeout_seconds=timeout_seconds,
+        )
+    if normalized_runtime == "docker":
+        from app.module_sdk.docker_sandbox import docker_sandbox_module_package
+
+        return docker_sandbox_module_package(
+            package,
+            inputs=inputs,
+            timeout_seconds=timeout_seconds,
+            image=image,
+            docker_executable=docker_executable,
+        )
+    raise ValueError("sandbox runtime must be 'subprocess' or 'docker'")

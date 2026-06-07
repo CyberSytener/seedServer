@@ -131,7 +131,7 @@ append-only local evidence, qualification/status commands, and guarded
 lifecycle transitions through `approved`. The fourth slice adds HMAC-signed
 evidence verification and a dedicated publish command that requires signed
 hardened-isolation evidence. SDK modules remain outside active flows until a
-hardened runtime adapter is implemented.
+hardened runtime execution path is integrated with the flow engine.
 
 ### Deliverables
 
@@ -221,18 +221,21 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 
 **Goal:** verify declared behavior against observed behavior before approval.
 
-**Status:** In progress. The publish policy and signed decision format are
-implemented. The hardened sandbox adapter that can satisfy network and
-filesystem enforcement requirements remains open.
+**Status:** In progress. The publish policy, signed decision format, and
+optional Docker hardened adapter are implemented. Fine-grained observed
+capability violations, dependency installation policy, remote attestation, and
+stronger secret isolation remain open.
 
 ### Deliverables
 
 - deny-by-default network and filesystem policy;
-- time, memory, process, and concurrency limits;
+- [x] container-level deny-by-default network and filesystem containment;
+- [x] time, memory, process, and CPU limits;
 - dependency and secret allowlists;
-- observed-vs-declared capability report;
+- [x] declared-vs-enforced capability report;
+- observed operation-level capability report;
 - deterministic test fixtures;
-- signed publication recommendation.
+- [x] signed publication recommendation.
 
 ### Exit Criteria
 
