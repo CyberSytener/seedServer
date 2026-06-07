@@ -8,9 +8,12 @@ from typing import Any, Dict, Optional, Sequence
 
 from app.module_sdk import (
     DEFAULT_EVIDENCE_ROOT,
+    DEFAULT_MAX_REPAIR_CONTEXT_BYTES,
     DEFAULT_REJECTION_HISTORY_ROOT,
     DEFAULT_VERSION_HISTORY_ROOT,
     assess_module_readiness,
+    build_module_repair_plan,
+    check_module_repair,
     create_module_package,
     deprecate_module_package,
     publish_module_package,
@@ -217,6 +220,38 @@ def _module_rejections(args: argparse.Namespace) -> int:
     return 0 if report["ok"] else 1
 
 
+def _module_repair_plan(args: argparse.Namespace) -> int:
+    report = build_module_repair_plan(
+        args.module_id,
+        rejection_id=args.rejection_id,
+        rejections_root=Path(args.rejections_root),
+        signing_key=os.getenv(args.signing_key_env),
+        max_context_bytes=args.max_context_bytes,
+    )
+    _print_report(report, as_json=args.json)
+    return 0
+
+
+def _module_repair_check(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = check_module_repair(
+        package,
+        rejection_id=args.rejection_id,
+        actor=args.actor,
+        generator=args.generator,
+        inputs=_load_sandbox_input(args),
+        evidence_root=Path(args.evidence_root),
+        rejections_root=Path(args.rejections_root) if args.rejections_root else None,
+        signing_key=os.getenv(args.signing_key_env),
+        sandbox_runtime=args.runtime,
+        sandbox_image=args.image,
+        docker_executable=args.docker_executable,
+        timeout_seconds=args.timeout_seconds,
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
 def _add_sandbox_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--input", dest="input_json")
     parser.add_argument("--input-file")
@@ -336,6 +371,28 @@ def build_parser() -> argparse.ArgumentParser:
     rejections.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
     rejections.add_argument("--json", action="store_true")
     rejections.set_defaults(handler=_module_rejections)
+
+    repair_plan = module_commands.add_parser("repair-plan", help="Build a bounded repair context pack")
+    repair_plan.add_argument("module_id")
+    repair_plan.add_argument("--rejection-id")
+    repair_plan.add_argument("--rejections-root", default=str(DEFAULT_REJECTION_HISTORY_ROOT))
+    repair_plan.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    repair_plan.add_argument("--max-context-bytes", type=int, default=DEFAULT_MAX_REPAIR_CONTEXT_BYTES)
+    repair_plan.add_argument("--json", action="store_true")
+    repair_plan.set_defaults(handler=_module_repair_plan)
+
+    repair_check = module_commands.add_parser("repair-check", help="Qualify and record one bounded repair attempt")
+    repair_check.add_argument("target")
+    repair_check.add_argument("--rejection-id", required=True)
+    repair_check.add_argument("--root", default="modules")
+    repair_check.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    repair_check.add_argument("--rejections-root")
+    repair_check.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    repair_check.add_argument("--actor", required=True)
+    repair_check.add_argument("--generator", default="human")
+    _add_sandbox_arguments(repair_check)
+    repair_check.add_argument("--json", action="store_true")
+    repair_check.set_defaults(handler=_module_repair_check)
     return parser
 
 

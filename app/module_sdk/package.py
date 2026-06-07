@@ -390,6 +390,8 @@ seed module deprecate {module_id} --actor reviewer --reason "replaced"
 seed module reject {module_id} --actor reviewer --reason "repair required"
 seed module history {module_id}
 seed module rejections {module_id}
+seed module repair-plan {module_id}
+seed module repair-check {module_id} --rejection-id REJECTION_ID --actor reviewer
 ```
 
 Edit `module.yaml` to declare the contract and `handler.py` to implement it.

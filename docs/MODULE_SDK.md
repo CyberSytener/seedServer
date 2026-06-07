@@ -28,6 +28,8 @@ seed module deprecate text_normalizer --actor reviewer --reason "replaced" --rep
 seed module reject text_normalizer --actor reviewer --reason "repair required"
 seed module history text_normalizer
 seed module rejections text_normalizer
+seed module repair-plan text_normalizer --rejection-id REJECTION_ID
+seed module repair-check text_normalizer --rejection-id REJECTION_ID --actor reviewer --generator human
 ```
 
 Pass `--json` to any command for a machine-readable report suitable for an AI
@@ -323,6 +325,36 @@ When `seed module reject` uses a custom `--evidence-root` without an explicit
 `--rejections-root`, it stores rejected candidates in the sibling
 `module_rejections` directory.
 
+## Bounded Repair Loop
+
+`seed module repair-plan` verifies a signed rejection and emits a versioned,
+machine-readable context pack. It contains the complete Module Contract schema,
+the exact rejected text files, structured rejection and qualification reports,
+previous attempt summaries, the allowed file paths, and the remaining attempt
+budget. The default context limit is 128 KiB and may never exceed 256 KiB.
+
+The plan allows changes only to the rejected package files and the standard
+`module.yaml`, `handler.py`, and `README.md` paths. It explicitly forbids
+publication and exposes only the stable `app.module_sdk` surface. It does not
+call a model, apply generated output, or execute arbitrary repair instructions.
+
+After a human or external builder changes the working candidate, run:
+
+```bash
+seed module repair-check text_normalizer \
+  --rejection-id REJECTION_ID \
+  --actor reviewer \
+  --generator provider-or-human
+```
+
+`repair-check` requires a changed candidate with the same module ID and semantic
+version. It runs the complete qualification path, compares current diagnostics
+with the rejection, and stores a signed repair evidence record plus a complete
+signed candidate snapshot. The rejection history exposes the attempt count,
+remaining budget, latest result, and provenance. A rejection permits at most
+three recorded attempts; blocked preconditions do not consume an attempt.
+A successful attempt closes that rejection's repair loop.
+
 ## Current Safety Boundary
 
 SDK tests load and execute local Python code in the developer process. They are
@@ -348,9 +380,9 @@ the authority key is available. They are still a local filesystem registry,
 not remote object-lock storage or a transparency log.
 
 Rejected candidate snapshots use the same local integrity boundary. They
-preserve repair evidence but do not execute repairs, prove reviewer identity
-beyond the shared authority key, or prevent a filesystem owner from deleting
-the local history.
+preserve repair evidence and signed repair-attempt snapshots but do not call a
+model, edit working files, prove reviewer identity beyond the shared authority
+key, or prevent a filesystem owner from deleting the local history.
 
 HMAC signatures establish that a record was produced by a holder of the shared
 authority key. They do not provide public-key identity, key rotation,

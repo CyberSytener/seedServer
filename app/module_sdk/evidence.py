@@ -21,7 +21,7 @@ from app.module_sdk.sandbox import sandbox_module_package
 
 EVIDENCE_SCHEMA_VERSION = "1.0"
 REQUIRED_EVIDENCE_KINDS = ("validation", "test", "sandbox")
-EVIDENCE_KINDS = (*REQUIRED_EVIDENCE_KINDS, "transition", "publish", "deprecate", "reject")
+EVIDENCE_KINDS = (*REQUIRED_EVIDENCE_KINDS, "transition", "publish", "deprecate", "reject", "repair")
 DEFAULT_EVIDENCE_ROOT = Path(".seed_artifacts/module_evidence")
 _IGNORED_PARTS = {"__pycache__", ".pytest_cache"}
 _IGNORED_SUFFIXES = {".pyc", ".pyo"}

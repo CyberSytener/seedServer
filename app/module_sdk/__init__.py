@@ -30,6 +30,13 @@ from app.module_sdk.rejection_history import (
     load_module_rejection_history,
     resolve_rejection_history_root,
 )
+from app.module_sdk.repair import (
+    DEFAULT_MAX_REPAIR_CONTEXT_BYTES,
+    MAX_MAX_REPAIR_CONTEXT_BYTES,
+    MAX_REPAIR_ATTEMPTS,
+    build_module_repair_plan,
+    check_module_repair,
+)
 from app.module_sdk.docker_sandbox import docker_sandbox_module_package
 from app.module_sdk.sandbox import sandbox_module_package
 from app.module_sdk.version_history import (
@@ -48,10 +55,15 @@ __all__ = [
     "ModuleResult",
     "ModuleSDKError",
     "DEFAULT_EVIDENCE_ROOT",
+    "DEFAULT_MAX_REPAIR_CONTEXT_BYTES",
     "DEFAULT_REJECTION_HISTORY_ROOT",
     "DEFAULT_VERSION_HISTORY_ROOT",
+    "MAX_MAX_REPAIR_CONTEXT_BYTES",
+    "MAX_REPAIR_ATTEMPTS",
     "assess_module_readiness",
     "assess_module_version_slot",
+    "build_module_repair_plan",
+    "check_module_repair",
     "create_module_package",
     "deprecate_module_package",
     "docker_sandbox_module_package",

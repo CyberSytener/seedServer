@@ -155,6 +155,8 @@ seed module deprecate [done: gate]
 seed module reject    [done: gate]
 seed module history   [done]
 seed module rejections [done]
+seed module repair-plan [done]
+seed module repair-check [done]
 ```
 
 ### Exit Criteria
@@ -175,7 +177,7 @@ third slice adds signed immutable package snapshots and semantic-version
 conflict prevention. The fourth slice adds signed deprecation decisions bound
 to immutable release snapshots. The fifth slice adds signed durable rejected
 candidate snapshots and structured repair context. Asymmetric signing, key
-rotation, a publish gate API, and the automated AI repair loop remain open.
+rotation, a publish gate API, and an AI provider adapter remain open.
 
 ### Lifecycle
 
@@ -203,6 +205,12 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 
 **Goal:** let AI propose modules using a bounded, explicit context pack.
 
+**Status:** In progress. The first vertical slice builds a versioned,
+size-bounded repair context pack from a signed durable rejection and qualifies
+up to three changed candidates. Each attempt preserves a signed candidate
+snapshot, provenance, qualification report, and diagnostic delta. No model
+provider, automatic file editing, or automatic publication is included.
+
 ### Context Pack
 
 - Module Contract schema and SDK documentation.
@@ -215,9 +223,10 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 
 - natural-language module proposal API;
 - manifest, implementation, test, README, and example-flow generation;
-- structured repair loop;
-- generation budgets and attempt limits;
-- provenance records for generated artifacts.
+- [x] bounded repair context pack from a signed rejection;
+- [x] structured repair-attempt qualification and diagnostic delta;
+- [x] repair attempt budget and signed provenance records;
+- model-provider adapter and controlled artifact application.
 
 ### Exit Criteria
 

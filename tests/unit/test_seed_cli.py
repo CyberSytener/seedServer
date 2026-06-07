@@ -416,3 +416,57 @@ def test_seed_module_reject_and_rejections_preserve_repair_context(tmp_path: Pat
     history = json.loads(capsys.readouterr().out)
     assert history["rejection_count"] == 1
     assert history["rejections"][0]["decision"]["reason"] == "repair undeclared dependency"
+
+    rejection_id = history["rejections"][0]["rejection_id"]
+    assert (
+        main(
+            [
+                "module",
+                "repair-plan",
+                "cli_rejection",
+                "--rejection-id",
+                rejection_id,
+                "--rejections-root",
+                str(rejections_root),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    plan = json.loads(capsys.readouterr().out)
+    assert plan["budget"]["attempts_remaining"] == 3
+    assert plan["constraints"]["publish_allowed"] is False
+
+    handler.write_text(
+        handler.read_text(encoding="utf-8").replace("import httpx", "# repaired"),
+        encoding="utf-8",
+    )
+    assert (
+        main(
+            [
+                "module",
+                "repair-check",
+                "cli_rejection",
+                "--rejection-id",
+                rejection_id,
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--rejections-root",
+                str(rejections_root),
+                "--actor",
+                "cli-reviewer",
+                "--generator",
+                "stub-builder",
+                "--input",
+                '{"request":"repaired through CLI"}',
+                "--json",
+            ]
+        )
+        == 0
+    )
+    repaired = json.loads(capsys.readouterr().out)
+    assert repaired["ok"] is True
+    assert repaired["repair_attempt"]["attempt"] == 1
+    assert repaired["qualification"]["checks"]["sandbox"]["passed"] is True

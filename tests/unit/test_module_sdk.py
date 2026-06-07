@@ -8,10 +8,13 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 import yaml
 
+from app.module_sdk import evidence as evidence_module
 from app.module_sdk import (
     ModuleExecutionContext,
     ModuleSDKError,
     assess_module_readiness,
+    build_module_repair_plan,
+    check_module_repair,
     create_module_package,
     deprecate_module_package,
     execute_module,
@@ -1558,6 +1561,321 @@ def test_rejection_history_preserves_candidate_and_repair_context(tmp_path: Path
     rejected_package = resolve_module_package(Path(history["rejections"][0]["package_path"]))
     assert fingerprint_module_package(rejected_package) == rejected_fingerprint
     assert fingerprint_module_package(package) != rejected_fingerprint
+
+
+def test_repair_plan_is_bounded_and_self_contained(tmp_path: Path) -> None:
+    package = create_module_package("repair_plan", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-plan-authority-" + "a" * 32
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\nimport httpx\n",
+        encoding="utf-8",
+    )
+    qualify_module_package(package, evidence_root=evidence_root)
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="remove undeclared dependency",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    plan = build_module_repair_plan(
+        "repair_plan",
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    files = {item["path"]: item["content"] for item in plan["candidate_files"]}
+    assert plan["schema_version"] == "1.0"
+    assert plan["budget"]["attempts_remaining"] == 3
+    assert plan["constraints"]["publish_allowed"] is False
+    assert plan["constraints"]["paths_outside_allowed_files"] == "forbidden"
+    assert plan["contract"]["schema"]["$schema"].endswith("2020-12/schema")
+    assert "import httpx" in files["handler.py"]
+    assert any(
+        item["code"] == "sdk.dependency_not_allowed"
+        for item in plan["repair_context"]["diagnostics"]
+    )
+    assert plan["context_bytes"] <= plan["budget"]["max_context_bytes"]
+    assert plan["context_sha256"].startswith("sha256:")
+    assert plan["context_bytes"] == len(
+        json.dumps(plan, ensure_ascii=False, separators=(",", ":"), sort_keys=True).encode("utf-8")
+    )
+    assert plan["context_sha256"] == evidence_module._sha256(
+        {key: value for key, value in plan.items() if key != "context_sha256"}
+    )
+
+
+def test_repair_check_records_successful_attempt(tmp_path: Path) -> None:
+    package = create_module_package("repair_success", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-success-authority-" + "b" * 32
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\nimport httpx\n",
+        encoding="utf-8",
+    )
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="repair undeclared dependency",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8").replace("import httpx", "# repaired"),
+        encoding="utf-8",
+    )
+
+    report = check_module_repair(
+        package,
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        actor="reviewer",
+        generator="stub-builder",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    history = load_module_rejection_history(
+        "repair_success",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is True
+    assert report["repair_attempt"]["attempt"] == 1
+    assert report["repair_attempt"]["provenance"]["actor"] == "reviewer"
+    assert report["repair_attempt"]["provenance"]["generator"] == "stub-builder"
+    assert "sdk.dependency_not_allowed" in report["resolved_diagnostic_codes"]
+    assert history["rejections"][0]["attempt_count"] == 1
+    assert history["rejections"][0]["attempts_remaining"] == 2
+    assert history["rejections"][0]["repair_status"] == "succeeded"
+
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\n# unnecessary retry\n",
+        encoding="utf-8",
+    )
+    blocked = check_module_repair(
+        package,
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        actor="reviewer",
+        generator="stub-builder",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    assert blocked["repair_attempt"] is None
+    assert any(item["code"] == "repair.already_succeeded" for item in blocked["diagnostics"])
+
+
+def test_repair_check_records_failed_attempts_and_enforces_budget(tmp_path: Path) -> None:
+    package = create_module_package("repair_budget", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-budget-authority-" + "c" * 32
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\nimport httpx\n",
+        encoding="utf-8",
+    )
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="repair undeclared dependency",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    rejection_id = rejected["rejection_snapshot"]["rejection_id"]
+
+    for attempt in range(1, 4):
+        package.handler_path.write_text(
+            package.handler_path.read_text(encoding="utf-8") + f"\n# attempt {attempt}\n",
+            encoding="utf-8",
+        )
+        report = check_module_repair(
+            package,
+            rejection_id=rejection_id,
+            actor="reviewer",
+            generator="stub-builder",
+            evidence_root=evidence_root,
+            rejections_root=rejections_root,
+            signing_key=signing_key,
+        )
+        assert report["ok"] is False
+        assert report["repair_attempt"]["attempt"] == attempt
+        if attempt == 1:
+            duplicate = check_module_repair(
+                package,
+                rejection_id=rejection_id,
+                actor="reviewer",
+                generator="stub-builder",
+                evidence_root=evidence_root,
+                rejections_root=rejections_root,
+                signing_key=signing_key,
+            )
+            assert duplicate["repair_attempt"] is None
+            assert any(
+                item["code"] == "repair.candidate_already_attempted"
+                for item in duplicate["diagnostics"]
+            )
+
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\n# fourth attempt\n",
+        encoding="utf-8",
+    )
+    blocked = check_module_repair(
+        package,
+        rejection_id=rejection_id,
+        actor="reviewer",
+        generator="stub-builder",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    history = load_module_rejection_history(
+        "repair_budget",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert blocked["ok"] is False
+    assert blocked["repair_attempt"] is None
+    assert any(
+        item["code"] == "repair.attempt_budget_exhausted"
+        for item in blocked["diagnostics"]
+    )
+    assert history["rejections"][0]["attempt_count"] == 3
+    assert history["rejections"][0]["attempts_remaining"] == 0
+
+
+def test_repair_check_rejects_unchanged_candidate(tmp_path: Path) -> None:
+    package = create_module_package("repair_unchanged", registry_root=tmp_path / "modules")
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-unchanged-authority-" + "d" * 32
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="capture candidate",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    report = check_module_repair(
+        package,
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        actor="reviewer",
+        generator="human",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["repair_attempt"] is None
+    assert any(item["code"] == "repair.candidate_unchanged" for item in report["diagnostics"])
+
+
+def test_repair_check_blocks_paths_outside_plan(tmp_path: Path) -> None:
+    package = create_module_package("repair_paths", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-path-authority-" + "e" * 32
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="capture bounded candidate",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    (package.root / "notes.txt").write_text("outside repair plan\n", encoding="utf-8")
+
+    report = check_module_repair(
+        package,
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        actor="reviewer",
+        generator="human",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["repair_attempt"] is None
+    assert any(item["code"] == "repair.path_not_allowed" for item in report["diagnostics"])
+
+
+def test_repair_check_blocks_candidate_identity_change(tmp_path: Path) -> None:
+    package = create_module_package("repair_identity", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-identity-authority-" + "g" * 32
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="capture identity",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    manifest = package.load_manifest()
+    manifest["mode_id"] = "changed_identity"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = check_module_repair(
+        package,
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        actor="reviewer",
+        generator="human",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["repair_attempt"] is None
+    assert any(item["code"] == "repair.identity_changed" for item in report["diagnostics"])
+
+
+def test_repair_check_can_complete_unknown_rejected_version(tmp_path: Path) -> None:
+    package = create_module_package("repair_incomplete", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "repair-incomplete-authority-" + "f" * 32
+    complete_manifest = package.manifest_path.read_text(encoding="utf-8")
+    package.manifest_path.write_text("title: Incomplete candidate\n", encoding="utf-8")
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="complete missing contract",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    package.manifest_path.write_text(complete_manifest, encoding="utf-8")
+
+    report = check_module_repair(
+        package,
+        rejection_id=rejected["rejection_snapshot"]["rejection_id"],
+        actor="reviewer",
+        generator="human",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is True
+    assert report["module_version"] == "0.1.0"
+    assert report["repair_attempt"]["candidate"]["module_version"] == "0.1.0"
 
 
 def test_reject_gate_blocks_published_release(tmp_path: Path, monkeypatch) -> None:
