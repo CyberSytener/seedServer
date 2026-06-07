@@ -151,6 +151,7 @@ seed module qualify   [done]
 seed module status    [done]
 seed module transition [done]
 seed module publish   [done: gate]
+seed module deprecate [done: gate]
 seed module history   [done]
 ```
 
@@ -169,8 +170,9 @@ validation, test, sandbox, and transition evidence; readiness assessment; and
 ordered CLI transitions through human approval. The second slice adds optional
 HMAC evidence signatures and signed allow/block publication decisions. The
 third slice adds signed immutable package snapshots and semantic-version
-conflict prevention. Deprecation records, asymmetric signing, key rotation, and
-durable rejection records remain open.
+conflict prevention. The fourth slice adds signed deprecation decisions bound
+to immutable release snapshots. Asymmetric signing, key rotation, durable
+rejection records, and a publish gate API remain open.
 
 ### Lifecycle
 
@@ -184,7 +186,7 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 - [x] append-only validation, test, sandbox, and transition reports;
 - [x] signed publish decision and dedicated CLI gate;
 - [x] immutable published version history;
-- deprecation records;
+- [x] signed deprecation records bound to published versions;
 - approval/rejection records with actor and reason;
 - publish gate API.
 

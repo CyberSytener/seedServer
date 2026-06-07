@@ -7,6 +7,7 @@ from app.module_sdk.evidence import (
     record_module_evidence,
     transition_module_lifecycle,
 )
+from app.module_sdk.deprecation import deprecate_module_package
 from app.module_sdk.package import (
     ModulePackage,
     create_module_package,
@@ -45,6 +46,7 @@ __all__ = [
     "assess_module_readiness",
     "assess_module_version_slot",
     "create_module_package",
+    "deprecate_module_package",
     "docker_sandbox_module_package",
     "execute_module",
     "fingerprint_module_package",

@@ -21,7 +21,7 @@ from app.module_sdk.sandbox import sandbox_module_package
 
 EVIDENCE_SCHEMA_VERSION = "1.0"
 REQUIRED_EVIDENCE_KINDS = ("validation", "test", "sandbox")
-EVIDENCE_KINDS = (*REQUIRED_EVIDENCE_KINDS, "transition", "publish")
+EVIDENCE_KINDS = (*REQUIRED_EVIDENCE_KINDS, "transition", "publish", "deprecate")
 DEFAULT_EVIDENCE_ROOT = Path(".seed_artifacts/module_evidence")
 _IGNORED_PARTS = {"__pycache__", ".pytest_cache"}
 _IGNORED_SUFFIXES = {".pyc", ".pyo"}
@@ -280,6 +280,18 @@ def _verified_lifecycle(records: list[Dict[str, Any]]) -> tuple[str, int]:
                 and record.get("signature_status") == "valid"
             ):
                 lifecycle = "published"
+                verified_count += 1
+            continue
+        if record.get("kind") == "deprecate":
+            report = record.get("report") if isinstance(record.get("report"), dict) else {}
+            if (
+                report.get("ok")
+                and report.get("decision") == "allow"
+                and str(report.get("from_lifecycle") or "") == lifecycle == "published"
+                and str(report.get("to_lifecycle") or "") == "deprecated"
+                and record.get("signature_status") == "valid"
+            ):
+                lifecycle = "deprecated"
                 verified_count += 1
             continue
         if record.get("kind") != "transition":
@@ -666,6 +678,14 @@ def transition_module_lifecycle(
                 "message": "publication requires the dedicated publish gate",
             }
         )
+    elif target == "deprecated":
+        diagnostics.append(
+            {
+                "code": "lifecycle.deprecate_command_required",
+                "path": "$.target",
+                "message": "deprecation requires the dedicated deprecate gate",
+            }
+        )
     elif target == "draft":
         if current not in _DRAFT_RESET_SOURCES:
             diagnostics.append(
@@ -729,7 +749,13 @@ def transition_module_lifecycle(
             yaml.safe_dump(manifest, sort_keys=False, allow_unicode=False),
             encoding="utf-8",
         )
-    record = record_module_evidence(package, kind="transition", report=report, evidence_root=evidence_root)
+    record = record_module_evidence(
+        package,
+        kind="transition",
+        report=report,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
     readiness = assess_module_readiness(package, evidence_root=evidence_root, signing_key=signing_key)
     return {
         **report,

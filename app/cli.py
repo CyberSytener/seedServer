@@ -11,6 +11,7 @@ from app.module_sdk import (
     DEFAULT_VERSION_HISTORY_ROOT,
     assess_module_readiness,
     create_module_package,
+    deprecate_module_package,
     publish_module_package,
     qualify_module_package,
     load_module_version_history,
@@ -35,10 +36,13 @@ def _print_report(report: Dict[str, Any], *, as_json: bool) -> None:
     if "approval_ready" in report:
         print(f"  approval ready: {str(bool(report.get('approval_ready'))).lower()}")
     if "version_count" in report:
-        print(f"  published versions: {report.get('version_count', 0)}")
+        print(f"  version history entries: {report.get('version_count', 0)}")
         for version in report.get("versions") or []:
             module = version.get("module") if isinstance(version.get("module"), dict) else {}
-            print(f"  - {module.get('module_version')}: {module.get('fingerprint')}")
+            print(
+                f"  - {module.get('module_version')}: {version.get('lifecycle', 'published')} "
+                f"({module.get('fingerprint')})"
+            )
     publication = report.get("publication")
     if isinstance(publication, dict):
         print(f"  publication ready: {str(bool(publication.get('ready'))).lower()}")
@@ -165,6 +169,21 @@ def _module_history(args: argparse.Namespace) -> int:
     return 0 if report["ok"] else 1
 
 
+def _module_deprecate(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = deprecate_module_package(
+        package,
+        actor=args.actor,
+        reason=args.reason,
+        replacement_version=args.replacement_version,
+        evidence_root=Path(args.evidence_root),
+        versions_root=Path(args.versions_root) if args.versions_root else None,
+        signing_key=os.getenv(args.signing_key_env),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
 def _add_sandbox_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--input", dest="input_json")
     parser.add_argument("--input-file")
@@ -247,6 +266,18 @@ def build_parser() -> argparse.ArgumentParser:
     publish.add_argument("--reason", required=True)
     publish.add_argument("--json", action="store_true")
     publish.set_defaults(handler=_module_publish)
+
+    deprecate = module_commands.add_parser("deprecate", help="Record a signed deprecation decision")
+    deprecate.add_argument("target")
+    deprecate.add_argument("--root", default="modules")
+    deprecate.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    deprecate.add_argument("--versions-root")
+    deprecate.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    deprecate.add_argument("--actor", required=True)
+    deprecate.add_argument("--reason", required=True)
+    deprecate.add_argument("--replacement-version")
+    deprecate.add_argument("--json", action="store_true")
+    deprecate.set_defaults(handler=_module_deprecate)
 
     history = module_commands.add_parser("history", help="Inspect immutable published module versions")
     history.add_argument("module_id")

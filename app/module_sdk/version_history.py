@@ -22,6 +22,7 @@ from app.module_sdk.package import ModulePackage, resolve_module_package
 
 
 VERSION_HISTORY_SCHEMA_VERSION = "1.0"
+DEPRECATION_SCHEMA_VERSION = "1.0"
 DEFAULT_VERSION_HISTORY_ROOT = Path(".seed_artifacts/module_versions")
 
 
@@ -128,12 +129,52 @@ def _load_version_snapshot(path: Path, *, signing_key: Optional[str]) -> Dict[st
         raise ValueError("snapshot manifest lifecycle must be published")
     if fingerprint_module_package(package) != fingerprint:
         raise ValueError("snapshot package fingerprint mismatch")
+    deprecations = _load_deprecation_records(path, record=record, signing_key=signing_key)
     return {
         **record,
         "path": str(path),
         "package_path": str(package_root),
         "signature_status": signature_status,
+        "lifecycle": "deprecated" if deprecations else "published",
+        "deprecations": deprecations,
+        "latest_deprecation": deprecations[-1] if deprecations else None,
     }
+
+
+def _load_deprecation_records(
+    snapshot_path: Path,
+    *,
+    record: Dict[str, Any],
+    signing_key: Optional[str],
+) -> list[Dict[str, Any]]:
+    records = []
+    deprecations_root = snapshot_path / "deprecations"
+    for path in sorted(deprecations_root.glob("*.json")) if deprecations_root.exists() else []:
+        deprecation = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(deprecation, dict):
+            raise ValueError("deprecation record must be a JSON object")
+        if deprecation.get("schema_version") != DEPRECATION_SCHEMA_VERSION:
+            raise ValueError("unsupported deprecation schema version")
+        payload = {
+            key: value
+            for key, value in deprecation.items()
+            if key not in {"record_sha256", "signature"}
+        }
+        if deprecation.get("record_sha256") != _sha256(payload):
+            raise ValueError("deprecation record integrity hash mismatch")
+        signature_status = _signature_status(deprecation, signing_key)
+        if signature_status == "invalid":
+            raise ValueError("deprecation record signature invalid")
+        if deprecation.get("module") != record.get("module"):
+            raise ValueError("deprecation module identity mismatch")
+        version_ref = deprecation.get("version_ref") if isinstance(deprecation.get("version_ref"), dict) else {}
+        if (
+            version_ref.get("version_id") != record.get("version_id")
+            or version_ref.get("record_sha256") != record.get("record_sha256")
+        ):
+            raise ValueError("deprecation version reference mismatch")
+        records.append({**deprecation, "path": str(path), "signature_status": signature_status})
+    return records
 
 
 def load_module_version_history(
@@ -305,3 +346,47 @@ def record_published_module_version(
         if temporary.exists():
             shutil.rmtree(temporary)
     return _load_version_snapshot(target, signing_key=signing_key)
+
+
+def record_module_deprecation(
+    version_record: Dict[str, Any],
+    *,
+    actor: str,
+    reason: str,
+    replacement_version: Optional[str],
+    deprecation_evidence: Dict[str, str],
+    signing_key: str,
+) -> Dict[str, Any]:
+    snapshot_path = Path(str(version_record.get("path") or ""))
+    verified = _load_version_snapshot(snapshot_path, signing_key=signing_key)
+    if verified["signature_status"] != "valid":
+        raise ValueError("deprecation requires a version snapshot signed by the configured authority")
+    if verified["latest_deprecation"] is not None:
+        raise ValueError("module version already has a deprecation record")
+    deprecation_id = f"dep-{uuid.uuid4().hex}"
+    payload = {
+        "schema_version": DEPRECATION_SCHEMA_VERSION,
+        "deprecation_id": deprecation_id,
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "module": verified["module"],
+        "version_ref": {
+            "version_id": verified["version_id"],
+            "record_sha256": verified["record_sha256"],
+        },
+        "actor": actor,
+        "reason": reason,
+        "replacement_version": replacement_version,
+        "deprecation_evidence": deprecation_evidence,
+    }
+    record = {**payload, "record_sha256": _sha256(payload)}
+    record["signature"] = _signature(record, signing_key)
+    target = snapshot_path / "deprecations" / f"deprecation-{deprecation_id}.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open("x", encoding="utf-8") as handle:
+        json.dump(record, handle, ensure_ascii=False, indent=2, sort_keys=True)
+        handle.write("\n")
+    return {
+        **record,
+        "path": str(target),
+        "signature_status": "valid",
+    }

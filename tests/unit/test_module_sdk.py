@@ -13,6 +13,7 @@ from app.module_sdk import (
     ModuleSDKError,
     assess_module_readiness,
     create_module_package,
+    deprecate_module_package,
     execute_module,
     fingerprint_module_package,
     load_module_evidence,
@@ -843,6 +844,25 @@ def test_module_lifecycle_rejects_skipped_stage_and_direct_publish(tmp_path: Pat
     assert package.load_manifest()["lifecycle"] == "draft"
 
 
+def test_module_lifecycle_rejects_direct_deprecation_transition(tmp_path: Path) -> None:
+    package = create_module_package("deprecate_transition_guard", registry_root=tmp_path / "modules")
+    manifest = package.load_manifest()
+    manifest["lifecycle"] = "published"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = transition_module_lifecycle(
+        package,
+        target="deprecated",
+        actor="reviewer",
+        reason="try generic transition",
+        evidence_root=tmp_path / "evidence",
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "lifecycle.deprecate_command_required" for item in report["diagnostics"])
+    assert package.load_manifest()["lifecycle"] == "published"
+
+
 def test_module_lifecycle_can_reset_changed_approved_module_to_draft(tmp_path: Path) -> None:
     package = create_module_package("evidence_reset", registry_root=tmp_path / "modules")
     evidence_root = tmp_path / "evidence"
@@ -1330,6 +1350,160 @@ def test_module_version_history_detects_snapshot_tampering(tmp_path: Path, monke
     assert history["ok"] is False
     assert history["version_count"] == 0
     assert "snapshot file hash mismatch" in history["invalid"][0]["message"]
+
+
+def test_deprecate_gate_records_signed_release_history(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("deprecate_allowed", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    versions_root = tmp_path / "versions"
+    signing_key = "deprecate-authority-" + "a" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish before deprecation",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+
+    report = deprecate_module_package(
+        package,
+        actor="release-manager",
+        reason="replaced by safer contract",
+        replacement_version="0.2.0",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+    history = load_module_version_history(
+        "deprecate_allowed",
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is True
+    assert report["decision"] == "allow"
+    assert report["lifecycle"] == "deprecated"
+    assert report["readiness"]["lifecycle_verified"] is True
+    assert report["deprecation_evidence"]["signature"]["algorithm"] == "hmac-sha256"
+    assert report["deprecation_record"]["signature_status"] == "valid"
+    assert history["versions"][0]["lifecycle"] == "deprecated"
+    assert history["versions"][0]["latest_deprecation"]["replacement_version"] == "0.2.0"
+    snapshot_package = resolve_module_package(Path(history["versions"][0]["package_path"]))
+    assert snapshot_package.load_manifest()["lifecycle"] == "published"
+
+
+def test_deprecate_gate_requires_matching_version_snapshot(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("deprecate_snapshot_guard", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "deprecate-authority-" + "b" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish to default sibling history",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    report = deprecate_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt without matching history",
+        evidence_root=evidence_root,
+        versions_root=tmp_path / "other-versions",
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["lifecycle"] == "published"
+    assert any(item["code"] == "deprecate.version_snapshot_required" for item in report["diagnostics"])
+
+
+def test_deprecate_gate_rejects_invalid_replacement_version(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("deprecate_replacement_guard", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "deprecate-authority-" + "d" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish before replacement validation",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    report = deprecate_module_package(
+        package,
+        actor="release-manager",
+        reason="invalid replacement test",
+        replacement_version="next",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["lifecycle"] == "published"
+    assert any(item["code"] == "deprecate.replacement_version_invalid" for item in report["diagnostics"])
+
+
+def test_module_version_history_detects_deprecation_tampering(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("deprecate_tampered", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    versions_root = tmp_path / "versions"
+    signing_key = "deprecate-authority-" + "c" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish before deprecation",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+    deprecated = deprecate_module_package(
+        package,
+        actor="release-manager",
+        reason="deprecate before tamper test",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+    deprecation_path = Path(deprecated["deprecation_record"]["path"])
+    payload = json.loads(deprecation_path.read_text(encoding="utf-8"))
+    payload["reason"] = "forged reason"
+    deprecation_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    history = load_module_version_history(
+        "deprecate_tampered",
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+
+    assert history["ok"] is False
+    assert history["version_count"] == 0
+    assert "deprecation record integrity hash mismatch" in history["invalid"][0]["message"]
 
 
 def test_publish_gate_rejects_evidence_added_after_approval(tmp_path: Path) -> None:

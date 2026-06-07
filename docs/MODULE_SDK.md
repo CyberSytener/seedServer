@@ -24,6 +24,7 @@ seed module sandbox text_normalizer --input-file sample-input.json
 seed module qualify text_normalizer
 seed module status text_normalizer
 seed module publish text_normalizer --actor reviewer --reason "approved release"
+seed module deprecate text_normalizer --actor reviewer --reason "replaced" --replacement-version 0.2.0
 seed module history text_normalizer
 ```
 
@@ -266,6 +267,31 @@ inspectable after the registry package changes or is removed. Pass
 `--versions-root` to inspect a non-default store. When publish uses a custom
 `--evidence-root` without an explicit versions root, it places version history
 in the sibling `module_versions` directory.
+
+## Signed Deprecation Gate
+
+`seed module deprecate` is the only supported transition from `published` to
+`deprecated`. The generic lifecycle transition command rejects direct
+deprecation attempts.
+
+The deprecation gate requires:
+
+- an evidence-backed published lifecycle;
+- the matching valid immutable version snapshot;
+- the configured authority signing key;
+- a non-empty actor and reason;
+- an optional replacement that is a different valid semantic version.
+
+An allowed decision updates the working manifest lifecycle and writes two
+linked signed records: deprecation evidence in the evidence store and an
+append-only deprecation record beside the immutable version snapshot. The
+snapshot package itself remains unchanged with its original `published`
+manifest. `seed module history` derives the release status from the linked
+record and exposes its actor, reason, and recommended replacement.
+
+Deprecation is irreversible in the current lifecycle. A replacement must be
+published as a new semantic version instead of mutating or restoring the old
+release.
 
 ## Current Safety Boundary
 

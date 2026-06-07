@@ -386,6 +386,7 @@ seed module sandbox {module_id} --runtime docker
 seed module qualify {module_id}
 seed module status {module_id}
 seed module publish {module_id} --actor reviewer --reason "approved release"
+seed module deprecate {module_id} --actor reviewer --reason "replaced"
 seed module history {module_id}
 ```
 

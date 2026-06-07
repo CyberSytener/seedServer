@@ -103,7 +103,7 @@ reach into FastAPI application state or infrastructure internals directly.
 ## Current Development Boundary
 
 The next active development area is verified secret/dependency fulfillment,
-module deprecation records, native-operation visibility, and public-key
+durable rejection records, native-operation visibility, and public-key
 publication evidence:
 
 - `modules/`

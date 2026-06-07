@@ -318,3 +318,47 @@ def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path
     history = json.loads(capsys.readouterr().out)
     assert history["version_count"] == 1
     assert history["versions"][0]["module"]["fingerprint"] == report["fingerprint"]
+
+    assert (
+        main(
+            [
+                "module",
+                "deprecate",
+                "cli_publish",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--versions-root",
+                str(versions_root),
+                "--actor",
+                "release-manager",
+                "--reason",
+                "replaced by next release",
+                "--replacement-version",
+                "0.2.0",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    deprecated = json.loads(capsys.readouterr().out)
+    assert deprecated["lifecycle"] == "deprecated"
+    assert deprecated["deprecation_record"]["signature_status"] == "valid"
+
+    assert (
+        main(
+            [
+                "module",
+                "history",
+                "cli_publish",
+                "--versions-root",
+                str(versions_root),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    deprecated_history = json.loads(capsys.readouterr().out)
+    assert deprecated_history["versions"][0]["lifecycle"] == "deprecated"
+    assert deprecated_history["versions"][0]["latest_deprecation"]["replacement_version"] == "0.2.0"
