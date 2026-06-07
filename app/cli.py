@@ -8,10 +8,12 @@ from typing import Any, Dict, Optional, Sequence
 
 from app.module_sdk import (
     DEFAULT_EVIDENCE_ROOT,
+    DEFAULT_VERSION_HISTORY_ROOT,
     assess_module_readiness,
     create_module_package,
     publish_module_package,
     qualify_module_package,
+    load_module_version_history,
     resolve_module_package,
     run_module_package_tests,
     sandbox_module_package,
@@ -32,6 +34,11 @@ def _print_report(report: Dict[str, Any], *, as_json: bool) -> None:
         print(f"  golden cases: {report.get('passed', 0)} passed, {report.get('failed', 0)} failed")
     if "approval_ready" in report:
         print(f"  approval ready: {str(bool(report.get('approval_ready'))).lower()}")
+    if "version_count" in report:
+        print(f"  published versions: {report.get('version_count', 0)}")
+        for version in report.get("versions") or []:
+            module = version.get("module") if isinstance(version.get("module"), dict) else {}
+            print(f"  - {module.get('module_version')}: {module.get('fingerprint')}")
     publication = report.get("publication")
     if isinstance(publication, dict):
         print(f"  publication ready: {str(bool(publication.get('ready'))).lower()}")
@@ -141,6 +148,17 @@ def _module_publish(args: argparse.Namespace) -> int:
         actor=args.actor,
         reason=args.reason,
         evidence_root=Path(args.evidence_root),
+        versions_root=Path(args.versions_root) if args.versions_root else None,
+        signing_key=os.getenv(args.signing_key_env),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
+def _module_history(args: argparse.Namespace) -> int:
+    report = load_module_version_history(
+        args.module_id,
+        versions_root=Path(args.versions_root),
         signing_key=os.getenv(args.signing_key_env),
     )
     _print_report(report, as_json=args.json)
@@ -223,11 +241,19 @@ def build_parser() -> argparse.ArgumentParser:
     publish.add_argument("target")
     publish.add_argument("--root", default="modules")
     publish.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    publish.add_argument("--versions-root")
     publish.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
     publish.add_argument("--actor", required=True)
     publish.add_argument("--reason", required=True)
     publish.add_argument("--json", action="store_true")
     publish.set_defaults(handler=_module_publish)
+
+    history = module_commands.add_parser("history", help="Inspect immutable published module versions")
+    history.add_argument("module_id")
+    history.add_argument("--versions-root", default=str(DEFAULT_VERSION_HISTORY_ROOT))
+    history.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    history.add_argument("--json", action="store_true")
+    history.set_defaults(handler=_module_history)
     return parser
 
 

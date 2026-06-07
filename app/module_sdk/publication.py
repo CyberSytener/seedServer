@@ -12,6 +12,11 @@ from app.module_sdk.evidence import (
     record_module_evidence,
 )
 from app.module_sdk.package import ModulePackage
+from app.module_sdk.version_history import (
+    assess_module_version_slot,
+    record_published_module_version,
+    resolve_version_history_root,
+)
 
 
 def publish_module_package(
@@ -20,6 +25,7 @@ def publish_module_package(
     actor: str,
     reason: str,
     evidence_root: Path = DEFAULT_EVIDENCE_ROOT,
+    versions_root: Optional[Path] = None,
     signing_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     actor = actor.strip()
@@ -35,6 +41,16 @@ def publish_module_package(
         signing_key=usable_signing_key,
     )
     blockers = list(readiness["publication"]["blockers"])
+    resolved_versions_root = resolve_version_history_root(
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+    )
+    version_slot = assess_module_version_slot(
+        package,
+        versions_root=resolved_versions_root,
+        signing_key=usable_signing_key,
+    )
+    blockers.extend(version_slot["blockers"])
     evidence = load_module_evidence(
         package,
         evidence_root=evidence_root,
@@ -140,6 +156,10 @@ def publish_module_package(
         }
         if approval
         else None,
+        "version_history": {
+            "root": version_slot["root"],
+            "existing_snapshot": version_slot["existing"] is not None,
+        },
     }
     decision_record = record_module_evidence(
         package,
@@ -148,12 +168,28 @@ def publish_module_package(
         evidence_root=evidence_root,
         signing_key=usable_signing_key,
     )
-    if report["ok"]:
+    version_snapshot = None
+    if report["ok"] and usable_signing_key is not None:
         manifest = package.load_manifest()
         manifest["lifecycle"] = "published"
         package.manifest_path.write_text(
             yaml.safe_dump(manifest, sort_keys=False, allow_unicode=False),
             encoding="utf-8",
+        )
+        version_snapshot = record_published_module_version(
+            package,
+            publication={
+                "actor": actor,
+                "reason": reason,
+                "publish_evidence": {
+                    "evidence_id": decision_record["evidence_id"],
+                    "record_sha256": decision_record["record_sha256"],
+                },
+                "evidence_refs": report["evidence_refs"],
+                "approval_ref": report["approval_ref"],
+            },
+            versions_root=resolved_versions_root,
+            signing_key=usable_signing_key,
         )
     status = assess_module_readiness(
         package,
@@ -169,5 +205,6 @@ def publish_module_package(
             "record_sha256": decision_record["record_sha256"],
             "signature": decision_record.get("signature"),
         },
+        "version_snapshot": version_snapshot,
         "readiness": status,
     }

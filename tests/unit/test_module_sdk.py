@@ -16,6 +16,7 @@ from app.module_sdk import (
     execute_module,
     fingerprint_module_package,
     load_module_evidence,
+    load_module_version_history,
     publish_module_package,
     qualify_module_package,
     record_module_evidence,
@@ -96,6 +97,26 @@ def _fake_docker_run(command: list[str], **_kwargs) -> subprocess.CompletedProce
         encoding="utf-8",
     )
     return subprocess.CompletedProcess(command, 0, stdout="", stderr="")
+
+
+def _approve_hardened_package(package, *, evidence_root: Path, signing_key: str, monkeypatch) -> None:
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.shutil.which", lambda _name: "docker")
+    monkeypatch.setattr("app.module_sdk.docker_sandbox.subprocess.run", _fake_docker_run)
+    qualify_module_package(
+        package,
+        evidence_root=evidence_root,
+        sandbox_runtime="docker",
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
 
 
 class _EchoHandler:
@@ -1187,6 +1208,128 @@ def test_publish_gate_allows_signed_hardened_sandbox_evidence(tmp_path: Path, mo
     assert report["approval_ref"]["record_sha256"].startswith("sha256:")
     assert report["readiness"]["lifecycle_verified"] is True
     assert report["readiness"]["publication"]["ready"] is True
+
+
+def test_published_version_history_survives_working_package_change(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("history_durable", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    versions_root = tmp_path / "versions"
+    signing_key = "history-authority-" + "a" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+
+    published = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="record durable release",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\n# next working revision\n",
+        encoding="utf-8",
+    )
+    history = load_module_version_history(
+        "history_durable",
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+
+    assert published["version_snapshot"]["signature_status"] == "valid"
+    assert published["version_snapshot"]["publication"]["publish_evidence"]["record_sha256"].startswith("sha256:")
+    assert history["ok"] is True
+    assert history["version_count"] == 1
+    assert history["versions"][0]["module"]["fingerprint"] == published["fingerprint"]
+    snapshot_package = resolve_module_package(Path(history["versions"][0]["package_path"]))
+    assert snapshot_package.load_manifest()["lifecycle"] == "published"
+    assert fingerprint_module_package(snapshot_package) == published["fingerprint"]
+    assert fingerprint_module_package(package) != published["fingerprint"]
+
+
+def test_publish_gate_blocks_reusing_version_for_different_package(tmp_path: Path, monkeypatch) -> None:
+    evidence_root = tmp_path / "evidence"
+    versions_root = tmp_path / "versions"
+    signing_key = "history-authority-" + "b" * 32
+    first = create_module_package("history_conflict", registry_root=tmp_path / "modules-a")
+    second = create_module_package("history_conflict", registry_root=tmp_path / "modules-b")
+    assert second.handler_path is not None
+    second.handler_path.write_text(
+        second.handler_path.read_text(encoding="utf-8") + "\n# incompatible revision\n",
+        encoding="utf-8",
+    )
+    _approve_hardened_package(
+        first,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    first_publish = publish_module_package(
+        first,
+        actor="release-manager",
+        reason="publish first package",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+    _approve_hardened_package(
+        second,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+
+    conflict = publish_module_package(
+        second,
+        actor="release-manager",
+        reason="attempt version reuse",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+
+    assert first_publish["ok"] is True
+    assert conflict["ok"] is False
+    assert conflict["lifecycle"] == "approved"
+    assert any(item["code"] == "version.version_conflict" for item in conflict["diagnostics"])
+
+
+def test_module_version_history_detects_snapshot_tampering(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("history_tampered", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    versions_root = tmp_path / "versions"
+    signing_key = "history-authority-" + "c" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    published = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish before tamper test",
+        evidence_root=evidence_root,
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+    snapshot_handler = Path(published["version_snapshot"]["package_path"]) / "handler.py"
+    snapshot_handler.write_text(snapshot_handler.read_text(encoding="utf-8") + "\n# tampered\n", encoding="utf-8")
+
+    history = load_module_version_history(
+        "history_tampered",
+        versions_root=versions_root,
+        signing_key=signing_key,
+    )
+
+    assert history["ok"] is False
+    assert history["version_count"] == 0
+    assert "snapshot file hash mismatch" in history["invalid"][0]["message"]
 
 
 def test_publish_gate_rejects_evidence_added_after_approval(tmp_path: Path) -> None:

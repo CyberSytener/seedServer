@@ -113,8 +113,7 @@ def _module_identity(package: ModulePackage) -> tuple[str, str]:
     return module_id, module_version
 
 
-def fingerprint_module_package(package: ModulePackage) -> str:
-    digest = hashlib.sha256()
+def module_package_files(package: ModulePackage) -> list[tuple[str, Path]]:
     files = []
     candidates = (
         package.root.rglob("*")
@@ -132,7 +131,12 @@ def fingerprint_module_package(package: ModulePackage) -> str:
         if any(part in _IGNORED_PARTS for part in relative.parts) or path.suffix in _IGNORED_SUFFIXES:
             continue
         files.append((relative.as_posix(), path))
-    for relative, path in sorted(files):
+    return sorted(files)
+
+
+def fingerprint_module_package(package: ModulePackage) -> str:
+    digest = hashlib.sha256()
+    for relative, path in module_package_files(package):
         digest.update(relative.encode("utf-8"))
         digest.update(b"\0")
         if path == package.manifest_path:

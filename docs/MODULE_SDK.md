@@ -24,6 +24,7 @@ seed module sandbox text_normalizer --input-file sample-input.json
 seed module qualify text_normalizer
 seed module status text_normalizer
 seed module publish text_normalizer --actor reviewer --reason "approved release"
+seed module history text_normalizer
 ```
 
 Pass `--json` to any command for a machine-readable report suitable for an AI
@@ -242,6 +243,30 @@ isolation as unenforced. Therefore normal local qualification reaches
 `approved`, but `seed module publish` blocks it. Publication additionally
 requires a signed Docker sandbox report with the complete hardening profile.
 
+## Immutable Published Version History
+
+A successful publish writes a signed, immutable package snapshot under
+`.seed_artifacts/module_versions/`. The snapshot contains:
+
+- the complete published package, including its published lifecycle manifest;
+- the module ID, semantic version, and package fingerprint;
+- actor, reason, exact qualification evidence hashes, approval reference, and
+  publish-decision reference;
+- a hash and size for every package file;
+- a signed version-record envelope.
+
+The publish gate refuses to reuse an already published `module_version` for a
+different package fingerprint. A changed implementation or contract must
+therefore advance its semantic version before publication. Existing snapshot
+tampering also blocks reuse of that version slot.
+
+`seed module history text_normalizer` verifies and lists published snapshots
+without reading the current working module package. This keeps an old release
+inspectable after the registry package changes or is removed. Pass
+`--versions-root` to inspect a non-default store. When publish uses a custom
+`--evidence-root` without an explicit versions root, it places version history
+in the sibling `module_versions` directory.
+
 ## Current Safety Boundary
 
 SDK tests load and execute local Python code in the developer process. They are
@@ -260,6 +285,11 @@ tampering through integrity hashes. Normal qualification and transition records
 are unsigned by default, and the store is not protected from a user with
 filesystem access. It is development and portfolio evidence, not a remote trust
 authority.
+
+Published version snapshots are immutable by command behavior and verify every
+stored file and their envelope hash. Their HMAC signature is also verified when
+the authority key is available. They are still a local filesystem registry,
+not remote object-lock storage or a transparency log.
 
 HMAC signatures establish that a record was produced by a holder of the shared
 authority key. They do not provide public-key identity, key rotation,

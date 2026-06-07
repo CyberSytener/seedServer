@@ -231,6 +231,7 @@ def test_seed_module_create_returns_structured_error_for_existing_package(tmp_pa
 def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path, capsys, monkeypatch) -> None:
     modules_root = tmp_path / "modules"
     evidence_root = tmp_path / "evidence"
+    versions_root = tmp_path / "versions"
     signing_key = "cli-publish-authority-" + "a" * 32
     package = create_module_package("cli_publish", registry_root=modules_root)
     qualify_module_package(package, evidence_root=evidence_root)
@@ -284,6 +285,8 @@ def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path
                 str(modules_root),
                 "--evidence-root",
                 str(evidence_root),
+                "--versions-root",
+                str(versions_root),
                 "--actor",
                 "release-manager",
                 "--reason",
@@ -298,3 +301,20 @@ def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path
     assert report["decision"] == "allow"
     assert report["lifecycle"] == "published"
     assert report["publish_evidence"]["signature"]["algorithm"] == "hmac-sha256"
+
+    assert (
+        main(
+            [
+                "module",
+                "history",
+                "cli_publish",
+                "--versions-root",
+                str(versions_root),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    history = json.loads(capsys.readouterr().out)
+    assert history["version_count"] == 1
+    assert history["versions"][0]["module"]["fingerprint"] == report["fingerprint"]

@@ -151,6 +151,7 @@ seed module qualify   [done]
 seed module status    [done]
 seed module transition [done]
 seed module publish   [done: gate]
+seed module history   [done]
 ```
 
 ### Exit Criteria
@@ -166,9 +167,10 @@ seed module publish   [done: gate]
 **Status:** In progress. The first vertical slice provides fingerprint-bound
 validation, test, sandbox, and transition evidence; readiness assessment; and
 ordered CLI transitions through human approval. The second slice adds optional
-HMAC evidence signatures and signed allow/block publication decisions. Version
-history, asymmetric signing, key rotation, and durable rejection records remain
-open.
+HMAC evidence signatures and signed allow/block publication decisions. The
+third slice adds signed immutable package snapshots and semantic-version
+conflict prevention. Deprecation records, asymmetric signing, key rotation, and
+durable rejection records remain open.
 
 ### Lifecycle
 
@@ -181,7 +183,8 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 - [x] lifecycle state model and transition guards through approval;
 - [x] append-only validation, test, sandbox, and transition reports;
 - [x] signed publish decision and dedicated CLI gate;
-- version history and deprecation records;
+- [x] immutable published version history;
+- deprecation records;
 - approval/rejection records with actor and reason;
 - publish gate API.
 
