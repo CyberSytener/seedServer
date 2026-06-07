@@ -137,6 +137,7 @@ seed module test text_normalizer
 seed module sandbox text_normalizer --input-file sample-input.json
 seed module qualify text_normalizer
 seed module status text_normalizer
+seed module publish text_normalizer --actor reviewer --reason "approved release"
 python -m pytest -q tests/unit/test_console_runtime_api.py
 python -m pytest -q tests/unit/test_module_registry.py tests/unit/test_modes_api.py
 cd saga-console && npm run build

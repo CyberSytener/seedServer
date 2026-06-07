@@ -2,6 +2,7 @@ from app.module_sdk.evidence import (
     DEFAULT_EVIDENCE_ROOT,
     assess_module_readiness,
     fingerprint_module_package,
+    load_module_evidence,
     qualify_module_package,
     record_module_evidence,
     transition_module_lifecycle,
@@ -21,6 +22,7 @@ from app.module_sdk.runtime import (
     ModuleSDKError,
     execute_module,
 )
+from app.module_sdk.publication import publish_module_package
 from app.module_sdk.sandbox import sandbox_module_package
 
 __all__ = [
@@ -35,6 +37,8 @@ __all__ = [
     "create_module_package",
     "execute_module",
     "fingerprint_module_package",
+    "load_module_evidence",
+    "publish_module_package",
     "qualify_module_package",
     "record_module_evidence",
     "transition_module_lifecycle",

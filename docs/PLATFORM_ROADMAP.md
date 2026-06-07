@@ -128,8 +128,10 @@ validation and golden-case reports, a Python dependency allowlist, and
 environment, wall timeout, platform-aware resource limits, and structured
 sandbox evidence. The third vertical slice adds package fingerprints,
 append-only local evidence, qualification/status commands, and guarded
-lifecycle transitions through `approved`. SDK modules remain outside active
-flows until a hardened runtime adapter is implemented.
+lifecycle transitions through `approved`. The fourth slice adds HMAC-signed
+evidence verification and a dedicated publish command that requires signed
+hardened-isolation evidence. SDK modules remain outside active flows until a
+hardened runtime adapter is implemented.
 
 ### Deliverables
 
@@ -148,7 +150,7 @@ seed module sandbox   [done]
 seed module qualify   [done]
 seed module status    [done]
 seed module transition [done]
-seed module publish
+seed module publish   [done: gate]
 ```
 
 ### Exit Criteria
@@ -163,8 +165,10 @@ seed module publish
 
 **Status:** In progress. The first vertical slice provides fingerprint-bound
 validation, test, sandbox, and transition evidence; readiness assessment; and
-ordered CLI transitions through human approval. Signed evidence, version
-history, rejection records, and the dedicated publish gate remain open.
+ordered CLI transitions through human approval. The second slice adds optional
+HMAC evidence signatures and signed allow/block publication decisions. Version
+history, asymmetric signing, key rotation, and durable rejection records remain
+open.
 
 ### Lifecycle
 
@@ -176,6 +180,7 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 
 - [x] lifecycle state model and transition guards through approval;
 - [x] append-only validation, test, sandbox, and transition reports;
+- [x] signed publish decision and dedicated CLI gate;
 - version history and deprecation records;
 - approval/rejection records with actor and reason;
 - publish gate API.
@@ -215,6 +220,10 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 ## Phase 5 - Sandbox And Publish Gate
 
 **Goal:** verify declared behavior against observed behavior before approval.
+
+**Status:** In progress. The publish policy and signed decision format are
+implemented. The hardened sandbox adapter that can satisfy network and
+filesystem enforcement requirements remains open.
 
 ### Deliverables
 

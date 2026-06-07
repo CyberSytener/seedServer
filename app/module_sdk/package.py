@@ -375,6 +375,7 @@ seed module test {module_id}
 seed module sandbox {module_id}
 seed module qualify {module_id}
 seed module status {module_id}
+seed module publish {module_id} --actor reviewer --reason "approved release"
 ```
 
 Edit `module.yaml` to declare the contract and `handler.py` to implement it.

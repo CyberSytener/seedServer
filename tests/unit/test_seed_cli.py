@@ -4,6 +4,13 @@ import json
 from pathlib import Path
 
 from app.cli import main
+from app.module_sdk import (
+    create_module_package,
+    qualify_module_package,
+    record_module_evidence,
+    sandbox_module_package,
+    transition_module_lifecycle,
+)
 
 
 def test_seed_module_create_validate_test_and_sandbox(tmp_path: Path, capsys) -> None:
@@ -185,3 +192,56 @@ def test_seed_module_create_returns_structured_error_for_existing_package(tmp_pa
 
     assert report["ok"] is False
     assert report["diagnostics"][0]["code"] == "cli.request_failed"
+
+
+def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path, capsys, monkeypatch) -> None:
+    modules_root = tmp_path / "modules"
+    evidence_root = tmp_path / "evidence"
+    signing_key = "cli-publish-authority-" + "a" * 32
+    package = create_module_package("cli_publish", registry_root=modules_root)
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    hardened["evidence"]["limits"]["network_enforced"] = True
+    hardened["evidence"]["limits"]["filesystem_enforced"] = True
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="cli-reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+    monkeypatch.setenv("SEED_MODULE_EVIDENCE_SIGNING_KEY", signing_key)
+
+    assert (
+        main(
+            [
+                "module",
+                "publish",
+                "cli_publish",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--actor",
+                "release-manager",
+                "--reason",
+                "publish signed module",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    report = json.loads(capsys.readouterr().out)
+
+    assert report["decision"] == "allow"
+    assert report["lifecycle"] == "published"
+    assert report["publish_evidence"]["signature"]["algorithm"] == "hmac-sha256"

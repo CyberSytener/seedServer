@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
 
@@ -9,6 +10,7 @@ from app.module_sdk import (
     DEFAULT_EVIDENCE_ROOT,
     assess_module_readiness,
     create_module_package,
+    publish_module_package,
     qualify_module_package,
     resolve_module_package,
     run_module_package_tests,
@@ -102,7 +104,11 @@ def _module_qualify(args: argparse.Namespace) -> int:
 
 def _module_status(args: argparse.Namespace) -> int:
     package = resolve_module_package(args.target, registry_root=Path(args.root))
-    report = assess_module_readiness(package, evidence_root=Path(args.evidence_root))
+    report = assess_module_readiness(
+        package,
+        evidence_root=Path(args.evidence_root),
+        signing_key=os.getenv(args.signing_key_env),
+    )
     _print_report(report, as_json=args.json)
     return 0 if report["ok"] else 1
 
@@ -115,6 +121,20 @@ def _module_transition(args: argparse.Namespace) -> int:
         actor=args.actor,
         reason=args.reason,
         evidence_root=Path(args.evidence_root),
+        signing_key=os.getenv(args.signing_key_env),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
+def _module_publish(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = publish_module_package(
+        package,
+        actor=args.actor,
+        reason=args.reason,
+        evidence_root=Path(args.evidence_root),
+        signing_key=os.getenv(args.signing_key_env),
     )
     _print_report(report, as_json=args.json)
     return 0 if report["ok"] else 1
@@ -170,6 +190,7 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("target")
     status.add_argument("--root", default="modules")
     status.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    status.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
     status.add_argument("--json", action="store_true")
     status.set_defaults(handler=_module_status)
 
@@ -181,10 +202,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     transition.add_argument("--root", default="modules")
     transition.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    transition.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
     transition.add_argument("--actor", required=True)
     transition.add_argument("--reason", required=True)
     transition.add_argument("--json", action="store_true")
     transition.set_defaults(handler=_module_transition)
+
+    publish = module_commands.add_parser("publish", help="Run the signed hardened publication gate")
+    publish.add_argument("target")
+    publish.add_argument("--root", default="modules")
+    publish.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    publish.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    publish.add_argument("--actor", required=True)
+    publish.add_argument("--reason", required=True)
+    publish.add_argument("--json", action="store_true")
+    publish.set_defaults(handler=_module_publish)
     return parser
 
 

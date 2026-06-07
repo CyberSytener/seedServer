@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import re
 import uuid
@@ -20,7 +21,7 @@ from app.module_sdk.sandbox import sandbox_module_package
 
 EVIDENCE_SCHEMA_VERSION = "1.0"
 REQUIRED_EVIDENCE_KINDS = ("validation", "test", "sandbox")
-EVIDENCE_KINDS = (*REQUIRED_EVIDENCE_KINDS, "transition")
+EVIDENCE_KINDS = (*REQUIRED_EVIDENCE_KINDS, "transition", "publish")
 DEFAULT_EVIDENCE_ROOT = Path(".seed_artifacts/module_evidence")
 _IGNORED_PARTS = {"__pycache__", ".pytest_cache"}
 _IGNORED_SUFFIXES = {".pyc", ".pyo"}
@@ -53,6 +54,39 @@ def _json_bytes(value: Any) -> bytes:
 
 def _sha256(value: Any) -> str:
     return f"sha256:{hashlib.sha256(_json_bytes(value)).hexdigest()}"
+
+
+def _signing_key_bytes(signing_key: str) -> bytes:
+    value = signing_key.encode("utf-8")
+    if len(value) < 32:
+        raise ValueError("module evidence signing key must contain at least 32 UTF-8 bytes")
+    return value
+
+
+def _signature(value: Any, signing_key: str) -> Dict[str, str]:
+    key = _signing_key_bytes(signing_key)
+    return {
+        "algorithm": "hmac-sha256",
+        "key_id": f"sha256:{hashlib.sha256(key).hexdigest()[:16]}",
+        "value": hmac.new(key, _json_bytes(value), hashlib.sha256).hexdigest(),
+    }
+
+
+def _signature_status(record: Dict[str, Any], signing_key: Optional[str]) -> str:
+    signature = record.get("signature") if isinstance(record.get("signature"), dict) else None
+    if signature is None:
+        return "unsigned"
+    if signing_key is None:
+        return "unverified"
+    if signature.get("algorithm") != "hmac-sha256":
+        return "invalid"
+    try:
+        expected = _signature({key: value for key, value in record.items() if key != "signature"}, signing_key)
+    except ValueError:
+        return "invalid"
+    if signature.get("key_id") != expected["key_id"]:
+        return "invalid"
+    return "valid" if hmac.compare_digest(str(signature.get("value") or ""), expected["value"]) else "invalid"
 
 
 def _safe_component(value: str, fallback: str) -> str:
@@ -116,6 +150,7 @@ def record_module_evidence(
     kind: str,
     report: Dict[str, Any],
     evidence_root: Path = DEFAULT_EVIDENCE_ROOT,
+    signing_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     if kind not in EVIDENCE_KINDS:
         raise ValueError(f"unsupported module evidence kind: {kind}")
@@ -137,6 +172,8 @@ def record_module_evidence(
         "report": report,
     }
     record = {**record_payload, "record_sha256": _sha256(record_payload)}
+    if signing_key is not None:
+        record["signature"] = _signature(record, signing_key)
     target = (
         evidence_root
         / module_id
@@ -155,6 +192,7 @@ def load_module_evidence(
     package: ModulePackage,
     *,
     evidence_root: Path = DEFAULT_EVIDENCE_ROOT,
+    signing_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     module_id, _ = _module_identity(package)
     fingerprint = fingerprint_module_package(package)
@@ -172,13 +210,20 @@ def load_module_evidence(
                 raise ValueError("unsupported evidence kind")
             if record.get("report_sha256") != _sha256(record.get("report")):
                 raise ValueError("report integrity hash mismatch")
-            record_payload = {key: value for key, value in record.items() if key != "record_sha256"}
+            record_payload = {
+                key: value
+                for key, value in record.items()
+                if key not in {"record_sha256", "signature"}
+            }
             if record.get("record_sha256") != _sha256(record_payload):
                 raise ValueError("evidence envelope integrity hash mismatch")
+            signature_status = _signature_status(record, signing_key)
+            if signature_status == "invalid":
+                raise ValueError("evidence signature invalid")
             module = record.get("module") if isinstance(record.get("module"), dict) else {}
             if str(module.get("mode_id") or "") != module_id:
                 raise ValueError("module identity mismatch")
-            records.append({**record, "path": str(path)})
+            records.append({**record, "path": str(path), "signature_status": signature_status})
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             invalid.append({"path": str(path), "message": str(exc)})
     matching = [
@@ -213,6 +258,18 @@ def _verified_lifecycle(records: list[Dict[str, Any]]) -> tuple[str, int]:
         records,
         key=lambda item: (str(item.get("recorded_at") or ""), str(item.get("evidence_id") or "")),
     ):
+        if record.get("kind") == "publish":
+            report = record.get("report") if isinstance(record.get("report"), dict) else {}
+            if (
+                report.get("ok")
+                and report.get("decision") == "allow"
+                and str(report.get("from_lifecycle") or "") == lifecycle == "approved"
+                and str(report.get("to_lifecycle") or "") == "published"
+                and record.get("signature_status") == "valid"
+            ):
+                lifecycle = "published"
+                verified_count += 1
+            continue
         if record.get("kind") != "transition":
             continue
         report = record.get("report") if isinstance(record.get("report"), dict) else {}
@@ -242,13 +299,14 @@ def assess_module_readiness(
     package: ModulePackage,
     *,
     evidence_root: Path = DEFAULT_EVIDENCE_ROOT,
+    signing_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     module_id, module_version = _module_identity(package)
     try:
         manifest = package.load_manifest()
     except Exception:  # noqa: BLE001
         manifest = {}
-    evidence = load_module_evidence(package, evidence_root=evidence_root)
+    evidence = load_module_evidence(package, evidence_root=evidence_root, signing_key=signing_key)
     latest = _latest_by_kind(evidence["matching"])
     diagnostics = []
     current_validation = validate_module_package(package)
@@ -262,6 +320,8 @@ def assess_module_readiness(
             "evidence_id": record.get("evidence_id") if record else None,
             "recorded_at": record.get("recorded_at") if record else None,
             "path": record.get("path") if record else None,
+            "record_sha256": record.get("record_sha256") if record else None,
+            "signature_status": record.get("signature_status") if record else None,
         }
         if record is None:
             diagnostics.append(
@@ -305,7 +365,7 @@ def assess_module_readiness(
             }
         )
         approval_ready = False
-    if lifecycle != "approved":
+    if lifecycle not in {"approved", "published"}:
         publication_blockers.append(
             {
                 "code": "lifecycle.approval_required",
@@ -317,6 +377,14 @@ def assess_module_readiness(
     sandbox_report = sandbox_record.get("report") if isinstance(sandbox_record.get("report"), dict) else {}
     sandbox_evidence = sandbox_report.get("evidence") if isinstance(sandbox_report.get("evidence"), dict) else {}
     limits = sandbox_evidence.get("limits") if isinstance(sandbox_evidence.get("limits"), dict) else {}
+    if sandbox_record.get("signature_status") != "valid":
+        publication_blockers.append(
+            {
+                "code": "evidence.sandbox_signature_required",
+                "path": "$.checks.sandbox.signature_status",
+                "message": "publication requires sandbox evidence signed by the configured evidence authority",
+            }
+        )
     for name in ("network", "filesystem"):
         if not bool(limits.get(f"{name}_enforced")):
             publication_blockers.append(
@@ -369,6 +437,7 @@ def assess_module_readiness(
             "invalid_count": len(evidence["invalid"]),
             "transition_count": sum(1 for record in evidence["matching"] if record.get("kind") == "transition"),
             "verified_transition_count": verified_transition_count,
+            "signed_count": sum(1 for record in evidence["matching"] if record.get("signature_status") == "valid"),
         },
     }
 
@@ -412,6 +481,7 @@ def transition_module_lifecycle(
     actor: str,
     reason: str,
     evidence_root: Path = DEFAULT_EVIDENCE_ROOT,
+    signing_key: Optional[str] = None,
 ) -> Dict[str, Any]:
     manifest = package.load_manifest()
     module_id, module_version = _module_identity(package)
@@ -454,7 +524,7 @@ def transition_module_lifecycle(
             }
         )
 
-    assessment = assess_module_readiness(package, evidence_root=evidence_root)
+    assessment = assess_module_readiness(package, evidence_root=evidence_root, signing_key=signing_key)
     if target != "draft" and not assessment["lifecycle_verified"]:
         diagnostics.append(
             {
@@ -484,6 +554,14 @@ def transition_module_lifecycle(
         "actor": actor,
         "reason": reason,
         "diagnostics": diagnostics,
+        "evidence_refs": {
+            kind: {
+                "evidence_id": check["evidence_id"],
+                "record_sha256": check["record_sha256"],
+                "signature_status": check["signature_status"],
+            }
+            for kind, check in assessment["checks"].items()
+        },
     }
     if not diagnostics:
         manifest["lifecycle"] = target
@@ -492,7 +570,7 @@ def transition_module_lifecycle(
             encoding="utf-8",
         )
     record = record_module_evidence(package, kind="transition", report=report, evidence_root=evidence_root)
-    readiness = assess_module_readiness(package, evidence_root=evidence_root)
+    readiness = assess_module_readiness(package, evidence_root=evidence_root, signing_key=signing_key)
     return {
         **report,
         "lifecycle": str(package.load_manifest().get("lifecycle") or ""),

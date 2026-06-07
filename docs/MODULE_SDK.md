@@ -23,6 +23,7 @@ seed module test text_normalizer
 seed module sandbox text_normalizer --input-file sample-input.json
 seed module qualify text_normalizer
 seed module status text_normalizer
+seed module publish text_normalizer --actor reviewer --reason "approved release"
 ```
 
 Pass `--json` to any command for a machine-readable report suitable for an AI
@@ -116,11 +117,43 @@ seed module transition text_normalizer approved --actor reviewer --reason "revie
 Transitions require actor and reason, enforce
 `draft -> validated -> tested -> sandboxed -> approved`, and write evidence for
 both accepted and rejected attempts. The generic transition command cannot set
-`published`; publication remains reserved for a future hardened publish gate.
+`published`; publication remains reserved for the dedicated publish gate.
 `seed module status` also reconstructs the successful transition chain from
 `draft`, so manually editing the YAML lifecycle cannot impersonate approval.
 After changing an advanced module, use an explicit actor/reason transition back
 to `draft`, then qualify the new fingerprint again.
+
+## Signed Publish Gate
+
+`seed module publish` is a separate gate, not a lifecycle alias. It:
+
+- requires an evidence-backed `approved` lifecycle;
+- requires passing evidence for the current package fingerprint;
+- requires the latest sandbox report to assert enforced network and filesystem
+  isolation;
+- requires that sandbox report to carry a valid HMAC-SHA256 authority
+  signature;
+- requires the approval transition to reference the exact evidence envelope
+  hashes currently being published;
+- records an `allow` or `block` decision with actor, reason, and exact evidence
+  envelope hashes. A valid authority key signs the decision, and an unsigned
+  decision can never allow publication.
+
+If validation, test, or sandbox evidence changes after approval, the publish
+gate blocks the module. Reset it to `draft`, advance it through the guarded
+lifecycle again, and let the new approval bind the updated evidence.
+
+The authority key is read from `SEED_MODULE_EVIDENCE_SIGNING_KEY` by default
+and must contain at least 32 UTF-8 bytes. The key is never accepted as a CLI
+argument and must never be committed. A different environment variable name
+may be selected with `--signing-key-env`.
+Inspecting an already published lifecycle also requires the same authority key
+so `seed module status` can verify the signed publish decision.
+
+The local subprocess sandbox deliberately reports network and filesystem
+isolation as unenforced. Therefore normal local qualification reaches
+`approved`, but `seed module publish` blocks it. A future hardened runtime
+adapter must produce and sign the qualifying sandbox report.
 
 ## Current Safety Boundary
 
@@ -132,9 +165,14 @@ enforce network or full filesystem isolation and is not production-grade
 untrusted-code containment. Reports expose these limits instead of hiding them.
 
 The local evidence store is append-only by command behavior and detects report
-tampering through integrity hashes, but it is not signed or protected from a
-user with filesystem access. It is development and portfolio evidence, not a
-remote trust authority.
+tampering through integrity hashes. Normal qualification and transition records
+are unsigned by default, and the store is not protected from a user with
+filesystem access. It is development and portfolio evidence, not a remote trust
+authority.
+
+HMAC signatures establish that a record was produced by a holder of the shared
+authority key. They do not provide public-key identity, key rotation,
+transparency logging, or protection if that shared key is compromised.
 
 An `sdk_module` remains visible to the registry and Saga Console for inspection,
 but is intentionally not directly runnable through `/v1/modes` or executable in

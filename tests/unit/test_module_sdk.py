@@ -14,6 +14,8 @@ from app.module_sdk import (
     create_module_package,
     execute_module,
     fingerprint_module_package,
+    load_module_evidence,
+    publish_module_package,
     qualify_module_package,
     record_module_evidence,
     run_module_package_tests,
@@ -502,3 +504,167 @@ def test_module_lifecycle_can_reset_changed_approved_module_to_draft(tmp_path: P
     assert reset["lifecycle"] == "draft"
     assert reset["readiness"]["lifecycle_verified"] is True
     assert reset["readiness"]["approval_ready"] is False
+
+
+def test_signed_module_evidence_requires_matching_authority_key(tmp_path: Path) -> None:
+    package = create_module_package("evidence_signed", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "authority-key-" + "a" * 32
+    record_module_evidence(
+        package,
+        kind="validation",
+        report=validate_module_package(package),
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    verified = load_module_evidence(package, evidence_root=evidence_root, signing_key=signing_key)
+    wrong_key = load_module_evidence(
+        package,
+        evidence_root=evidence_root,
+        signing_key="wrong-authority-" + "b" * 32,
+    )
+
+    assert verified["matching"][0]["signature_status"] == "valid"
+    assert wrong_key["matching"] == []
+    assert wrong_key["invalid"][0]["message"] == "evidence signature invalid"
+
+
+def test_publish_gate_blocks_local_subprocess_sandbox(tmp_path: Path) -> None:
+    package = create_module_package("publish_blocked", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    qualify_module_package(package, evidence_root=evidence_root)
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt local release",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["decision"] == "block"
+    assert report["lifecycle"] == "approved"
+    assert report["publish_evidence"]["signature"]["algorithm"] == "hmac-sha256"
+    assert any(item["code"] == "evidence.sandbox_signature_required" for item in report["diagnostics"])
+    assert any(item["code"] == "sandbox.network_isolation_missing" for item in report["diagnostics"])
+
+
+def test_publish_gate_allows_signed_hardened_sandbox_evidence(tmp_path: Path) -> None:
+    package = create_module_package("publish_allowed", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    hardened["evidence"]["limits"]["network_enforced"] = True
+    hardened["evidence"]["limits"]["filesystem_enforced"] = True
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="signed hardened evidence passed",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is True
+    assert report["decision"] == "allow"
+    assert report["lifecycle"] == "published"
+    assert report["publish_evidence"]["signature"]["algorithm"] == "hmac-sha256"
+    assert report["evidence_refs"]["sandbox"]["record_sha256"].startswith("sha256:")
+    assert report["approval_ref"]["record_sha256"].startswith("sha256:")
+    assert report["readiness"]["lifecycle_verified"] is True
+    assert report["readiness"]["publication"]["ready"] is True
+
+
+def test_publish_gate_rejects_evidence_added_after_approval(tmp_path: Path) -> None:
+    package = create_module_package("publish_stale_approval", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    qualify_module_package(package, evidence_root=evidence_root)
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+        )
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    hardened["evidence"]["limits"]["network_enforced"] = True
+    hardened["evidence"]["limits"]["filesystem_enforced"] = True
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt release with stale approval",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "publish.approval_evidence_stale" for item in report["diagnostics"])
+
+
+def test_publish_gate_rejects_short_signing_key_without_exception(tmp_path: Path) -> None:
+    package = create_module_package("publish_short_key", registry_root=tmp_path / "modules")
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="invalid key check",
+        evidence_root=tmp_path / "evidence",
+        signing_key="too-short",
+    )
+
+    assert report["ok"] is False
+    assert report["publish_evidence"]["signature"] is None
+    assert any(item["code"] == "publish.signing_key_invalid" for item in report["diagnostics"])
+
+
+def test_publish_gate_records_unsigned_block_when_authority_key_is_missing(tmp_path: Path) -> None:
+    package = create_module_package("publish_missing_key", registry_root=tmp_path / "modules")
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="missing key check",
+        evidence_root=tmp_path / "evidence",
+    )
+
+    assert report["ok"] is False
+    assert report["publish_evidence"]["signature"] is None
+    assert any(item["code"] == "publish.signing_key_required" for item in report["diagnostics"])

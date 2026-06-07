@@ -41,6 +41,7 @@ Expected:
 Keep these out of the public branch or release archive:
 
 - `.env`, `.env.public`, `.env.local`;
+- any real `SEED_MODULE_EVIDENCE_SIGNING_KEY` value;
 - `seed.db`, `*.db-wal`, `*.db-shm`, `*.sqlite3`;
 - `node_modules/`, `saga-console/dist/`;
 - `logs/`, `reports/baseline/`, `test_artifacts/`, `optimizer_logs/`;
