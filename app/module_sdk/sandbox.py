@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from app.module_sdk.package import ModulePackage, resolve_module_package, validate_module_package
+from app.module_sdk.policy_reports import build_policy_reports
 
 
 SANDBOX_PROTOCOL_VERSION = "1.0"
@@ -106,6 +107,7 @@ def _subprocess_sandbox_module_package(
         raise ValueError("sandbox timeout must be greater than zero")
     memory_mb = int(resources.get("memory_mb") or 128)
     sandbox_input = dict(inputs) if inputs is not None else _default_input(manifest)
+    policy_evidence = build_policy_reports(manifest)
 
     with tempfile.TemporaryDirectory(prefix="seed-module-sandbox-") as temp:
         workspace = Path(temp)
@@ -163,6 +165,7 @@ def _subprocess_sandbox_module_package(
             evidence = {
                 "protocol_version": SANDBOX_PROTOCOL_VERSION,
                 "runtime": {"adapter": "subprocess"},
+                **policy_evidence,
                 "duration_ms": duration_ms,
                 "exit_code": None,
                 "timed_out": True,
@@ -200,6 +203,7 @@ def _subprocess_sandbox_module_package(
         base_evidence = {
             "protocol_version": SANDBOX_PROTOCOL_VERSION,
             "runtime": {"adapter": "subprocess"},
+            **policy_evidence,
             "duration_ms": duration_ms,
             "exit_code": process.returncode,
             "timed_out": timed_out,
@@ -252,6 +256,7 @@ def _subprocess_sandbox_module_package(
             "evidence": {
                 **base_evidence,
                 **worker_evidence,
+                **policy_evidence,
                 "limits": {
                     **base_evidence["limits"],
                     **(

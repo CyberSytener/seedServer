@@ -62,7 +62,8 @@ Package validation combines:
 - required SDK package files;
 - handler syntax;
 - static Python import allowlist from `dependencies.python`; platform internals
-  remain unavailable even when listed.
+  and internal `app.module_sdk.*` implementation modules remain unavailable
+  even when listed.
 
 `seed module test` executes manifest `tests.golden` cases and verifies both the
 output schema and `expect_fields`. Reports contain stable diagnostic codes,
@@ -139,6 +140,29 @@ Worker startup, protocol I/O, and event-loop setup happen outside the observed
 window. Environment reads are not covered by Python audit events; the sandbox
 continues to rely on its sanitized environment and secret policy declarations.
 
+## Secret And Dependency Publication Policy
+
+The trusted sandbox adapter adds two reports after the worker finishes:
+
+- `secret_report`: declared secret references, proof that no secret references
+  were forwarded, broker availability, and policy status;
+- `dependency_report`: declared Python dependencies, the static import
+  allowlist enforcement mode, installed bundle, installer status, and policy
+  status.
+
+The current sandbox deliberately provides no secret broker and does not install
+module-specific dependency bundles. A module may declare these requirements,
+validate, test, and produce sandbox evidence, but the publish gate blocks it
+with `sandbox.secret_broker_required` or
+`sandbox.dependency_bundle_required`. This is fail-closed behavior: a
+declaration is not treated as proof that the requirement was safely fulfilled.
+
+Modules without secret references or external Python dependencies receive
+positive policy evidence. Publication additionally rejects missing or
+contract-mismatched policy reports. Future secret broker and dependency builder
+adapters must replace these blockers with signed, verifiable fulfillment
+evidence.
+
 ## Qualification And Evidence
 
 `seed module qualify` runs validation, golden tests, and the selected sandbox
@@ -189,6 +213,8 @@ to `draft`, then qualify the new fingerprint again.
   isolation;
 - requires a clean operation-level capability report from the Python audit
   observer;
+- requires matching secret and dependency policy reports with no unresolved
+  broker or bundle requirements;
 - requires that sandbox report to carry a valid HMAC-SHA256 authority
   signature;
 - requires the approval transition to reference the exact evidence envelope

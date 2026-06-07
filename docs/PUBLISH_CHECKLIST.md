@@ -69,6 +69,9 @@ Seed Server is a portfolio demo of an AI workflow control plane: FastAPI backend
 - Docker Compose remains available, but the portfolio demo does not require Docker.
 - The optional Module SDK Docker adapter is built and smoke-tested in CI; local
   use requires a running Docker engine.
+- SDK modules declaring secret references or external Python dependencies
+  remain inspectable and testable, but publication intentionally blocks them
+  until verified secret broker and dependency bundle adapters exist.
 - Some deeper architecture documents are historical. Prefer `README.md`, `DEMO.md`, and `docs/PORTFOLIO_GITHUB_BRIEF.md` as public entry points.
 - Platform development direction is defined in `docs/PLATFORM_ROADMAP.md`; active
   commitments are defined in `docs/ACTIVE_PLATFORM_SCOPE.md`.

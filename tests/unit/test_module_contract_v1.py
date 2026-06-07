@@ -83,6 +83,15 @@ def test_contract_rejects_duplicate_python_dependencies() -> None:
     assert any(issue.code == "security.duplicate_dependency" for issue in issues)
 
 
+def test_contract_rejects_duplicate_secret_references() -> None:
+    spec = _module()
+    spec["security"]["secret_refs"] = ["provider_api_key", "provider_api_key"]
+
+    issues = validate_module_contract(spec)
+
+    assert any(issue.code == "security.duplicate_secret_ref" for issue in issues)
+
+
 def test_legacy_adapter_produces_valid_draft_contract() -> None:
     legacy = _module()
     for field in (

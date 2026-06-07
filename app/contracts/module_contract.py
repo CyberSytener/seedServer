@@ -226,6 +226,19 @@ def validate_module_contract(spec: Mapping[str, Any]) -> List[ContractIssue]:
                 )
             )
 
+    security = spec.get("security") if isinstance(spec.get("security"), dict) else {}
+    secret_refs = security.get("secret_refs")
+    if isinstance(secret_refs, list):
+        normalized_secret_refs = [str(secret_ref).strip() for secret_ref in secret_refs]
+        if len(set(normalized_secret_refs)) != len(normalized_secret_refs):
+            issues.append(
+                ContractIssue(
+                    code="security.duplicate_secret_ref",
+                    path="$.security.secret_refs",
+                    message="secret references must be unique",
+                )
+            )
+
     pipeline = str(spec.get("pipeline") or "").strip()
     execution = spec.get("execution") if isinstance(spec.get("execution"), dict) else {}
     adapter = str(execution.get("adapter") or "").strip()

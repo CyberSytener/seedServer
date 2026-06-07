@@ -19,9 +19,10 @@ python scripts/run_quality_gate.py portfolio
 This is the mandatory local gate for active platform work. It validates the
 active documentation links, module registry, Module SDK/CLI, subprocess
 sandbox, Docker adapter command policy, lifecycle evidence and transition
-guards, operation-level capability violations, console runtime, modes, auth
-provider facade, signed publication gates, security regressions, LLM routing
-regression, and simulation unit tests.
+guards, operation-level capability violations, fail-closed secret/dependency
+publication policy, console runtime, modes, auth provider facade, signed
+publication gates, security regressions, LLM routing regression, and simulation
+unit tests.
 
 Expected properties:
 

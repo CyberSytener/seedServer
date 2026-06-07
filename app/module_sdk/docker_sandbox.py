@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from app.module_sdk.package import ModulePackage, validate_module_package
+from app.module_sdk.policy_reports import build_policy_reports
 from app.module_sdk.sandbox import (
     SANDBOX_PROTOCOL_VERSION,
     _default_input,
@@ -213,6 +214,7 @@ def docker_sandbox_module_package(
     base_evidence = {
         "protocol_version": SANDBOX_PROTOCOL_VERSION,
         "runtime": _runtime_evidence(image=selected_image, engine_version=engine_version),
+        **build_policy_reports(manifest),
         "limits": _limits_evidence(timeout_seconds=effective_timeout, memory_mb=memory_mb, enforced=False),
         "policy": {
             "declared": {

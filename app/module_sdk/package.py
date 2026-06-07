@@ -92,7 +92,16 @@ def validate_handler_dependencies(path: Path, allowed: Iterable[str]) -> List[Mo
                 imported = [node.module]
         for name in imported:
             root = name.split(".")[0]
-            if name == "app.module_sdk" or name.startswith("app.module_sdk."):
+            if name == "app.module_sdk":
+                continue
+            if name.startswith("app.module_sdk."):
+                diagnostics.append(
+                    _diagnostic(
+                        "sdk.internal_sdk_import",
+                        f"{path}:{getattr(node, 'lineno', 1)}",
+                        f"import '{name}' bypasses the stable app.module_sdk public interface",
+                    )
+                )
                 continue
             if root == "app":
                 diagnostics.append(

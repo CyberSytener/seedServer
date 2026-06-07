@@ -224,15 +224,18 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 **Status:** In progress. The publish policy, signed decision format, and
 optional Docker hardened adapter are implemented. Python-level operation
 observation now blocks undeclared filesystem, network, and process events and
-feeds the publish gate. Native/syscall observation, dependency installation
-policy, remote attestation, and stronger secret isolation remain open.
+feeds the publish gate. Sandbox evidence now records secret/dependency policy,
+and publication fails closed when a module needs an unavailable secret broker
+or verified dependency bundle. Native/syscall observation, broker/bundle
+implementation, remote attestation, and stronger secret isolation remain open.
 
 ### Deliverables
 
 - deny-by-default network and filesystem policy;
 - [x] container-level deny-by-default network and filesystem containment;
 - [x] time, memory, process, and CPU limits;
-- dependency and secret allowlists;
+- [x] fail-closed dependency and secret requirement reports;
+- verified dependency bundle builder and secret broker;
 - [x] declared-vs-enforced capability report;
 - [x] observed Python operation-level capability report;
 - deterministic test fixtures;
@@ -241,7 +244,7 @@ policy, remote attestation, and stronger secret isolation remain open.
 ### Exit Criteria
 
 - Undeclared Python-level network and filesystem access causes rejection;
-  secret and native/syscall enforcement remain open.
+  unresolved secret/dependency requirements also cause rejection.
 - Timeouts and resource violations are visible in the report.
 - The publish gate explains why a module is accepted or rejected.
 

@@ -49,6 +49,11 @@ The stable `code` and JSON-style `path` are intended for Saga Console and a
 future AI repair loop. Human-readable CLI messages are rendered from the same
 issues, so runtime and tooling cannot silently diverge.
 
+`capabilities`, `security.secret_refs`, and `dependencies.python` must contain
+unique values. Secret and Python dependency declarations describe
+requirements; they do not grant access by themselves. The sandbox and publish
+gate must provide matching fulfillment evidence.
+
 ## Compatibility Rules
 
 The first compatibility checker is intentionally conservative:
@@ -119,3 +124,6 @@ lifecycle.
   every possible JSON Schema relation.
 - Declared effects are validated but observed-vs-declared enforcement belongs
   to the Phase 5 sandbox and publish gate.
+- Secret references and external Python dependencies can be declared and
+  inspected, but publication remains blocked until verified broker and bundle
+  adapters are implemented.

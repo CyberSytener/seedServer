@@ -120,4 +120,4 @@ jobs:
             --runtime docker \
             --image seed-module-sandbox:ci \
             --json > .seed_artifacts/docker-sandbox-report.json
-          python -c "import json; r=json.load(open('.seed_artifacts/docker-sandbox-report.json')); assert r['ok']; assert r['evidence']['limits']['network_enforced']; assert r['evidence']['limits']['filesystem_enforced']; c=r['evidence']['capability_report']; assert c['enforcement']=='python_audit_hook'; assert c['violation_count']==0"
+          python -c "import json; r=json.load(open('.seed_artifacts/docker-sandbox-report.json')); assert r['ok']; assert r['evidence']['limits']['network_enforced']; assert r['evidence']['limits']['filesystem_enforced']; c=r['evidence']['capability_report']; assert c['enforcement']=='python_audit_hook'; assert c['violation_count']==0; assert r['evidence']['secret_report']['policy_satisfied']; assert r['evidence']['dependency_report']['policy_satisfied']"

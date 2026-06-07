@@ -236,6 +236,15 @@ def test_dependency_allowlist_rejects_platform_internal_import(tmp_path: Path) -
     assert any(item.code == "sdk.platform_internal_import" for item in diagnostics)
 
 
+def test_dependency_allowlist_rejects_internal_sdk_submodule_import(tmp_path: Path) -> None:
+    handler = tmp_path / "handler.py"
+    handler.write_text("from app.module_sdk.sandbox_worker import _run\n", encoding="utf-8")
+
+    diagnostics = validate_handler_dependencies(handler, allowed=[])
+
+    assert any(item.code == "sdk.internal_sdk_import" for item in diagnostics)
+
+
 def test_dependency_allowlist_rejects_relative_import(tmp_path: Path) -> None:
     handler = tmp_path / "handler.py"
     handler.write_text("from .helpers import normalize\n", encoding="utf-8")
@@ -282,6 +291,8 @@ def test_docker_sandbox_enforces_hardened_container_profile(tmp_path: Path, monk
     assert report["evidence"]["runtime"]["adapter"] == "docker"
     assert report["evidence"]["limits"]["network_enforced"] is True
     assert report["evidence"]["limits"]["filesystem_enforced"] is True
+    assert report["evidence"]["secret_report"]["policy_satisfied"] is True
+    assert report["evidence"]["dependency_report"]["policy_satisfied"] is True
     run_command = next(command for command in commands if len(command) > 1 and command[1] == "run")
     assert ["--network", "none"] == run_command[run_command.index("--network") : run_command.index("--network") + 2]
     assert "--read-only" in run_command
@@ -300,6 +311,8 @@ def test_docker_sandbox_returns_structured_error_when_engine_is_unavailable(tmp_
     assert report["evidence"]["runtime"]["adapter"] == "docker"
     assert report["evidence"]["limits"]["network_enforced"] is False
     assert report["evidence"]["policy"]["enforced"] is None
+    assert report["evidence"]["secret_report"]["policy_satisfied"] is True
+    assert report["evidence"]["dependency_report"]["policy_satisfied"] is True
     assert any(item["code"] == "sandbox.docker_unavailable" for item in report["diagnostics"])
 
 
@@ -352,6 +365,35 @@ class Handler:
     assert report["ok"] is True
     assert report["result"]["output"] == {"result": "None"}
     assert report["evidence"]["handler_stdout"].splitlines() == ["handler-log"]
+    assert report["evidence"]["secret_report"]["policy_satisfied"] is True
+    assert report["evidence"]["secret_report"]["forwarded_refs"] == []
+    assert report["evidence"]["dependency_report"]["policy_satisfied"] is True
+
+
+def test_sandbox_reports_unavailable_secret_and_dependency_brokers(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_policy_requirements", registry_root=tmp_path)
+    manifest = package.load_manifest()
+    manifest["security"]["secret_refs"] = ["provider_api_key"]
+    manifest["dependencies"]["python"] = ["httpx"]
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is True
+    assert report["evidence"]["secret_report"] == {
+        "enforcement": "no_secret_forwarding",
+        "declared_refs": ["provider_api_key"],
+        "forwarded_refs": [],
+        "broker": "unavailable",
+        "policy_satisfied": False,
+    }
+    assert report["evidence"]["dependency_report"] == {
+        "enforcement": "static_import_allowlist",
+        "declared_python": ["httpx"],
+        "installed_bundle": [],
+        "installer": "disabled",
+        "policy_satisfied": False,
+    }
 
 
 def test_sandbox_blocks_undeclared_filesystem_write(tmp_path: Path) -> None:
@@ -987,6 +1029,126 @@ def test_publish_gate_rejects_observed_capability_violations(tmp_path: Path) -> 
     assert any(item["code"] == "sandbox.capability_violations_detected" for item in report["diagnostics"])
 
 
+def test_publish_gate_requires_secret_and_dependency_policy_evidence(tmp_path: Path) -> None:
+    package = create_module_package("publish_missing_policy_reports", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    _hardened_limits(hardened)
+    hardened["evidence"].pop("secret_report")
+    hardened["evidence"].pop("dependency_report")
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt release without policy reports",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    blocker_codes = {item["code"] for item in report["diagnostics"]}
+    assert report["ok"] is False
+    assert "sandbox.secret_policy_missing" in blocker_codes
+    assert "sandbox.dependency_policy_missing" in blocker_codes
+
+
+def test_publish_gate_blocks_secret_dependent_module_without_broker(tmp_path: Path) -> None:
+    package = create_module_package("publish_secret_requirement", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    manifest = package.load_manifest()
+    manifest["security"]["secret_refs"] = ["provider_api_key"]
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    _hardened_limits(hardened)
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt secret-dependent release",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "sandbox.secret_broker_required" for item in report["diagnostics"])
+    assert not any(item["code"] == "sandbox.secret_policy_invalid" for item in report["diagnostics"])
+
+
+def test_publish_gate_blocks_external_dependency_without_bundle(tmp_path: Path) -> None:
+    package = create_module_package("publish_dependency_requirement", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "publish-authority-" + "a" * 32
+    manifest = package.load_manifest()
+    manifest["dependencies"]["python"] = ["httpx"]
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+    qualify_module_package(package, evidence_root=evidence_root)
+    hardened = sandbox_module_package(package, inputs={"request": "hardened"})
+    _hardened_limits(hardened)
+    record_module_evidence(
+        package,
+        kind="sandbox",
+        report=hardened,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+            signing_key=signing_key,
+        )
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="attempt dependency-backed release",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "sandbox.dependency_bundle_required" for item in report["diagnostics"])
+    assert not any(item["code"] == "sandbox.dependency_policy_invalid" for item in report["diagnostics"])
+
+
 def test_publish_gate_allows_signed_hardened_sandbox_evidence(tmp_path: Path, monkeypatch) -> None:
     package = create_module_package("publish_allowed", registry_root=tmp_path / "modules")
     evidence_root = tmp_path / "evidence"
@@ -1076,6 +1238,25 @@ def test_publish_gate_rejects_short_signing_key_without_exception(tmp_path: Path
     assert report["ok"] is False
     assert report["publish_evidence"]["signature"] is None
     assert any(item["code"] == "publish.signing_key_invalid" for item in report["diagnostics"])
+
+
+def test_publish_gate_blocks_invalid_policy_shapes_without_exception(tmp_path: Path) -> None:
+    package = create_module_package("publish_invalid_policy_shapes", registry_root=tmp_path / "modules")
+    manifest = package.load_manifest()
+    manifest["security"] = "invalid"
+    manifest["dependencies"] = "invalid"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = publish_module_package(
+        package,
+        actor="release-manager",
+        reason="invalid policy shape check",
+        evidence_root=tmp_path / "evidence",
+        signing_key="publish-authority-" + "a" * 32,
+    )
+
+    assert report["ok"] is False
+    assert any(item["code"] == "contract.invalid_value" for item in report["diagnostics"])
 
 
 def test_publish_gate_records_unsigned_block_when_authority_key_is_missing(tmp_path: Path) -> None:

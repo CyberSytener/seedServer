@@ -108,7 +108,7 @@
       "required": ["trust_level", "secret_refs"],
       "properties": {
         "trust_level": {"enum": ["internal", "verified", "third_party", "untrusted"]},
-        "secret_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        "secret_refs": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }
     },
     "resources": {

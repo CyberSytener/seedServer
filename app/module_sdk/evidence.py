@@ -391,6 +391,16 @@ def assess_module_readiness(
         if isinstance(sandbox_evidence.get("capability_report"), dict)
         else {}
     )
+    secret_report = (
+        sandbox_evidence.get("secret_report")
+        if isinstance(sandbox_evidence.get("secret_report"), dict)
+        else {}
+    )
+    dependency_report = (
+        sandbox_evidence.get("dependency_report")
+        if isinstance(sandbox_evidence.get("dependency_report"), dict)
+        else {}
+    )
     if sandbox_record.get("signature_status") != "valid":
         publication_blockers.append(
             {
@@ -455,6 +465,72 @@ def assess_module_readiness(
                 "code": "sandbox.capability_violations_detected",
                 "path": "$.checks.sandbox.capability_report.violation_count",
                 "message": "publication rejects sandbox evidence containing capability violations",
+            }
+        )
+    security = manifest.get("security") if isinstance(manifest.get("security"), dict) else {}
+    secret_refs = security.get("secret_refs")
+    declared_secret_refs = list(secret_refs) if isinstance(secret_refs, list) else []
+    expected_secret_policy = not declared_secret_refs
+    if secret_report.get("enforcement") != "no_secret_forwarding":
+        publication_blockers.append(
+            {
+                "code": "sandbox.secret_policy_missing",
+                "path": "$.checks.sandbox.secret_report.enforcement",
+                "message": "publication requires no-secret-forwarding evidence",
+            }
+        )
+    elif (
+        secret_report.get("declared_refs") != declared_secret_refs
+        or secret_report.get("forwarded_refs") != []
+        or secret_report.get("broker") != "unavailable"
+        or secret_report.get("policy_satisfied") is not expected_secret_policy
+    ):
+        publication_blockers.append(
+            {
+                "code": "sandbox.secret_policy_invalid",
+                "path": "$.checks.sandbox.secret_report",
+                "message": "sandbox secret policy evidence does not match the module contract",
+            }
+        )
+    if declared_secret_refs:
+        publication_blockers.append(
+            {
+                "code": "sandbox.secret_broker_required",
+                "path": "$.security.secret_refs",
+                "message": "publication blocks secret-dependent modules until a verified secret broker is available",
+            }
+        )
+    dependencies = manifest.get("dependencies") if isinstance(manifest.get("dependencies"), dict) else {}
+    python_dependencies = dependencies.get("python")
+    declared_python = list(python_dependencies) if isinstance(python_dependencies, list) else []
+    expected_dependency_policy = not declared_python
+    if dependency_report.get("enforcement") != "static_import_allowlist":
+        publication_blockers.append(
+            {
+                "code": "sandbox.dependency_policy_missing",
+                "path": "$.checks.sandbox.dependency_report.enforcement",
+                "message": "publication requires dependency policy evidence",
+            }
+        )
+    elif (
+        dependency_report.get("declared_python") != declared_python
+        or dependency_report.get("installed_bundle") != []
+        or dependency_report.get("installer") != "disabled"
+        or dependency_report.get("policy_satisfied") is not expected_dependency_policy
+    ):
+        publication_blockers.append(
+            {
+                "code": "sandbox.dependency_policy_invalid",
+                "path": "$.checks.sandbox.dependency_report",
+                "message": "sandbox dependency policy evidence does not match the module contract",
+            }
+        )
+    if declared_python:
+        publication_blockers.append(
+            {
+                "code": "sandbox.dependency_bundle_required",
+                "path": "$.dependencies.python",
+                "message": "publication blocks external Python dependencies until a verified bundle is available",
             }
         )
     if not approval_ready:
