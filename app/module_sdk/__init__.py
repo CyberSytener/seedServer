@@ -13,6 +13,7 @@ from app.module_sdk.runtime import (
     ModuleSDKError,
     execute_module,
 )
+from app.module_sdk.sandbox import sandbox_module_package
 
 __all__ = [
     "ModuleDiagnostic",
@@ -25,5 +26,6 @@ __all__ = [
     "execute_module",
     "resolve_module_package",
     "run_module_package_tests",
+    "sandbox_module_package",
     "validate_module_package",
 ]

@@ -123,8 +123,11 @@ blocks to full Contract v1 manifests with runtime-schema drift protection.
 **Status:** In progress. The first vertical slice provides the stable SDK
 context/result/error interfaces, a standard generated module package, structured
 validation and golden-case reports, a Python dependency allowlist, and
-`seed module create|validate|test`. SDK modules remain local-only until the
-isolated sandbox adapter is implemented.
+`seed module create|validate|test`. The second vertical slice adds
+`seed module sandbox`: isolated-interpreter subprocess execution, sanitized
+environment, wall timeout, platform-aware resource limits, and structured
+sandbox evidence. SDK modules remain outside active flows until a hardened
+runtime adapter is implemented.
 
 ### Deliverables
 
@@ -139,7 +142,7 @@ isolated sandbox adapter is implemented.
 seed module create    [done]
 seed module validate  [done]
 seed module test      [done]
-seed module sandbox
+seed module sandbox   [done]
 seed module publish
 ```
 

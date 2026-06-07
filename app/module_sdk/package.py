@@ -372,6 +372,7 @@ Generated Seed SDK module package.
 ```bash
 seed module validate {module_id}
 seed module test {module_id}
+seed module sandbox {module_id}
 ```
 
 Edit `module.yaml` to declare the contract and `handler.py` to implement it.

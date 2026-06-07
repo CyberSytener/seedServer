@@ -49,6 +49,8 @@ vite
 
 - Runtime design: module registry, flow compilation, validation, release records,
   run creation, timeline inspection, artifact extraction, and SSE event replay.
+- Extension tooling: Contract v1 manifests, a shared Module SDK, structured CLI
+  diagnostics, and subprocess sandbox evidence.
 - Saga depth: version registry, typed flow handlers, retry/timeouts,
   idempotency, distributed locking, compensation-oriented state model.
 - Domain proof: NeoEats uses the runtime for pantry, recipes, receipt

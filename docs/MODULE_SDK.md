@@ -2,8 +2,8 @@
 
 Last updated: 2026-06-07
 
-The first Phase 2 SDK slice gives humans and AI builders one repeatable local
-workflow for creating, validating, and testing a module package.
+The Phase 2 SDK gives humans and AI builders one repeatable local workflow for
+creating, validating, testing, and subprocess-sandboxing a module package.
 
 ## Install And Use
 
@@ -19,6 +19,7 @@ Create and verify a draft module:
 seed module create text_normalizer
 seed module validate text_normalizer
 seed module test text_normalizer
+seed module sandbox text_normalizer --input-file sample-input.json
 ```
 
 Pass `--json` to any command for a machine-readable report suitable for an AI
@@ -63,12 +64,32 @@ Package validation combines:
 output schema and `expect_fields`. Reports contain stable diagnostic codes,
 paths, messages, and per-case result envelopes.
 
+## Subprocess Sandbox
+
+`seed module sandbox`:
+
+- validates the package before execution;
+- copies it into a temporary workspace;
+- launches `python -I` with a minimal environment;
+- applies the declared wall timeout;
+- attempts CPU and heap-memory limits on Unix;
+- captures bounded stdout/stderr and returns structured evidence.
+
+Use `--input '{"request":"hello"}'` where shell quoting is convenient, or
+`--input-file sample-input.json` for a cross-platform input path. Without
+either option, the first declared golden input is used. `--timeout-seconds`
+may reduce, but never increase, the manifest timeout.
+
 ## Current Safety Boundary
 
 SDK tests load and execute local Python code in the developer process. They are
 for trusted local development and are not sandbox evidence.
 
-An `sdk_module` is visible to the registry and Saga Console for inspection, but
-is intentionally not directly runnable through `/v1/modes` or executable in a
-flow. The next Phase 2 slice must connect the SDK runner to an isolated sandbox
-adapter before generated handlers can enter runtime flows.
+The subprocess sandbox is a stronger local evidence tier, but it does not yet
+enforce network or full filesystem isolation and is not production-grade
+untrusted-code containment. Reports expose these limits instead of hiding them.
+
+An `sdk_module` remains visible to the registry and Saga Console for inspection,
+but is intentionally not directly runnable through `/v1/modes` or executable in
+a flow. A later runtime adapter must add hardened containment before generated
+handlers can enter runtime flows.

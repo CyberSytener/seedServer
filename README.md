@@ -11,6 +11,7 @@ new modules through validation, sandboxing, and human-gated publication.
 ## What To Review
 
 - Saga workflow runtime with typed modules, flow graphs, sandbox runs, run history, and artifacts.
+- Contract-first Module SDK and CLI for generating, validating, testing, and subprocess-sandboxing extension packages.
 - React Saga Console with gallery, canvas, modules, providers, and run inspection.
 - Deterministic stub mode so reviewers can run the demo without Gemini, OpenAI, Redis, or PostgreSQL credentials.
 - NeoEats/domain blocks and broader API surface showing how a vertical product can be wired into the same runtime.
@@ -133,6 +134,7 @@ python scripts/run_quality_gate.py integration
 seed module create text_normalizer
 seed module validate text_normalizer
 seed module test text_normalizer
+seed module sandbox text_normalizer --input-file sample-input.json
 python -m pytest -q tests/unit/test_console_runtime_api.py
 python -m pytest -q tests/unit/test_module_registry.py tests/unit/test_modes_api.py
 cd saga-console && npm run build

@@ -30,6 +30,8 @@ runtime would bypass the contract-first and human-gated publication model.
   isolation.
 - The next SDK slice has a clear responsibility: isolated execution and runtime
   adapter integration.
+- The local subprocess evidence tier defined by ADR 0005 does not change the
+  API or flow execution boundary.
 
 ## Verification
 

@@ -9,6 +9,7 @@ from app.module_sdk import (
     create_module_package,
     resolve_module_package,
     run_module_package_tests,
+    sandbox_module_package,
     validate_module_package,
 )
 
@@ -53,6 +54,31 @@ def _module_test(args: argparse.Namespace) -> int:
     return 0 if report["ok"] else 1
 
 
+def _load_sandbox_input(args: argparse.Namespace) -> Optional[Dict[str, Any]]:
+    if args.input_json and args.input_file:
+        raise ValueError("use either --input or --input-file, not both")
+    if args.input_file:
+        data = json.loads(Path(args.input_file).read_text(encoding="utf-8-sig"))
+    elif args.input_json:
+        data = json.loads(args.input_json)
+    else:
+        return None
+    if not isinstance(data, dict):
+        raise ValueError("sandbox input must be a JSON object")
+    return data
+
+
+def _module_sandbox(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = sandbox_module_package(
+        package,
+        inputs=_load_sandbox_input(args),
+        timeout_seconds=args.timeout_seconds,
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="seed", description="Seed Platform developer CLI")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -77,6 +103,15 @@ def build_parser() -> argparse.ArgumentParser:
         command.add_argument("--root", default="modules")
         command.add_argument("--json", action="store_true")
         command.set_defaults(handler=handler)
+
+    sandbox = module_commands.add_parser("sandbox", help="Run an SDK module in an isolated subprocess")
+    sandbox.add_argument("target")
+    sandbox.add_argument("--root", default="modules")
+    sandbox.add_argument("--input", dest="input_json")
+    sandbox.add_argument("--input-file")
+    sandbox.add_argument("--timeout-seconds", type=float)
+    sandbox.add_argument("--json", action="store_true")
+    sandbox.set_defaults(handler=_module_sandbox)
     return parser
 
 

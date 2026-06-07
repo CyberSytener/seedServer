@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
+import yaml
 
 from app.module_sdk import (
     ModuleExecutionContext,
@@ -12,8 +13,10 @@ from app.module_sdk import (
     create_module_package,
     execute_module,
     run_module_package_tests,
+    sandbox_module_package,
     validate_module_package,
 )
+from app.module_sdk.package import resolve_module_package
 from app.module_sdk.package import validate_handler_dependencies
 
 
@@ -162,3 +165,134 @@ def test_dependency_allowlist_rejects_relative_import(tmp_path: Path) -> None:
     diagnostics = validate_handler_dependencies(handler, allowed=[])
 
     assert any(item.code == "sdk.relative_import_not_allowed" for item in diagnostics)
+
+
+def test_sandbox_module_package_runs_in_isolated_subprocess(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_demo", registry_root=tmp_path)
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is True
+    assert report["status"] == "succeeded"
+    assert report["result"]["output"] == {"result": "sandbox"}
+    assert report["evidence"]["limits"]["isolated_python"] is True
+    assert report["evidence"]["limits"]["sanitized_environment"] is True
+    assert report["evidence"]["limits"]["package_copy"] is True
+    assert report["evidence"]["limits"]["network_enforced"] is False
+    assert report["evidence"]["limits"]["filesystem_enforced"] is False
+    assert report["evidence"]["exit_code"] == 0
+
+
+def test_sandbox_module_package_sanitizes_environment_and_captures_output(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    package = create_module_package("sandbox_env", registry_root=tmp_path)
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        """
+from __future__ import annotations
+
+import os
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        print("handler-log")
+        return {"result": str(os.getenv("SDK_TEST_SECRET"))}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("SDK_TEST_SECRET", "must-not-leak")
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is True
+    assert report["result"]["output"] == {"result": "None"}
+    assert report["evidence"]["handler_stdout"].splitlines() == ["handler-log"]
+
+
+def test_sandbox_module_package_enforces_wall_timeout(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_timeout", registry_root=tmp_path)
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        """
+from __future__ import annotations
+
+import time
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        time.sleep(2)
+        return {"result": "late"}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"}, timeout_seconds=0.2)
+
+    assert report["ok"] is False
+    assert report["evidence"]["timed_out"] is True
+    assert any(item["code"] == "sandbox.timeout" for item in report["diagnostics"])
+
+
+def test_sandbox_module_package_limits_captured_output(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_output", registry_root=tmp_path)
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        """
+from __future__ import annotations
+
+
+class Handler:
+    async def execute(self, context, inputs):
+        del context, inputs
+        print("x" * 40000)
+        return {"result": "ok"}
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+
+    report = sandbox_module_package(package, inputs={"request": "sandbox"})
+
+    assert report["ok"] is True
+    assert report["evidence"]["handler_stdout_truncated"] is True
+    assert len(report["evidence"]["handler_stdout"]) == 32768
+
+
+def test_sandbox_module_package_rejects_non_sdk_pipeline() -> None:
+    package = resolve_module_package("general_assistant")
+
+    report = sandbox_module_package(package, inputs={"user_request": "hello"})
+
+    assert report["ok"] is False
+    assert any(item["code"] == "sandbox.unsupported_pipeline" for item in report["diagnostics"])
+
+
+def test_sandbox_module_package_returns_manifest_validation_failure(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_invalid", registry_root=tmp_path)
+    package.manifest_path.write_text("not: [valid", encoding="utf-8")
+
+    report = sandbox_module_package(package, inputs={"request": "hello"})
+
+    assert report["ok"] is False
+    assert report["status"] == "failed"
+    assert any(item["code"] == "sdk.manifest_unreadable" for item in report["diagnostics"])
+
+
+def test_sandbox_timeout_cannot_exceed_manifest_limit(tmp_path: Path) -> None:
+    package = create_module_package("sandbox_cap", registry_root=tmp_path)
+    manifest = package.load_manifest()
+    manifest["execution"]["timeout_seconds"] = 1
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = sandbox_module_package(package, inputs={"request": "hello"}, timeout_seconds=10)
+
+    assert report["ok"] is True
+    assert report["evidence"]["limits"]["wall_timeout_seconds"] == 1
