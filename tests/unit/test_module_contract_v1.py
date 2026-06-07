@@ -25,7 +25,7 @@ def test_committed_contract_schema_is_valid_json_schema() -> None:
     schema = json.loads((ROOT / "app" / "contracts" / "module_contract_v1.schema.json").read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    for path in sorted((ROOT / "modules").glob("*.yaml")):
+    for path in sorted((ROOT / "modules").rglob("*.yaml")):
         spec = yaml.safe_load(path.read_text(encoding="utf-8"))
         assert list(validator.iter_errors(spec)) == [], path.name
 
@@ -63,6 +63,24 @@ def test_contract_rejects_pipeline_adapter_mismatch() -> None:
     issues = validate_module_contract(spec)
 
     assert any(issue.code == "execution.adapter_mismatch" for issue in issues)
+
+
+def test_contract_accepts_sdk_module_route() -> None:
+    spec = _module()
+    spec["pipeline"] = "sdk_module"
+    spec["execution"]["adapter"] = "module_sdk"
+    spec["dependencies"] = {"python": []}
+
+    assert validate_module_contract(spec) == []
+
+
+def test_contract_rejects_duplicate_python_dependencies() -> None:
+    spec = _module()
+    spec["dependencies"] = {"python": ["httpx", "httpx"]}
+
+    issues = validate_module_contract(spec)
+
+    assert any(issue.code == "security.duplicate_dependency" for issue in issues)
 
 
 def test_legacy_adapter_produces_valid_draft_contract() -> None:

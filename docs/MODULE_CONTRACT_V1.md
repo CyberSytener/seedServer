@@ -28,6 +28,7 @@ is a portable artifact for editors, generators, and external tooling.
 | Execution | `pipeline`, `execution.adapter`, execution limits | runtime route, timeout, retry, idempotency, and determinism |
 | Effects | `effects` | declared side effects, compensation, network, and filesystem access |
 | Security | `capabilities`, `security` | least-privilege capabilities, secrets, and trust level |
+| Dependencies | `dependencies.python`, `compatibility.module_dependencies` | allowed Python packages and module relationships |
 | Resources | `resources` | memory, concurrency, cost, and provider limits |
 | Compatibility | `compatibility` | accepted contract versions and dependencies |
 | Evidence | `tests`, `evidence`, prompt/rubric versions | reviewable proof and reproducibility |
@@ -69,6 +70,7 @@ Contract v1 separates the module's product role from its runtime adapter:
 | --- | --- | --- | --- |
 | `llm_pipeline` | `saga_orchestrator` | yes | no |
 | `flow_block` | `block_registry` | no | yes, when the block is registered |
+| `sdk_module` | `module_sdk` | no | no, until the isolated SDK adapter is implemented |
 
 Mismatched declarations fail with `execution.adapter_mismatch`. Saga Console
 lists both kinds for inspection, while `/v1/modes` lists only directly runnable
@@ -112,7 +114,7 @@ lifecycle.
 ## Current Boundaries
 
 - Contract v1 supports the active `llm_pipeline` and `flow_block` execution
-  routes; other runtime families still require an explicit adapter design.
+  routes plus the local-development `sdk_module` route.
 - Compatibility checks cover object properties and primitive JSON types, not
   every possible JSON Schema relation.
 - Declared effects are validated but observed-vs-declared enforcement belongs

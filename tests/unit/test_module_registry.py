@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from app.module_sdk import create_module_package
 from app.services.module_registry import ModuleRegistry
 
 
@@ -30,6 +31,17 @@ def test_module_registry_filters_direct_mode_pipeline() -> None:
     }
     assert all(item["execution_adapter"] == "block_registry" for item in flow_blocks)
     assert all(item["directly_runnable"] is False for item in flow_blocks)
+
+
+def test_module_registry_discovers_nested_sdk_package(tmp_path: Path) -> None:
+    create_module_package("nested_sdk", registry_root=tmp_path)
+
+    modules = ModuleRegistry(root=tmp_path).list_modules(pipeline="sdk_module")
+
+    assert len(modules) == 1
+    assert modules[0]["mode_id"] == "nested_sdk"
+    assert modules[0]["execution_adapter"] == "module_sdk"
+    assert modules[0]["directly_runnable"] is False
 
 
 def test_module_registry_detects_unauthorized_capability(tmp_path: Path) -> None:

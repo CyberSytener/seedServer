@@ -31,6 +31,7 @@ jobs:
           python -m compileall -q \
             app/api/console \
             app/contracts \
+            app/module_sdk \
             app/core/realtime/sagas \
             app/services/module_registry.py \
             app/sim \
@@ -41,6 +42,8 @@ jobs:
           flake8 \
             app/api/console \
             app/contracts \
+            app/module_sdk \
+            app/cli.py \
             app/services/module_registry.py \
             app/services/flow_contract_validator.py \
             scripts/validate_modules.py \
@@ -49,6 +52,8 @@ jobs:
             tests/unit/test_flow_contract_validator.py \
             tests/unit/test_console_runtime_api.py \
             tests/unit/test_module_registry.py \
+            tests/unit/test_module_sdk.py \
+            tests/unit/test_seed_cli.py \
             tests/unit/test_modes_api.py \
             tests/unit/test_auth_providers_api.py \
             --select=E9,F63,F7,F82 \

@@ -42,7 +42,7 @@ class Owner(ContractModel):
 
 
 class ExecutionPolicy(ContractModel):
-    adapter: Literal["saga_orchestrator", "block_registry"]
+    adapter: Literal["saga_orchestrator", "block_registry", "module_sdk"]
     timeout_seconds: int = Field(gt=0, le=3600)
     max_retries: int = Field(ge=0, le=10)
     idempotent: StrictBool
@@ -77,6 +77,10 @@ class ResourcePolicy(ContractModel):
 class CompatibilityPolicy(ContractModel):
     accepts_contract_versions: List[NonEmptyString] = Field(min_length=1)
     module_dependencies: List[NonEmptyString] = Field(default_factory=list)
+
+
+class DependencyPolicy(ContractModel):
+    python: List[NonEmptyString] = Field(default_factory=list)
 
 
 class ErrorDeclaration(ContractModel):
@@ -119,7 +123,7 @@ class ModuleContractV1(ContractModel):
     description: str = Field(min_length=1)
     owner: Owner
     lifecycle: Literal["draft", "validated", "tested", "sandboxed", "approved", "published", "deprecated"]
-    pipeline: Literal["llm_pipeline", "flow_block"]
+    pipeline: Literal["llm_pipeline", "flow_block", "sdk_module"]
     task_type: str = Field(min_length=1)
     capabilities: List[NonEmptyString]
     input_schema: Dict[str, Any]
@@ -130,6 +134,7 @@ class ModuleContractV1(ContractModel):
     security: SecurityPolicy
     resources: ResourcePolicy
     compatibility: CompatibilityPolicy
+    dependencies: DependencyPolicy = Field(default_factory=DependencyPolicy)
     evidence: Evidence
     breaking_changes: StrictBool
     migrations: List[Migration]
@@ -208,12 +213,26 @@ def validate_module_contract(spec: Mapping[str, Any]) -> List[ContractIssue]:
                 )
             )
 
+    dependencies = spec.get("dependencies") if isinstance(spec.get("dependencies"), dict) else {}
+    python_dependencies = dependencies.get("python")
+    if isinstance(python_dependencies, list):
+        normalized_dependencies = [str(dependency).strip() for dependency in python_dependencies]
+        if len(set(normalized_dependencies)) != len(normalized_dependencies):
+            issues.append(
+                ContractIssue(
+                    code="security.duplicate_dependency",
+                    path="$.dependencies.python",
+                    message="python dependencies must be unique",
+                )
+            )
+
     pipeline = str(spec.get("pipeline") or "").strip()
     execution = spec.get("execution") if isinstance(spec.get("execution"), dict) else {}
     adapter = str(execution.get("adapter") or "").strip()
     expected_adapters = {
         "llm_pipeline": "saga_orchestrator",
         "flow_block": "block_registry",
+        "sdk_module": "module_sdk",
     }
     expected_adapter = expected_adapters.get(pipeline)
     if expected_adapter and adapter and adapter != expected_adapter:
@@ -286,6 +305,9 @@ def migrate_legacy_module(spec: Mapping[str, Any]) -> Dict[str, Any]:
             "compatibility": migrated.get("compatibility")
             if isinstance(migrated.get("compatibility"), dict)
             else {"accepts_contract_versions": ["1.x"], "module_dependencies": []},
+            "dependencies": migrated.get("dependencies")
+            if isinstance(migrated.get("dependencies"), dict)
+            else {"python": []},
             "evidence": migrated.get("evidence")
             if isinstance(migrated.get("evidence"), dict)
             else {"documentation": ["migration-required"], "examples": ["legacy-manifest"]},
@@ -294,7 +316,10 @@ def migrate_legacy_module(spec: Mapping[str, Any]) -> Dict[str, Any]:
     execution = dict(migrated.get("execution") or {})
     execution.setdefault(
         "adapter",
-        "block_registry" if migrated.get("pipeline") == "flow_block" else "saga_orchestrator",
+        {
+            "flow_block": "block_registry",
+            "sdk_module": "module_sdk",
+        }.get(str(migrated.get("pipeline") or ""), "saga_orchestrator"),
     )
     migrated["execution"] = execution
     return migrated

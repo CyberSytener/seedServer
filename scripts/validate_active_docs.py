@@ -12,6 +12,7 @@ ACTIVE_DOCS = [
     ROOT / "docs" / "ACTIVE_PLATFORM_SCOPE.md",
     ROOT / "docs" / "PHASE_0_STABILIZATION.md",
     ROOT / "docs" / "MODULE_CONTRACT_V1.md",
+    ROOT / "docs" / "MODULE_SDK.md",
     ROOT / "docs" / "PLATFORM_ROADMAP.md",
     ROOT / "docs" / "PORTFOLIO_GITHUB_BRIEF.md",
     ROOT / "docs" / "PUBLISH_CHECKLIST.md",

@@ -18,7 +18,7 @@ change.
 | Portfolio demo launcher | `scripts/run_portfolio_demo.py` | demo smoke |
 | Saga Console | `saga-console/` | TypeScript and Vite build |
 | Console control plane | `app/api/console/` | console runtime unit tests |
-| Module registry | `modules/`, `app/services/module_registry.py` | registry validation and tests |
+| Module registry and SDK | `modules/`, `app/services/module_registry.py`, `app/module_sdk/`, `app/cli.py` | registry, SDK, and CLI tests |
 | Saga execution core | `app/core/realtime/sagas/` | focused saga and simulation tests |
 | Stub simulation | `app/sim/`, `tests/unit/sim/` | simulation tests and report |
 | Runtime safety baseline | auth, route registration, high-severity Bandit gate | smoke/security/route gates |
@@ -102,14 +102,16 @@ reach into FastAPI application state or infrastructure internals directly.
 
 ## Current Development Boundary
 
-The next active development area is Module Contract v1:
+The next active development area is Module SDK and isolated execution:
 
 - `modules/`
 - `app/contracts/module_contract.py`
+- `app/module_sdk/`
+- `app/cli.py`
 - `app/services/module_registry.py`
 - `app/services/flow_contract_validator.py`
 - contract models and schemas
-- contract-focused tests
+- contract, SDK, and CLI-focused tests
 - console module views when required
 
 Changes outside that boundary require a clear reason and focused verification.

@@ -97,6 +97,27 @@ def test_flow_contract_validator_requires_declared_block_registry_adapter(tmp_pa
     assert any(issue["code"] == "flow.module_contract_invalid" for issue in report["issues"])
 
 
+def test_flow_contract_validator_keeps_sdk_module_out_of_runtime(tmp_path) -> None:
+    spec = ModuleRegistry().get_module("general_assistant")
+    assert spec is not None
+    spec["mode_id"] = "local_sdk_module"
+    spec["pipeline"] = "sdk_module"
+    spec["execution"]["adapter"] = "module_sdk"
+    spec.pop("_path", None)
+    (tmp_path / "local_sdk_module.yaml").write_text(
+        yaml.safe_dump(spec, sort_keys=False),
+        encoding="utf-8",
+    )
+
+    report = FlowContractValidator(module_registry=ModuleRegistry(root=tmp_path)).validate_graph(
+        [{"node_id": "sdk", "module_id": "local_sdk_module"}],
+        [],
+    )
+
+    assert report["sources"] == {"sdk": "module_contract_v1"}
+    assert any(issue["code"] == "flow.module_not_executable" for issue in report["issues"])
+
+
 def test_flow_contract_validator_rejects_invalid_module_contract(tmp_path) -> None:
     (tmp_path / "invalid.yaml").write_text(
         """

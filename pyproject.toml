@@ -29,6 +29,9 @@ dependencies = [
   "jsonschema>=4.22.0",
 ]
 
+[project.scripts]
+seed = "app.cli:main"
+
 [project.optional-dependencies]
 dev = [
   "black==24.1.1",

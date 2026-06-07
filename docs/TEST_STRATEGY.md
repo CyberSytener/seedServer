@@ -1,6 +1,6 @@
 # Test And Quality Strategy
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 Seed Platform separates supported release gates from historical and
 experimental checks. A green badge must communicate a real promise, not imply
@@ -17,7 +17,7 @@ python scripts/run_quality_gate.py portfolio
 ```
 
 This is the mandatory local gate for active platform work. It validates the
-active documentation links, module registry, console runtime, modes, auth
+active documentation links, module registry, Module SDK/CLI, console runtime, modes, auth
 provider facade, security regressions, LLM routing regression, and simulation
 unit tests.
 

@@ -115,8 +115,9 @@ app/
   api/                 FastAPI routers, including console facade
   core/                auth, blocks, saga runtime, NeoEats blocks
   infrastructure/      db, cors, middleware, monitoring
+  module_sdk/          stable handler interface and local package tooling
   services/            LLM/service abstractions and registries
-modules/               YAML module definitions
+modules/               module manifests and SDK packages
 saga-console/          React + Vite operator console
 scripts/               demo, seeding, verification helpers
 tests/                 unit and integration coverage
@@ -129,6 +130,9 @@ docs/                  portfolio brief and deeper notes
 python scripts/run_portfolio_demo.py --smoke-test --no-open
 python scripts/run_quality_gate.py portfolio
 python scripts/run_quality_gate.py integration
+seed module create text_normalizer
+seed module validate text_normalizer
+seed module test text_normalizer
 python -m pytest -q tests/unit/test_console_runtime_api.py
 python -m pytest -q tests/unit/test_module_registry.py tests/unit/test_modes_api.py
 cd saga-console && npm run build
@@ -138,6 +142,7 @@ cd saga-console && npm run build
 
 - [Platform roadmap](docs/PLATFORM_ROADMAP.md)
 - [Module Contract v1](docs/MODULE_CONTRACT_V1.md)
+- [Module SDK and CLI](docs/MODULE_SDK.md)
 - [Active platform scope](docs/ACTIVE_PLATFORM_SCOPE.md)
 - [Test and quality strategy](docs/TEST_STRATEGY.md)
 - [Architecture decisions](docs/adr/README.md)

@@ -120,19 +120,25 @@ blocks to full Contract v1 manifests with runtime-schema drift protection.
 
 **Goal:** make module creation predictable for both humans and AI.
 
+**Status:** In progress. The first vertical slice provides the stable SDK
+context/result/error interfaces, a standard generated module package, structured
+validation and golden-case reports, a Python dependency allowlist, and
+`seed module create|validate|test`. SDK modules remain local-only until the
+isolated sandbox adapter is implemented.
+
 ### Deliverables
 
-- standard module package layout;
-- `ModuleHandler` interface and typed execution context;
-- input/output validation wrappers;
-- standard error envelope;
-- dependency allowlist;
+- [x] standard module package layout;
+- [x] `ModuleHandler` interface and typed execution context;
+- [x] input/output validation wrappers;
+- [x] standard error envelope;
+- [x] dependency allowlist;
 - local commands:
 
 ```text
-seed module create
-seed module validate
-seed module test
+seed module create    [done]
+seed module validate  [done]
+seed module test      [done]
 seed module sandbox
 seed module publish
 ```
