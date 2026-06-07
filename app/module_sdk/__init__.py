@@ -1,3 +1,11 @@
+from app.module_sdk.evidence import (
+    DEFAULT_EVIDENCE_ROOT,
+    assess_module_readiness,
+    fingerprint_module_package,
+    qualify_module_package,
+    record_module_evidence,
+    transition_module_lifecycle,
+)
 from app.module_sdk.package import (
     ModulePackage,
     create_module_package,
@@ -22,8 +30,14 @@ __all__ = [
     "ModulePackage",
     "ModuleResult",
     "ModuleSDKError",
+    "DEFAULT_EVIDENCE_ROOT",
+    "assess_module_readiness",
     "create_module_package",
     "execute_module",
+    "fingerprint_module_package",
+    "qualify_module_package",
+    "record_module_evidence",
+    "transition_module_lifecycle",
     "resolve_module_package",
     "run_module_package_tests",
     "sandbox_module_package",

@@ -2,8 +2,9 @@
 
 Last updated: 2026-06-07
 
-The Phase 2 SDK gives humans and AI builders one repeatable local workflow for
-creating, validating, testing, and subprocess-sandboxing a module package.
+The Module SDK gives humans and AI builders one repeatable local workflow for
+creating, validating, testing, subprocess-sandboxing, and qualifying a module
+package.
 
 ## Install And Use
 
@@ -20,6 +21,8 @@ seed module create text_normalizer
 seed module validate text_normalizer
 seed module test text_normalizer
 seed module sandbox text_normalizer --input-file sample-input.json
+seed module qualify text_normalizer
+seed module status text_normalizer
 ```
 
 Pass `--json` to any command for a machine-readable report suitable for an AI
@@ -80,6 +83,45 @@ Use `--input '{"request":"hello"}'` where shell quoting is convenient, or
 either option, the first declared golden input is used. `--timeout-seconds`
 may reduce, but never increase, the manifest timeout.
 
+## Qualification And Evidence
+
+`seed module qualify` runs validation, golden tests, and the subprocess sandbox,
+then writes append-only JSON evidence under `.seed_artifacts/module_evidence/`.
+Each record contains:
+
+- the module ID and semantic version;
+- a package fingerprint;
+- a timestamp, evidence ID, kind, report hash, and full envelope integrity hash;
+- the complete structured report.
+
+The fingerprint covers package content but intentionally excludes the
+`lifecycle` field. A code, contract, version, test, or documentation change
+makes earlier evidence stale; a reviewed lifecycle transition does not.
+
+`seed module status` only accepts passing evidence for the current fingerprint.
+It reports stale and invalid records separately and explains whether the module
+is technically ready for human approval or blocked from publication.
+
+## Guarded Lifecycle
+
+Use one explicit transition at a time:
+
+```bash
+seed module transition text_normalizer validated --actor reviewer --reason "contract passed"
+seed module transition text_normalizer tested --actor reviewer --reason "golden cases passed"
+seed module transition text_normalizer sandboxed --actor reviewer --reason "sandbox passed"
+seed module transition text_normalizer approved --actor reviewer --reason "review complete"
+```
+
+Transitions require actor and reason, enforce
+`draft -> validated -> tested -> sandboxed -> approved`, and write evidence for
+both accepted and rejected attempts. The generic transition command cannot set
+`published`; publication remains reserved for a future hardened publish gate.
+`seed module status` also reconstructs the successful transition chain from
+`draft`, so manually editing the YAML lifecycle cannot impersonate approval.
+After changing an advanced module, use an explicit actor/reason transition back
+to `draft`, then qualify the new fingerprint again.
+
 ## Current Safety Boundary
 
 SDK tests load and execute local Python code in the developer process. They are
@@ -88,6 +130,11 @@ for trusted local development and are not sandbox evidence.
 The subprocess sandbox is a stronger local evidence tier, but it does not yet
 enforce network or full filesystem isolation and is not production-grade
 untrusted-code containment. Reports expose these limits instead of hiding them.
+
+The local evidence store is append-only by command behavior and detects report
+tampering through integrity hashes, but it is not signed or protected from a
+user with filesystem access. It is development and portfolio evidence, not a
+remote trust authority.
 
 An `sdk_module` remains visible to the registry and Saga Console for inspection,
 but is intentionally not directly runnable through `/v1/modes` or executable in

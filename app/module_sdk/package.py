@@ -373,6 +373,8 @@ Generated Seed SDK module package.
 seed module validate {module_id}
 seed module test {module_id}
 seed module sandbox {module_id}
+seed module qualify {module_id}
+seed module status {module_id}
 ```
 
 Edit `module.yaml` to declare the contract and `handler.py` to implement it.

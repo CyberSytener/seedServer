@@ -1,6 +1,6 @@
 # Seed Platform Development Roadmap
 
-Last updated: 2026-06-06
+Last updated: 2026-06-07
 
 ## Product Thesis
 
@@ -126,8 +126,10 @@ validation and golden-case reports, a Python dependency allowlist, and
 `seed module create|validate|test`. The second vertical slice adds
 `seed module sandbox`: isolated-interpreter subprocess execution, sanitized
 environment, wall timeout, platform-aware resource limits, and structured
-sandbox evidence. SDK modules remain outside active flows until a hardened
-runtime adapter is implemented.
+sandbox evidence. The third vertical slice adds package fingerprints,
+append-only local evidence, qualification/status commands, and guarded
+lifecycle transitions through `approved`. SDK modules remain outside active
+flows until a hardened runtime adapter is implemented.
 
 ### Deliverables
 
@@ -143,6 +145,9 @@ seed module create    [done]
 seed module validate  [done]
 seed module test      [done]
 seed module sandbox   [done]
+seed module qualify   [done]
+seed module status    [done]
+seed module transition [done]
 seed module publish
 ```
 
@@ -156,6 +161,11 @@ seed module publish
 
 **Goal:** make module state transitions explicit and auditable.
 
+**Status:** In progress. The first vertical slice provides fingerprint-bound
+validation, test, sandbox, and transition evidence; readiness assessment; and
+ordered CLI transitions through human approval. Signed evidence, version
+history, rejection records, and the dedicated publish gate remain open.
+
 ### Lifecycle
 
 ```text
@@ -164,8 +174,8 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 
 ### Deliverables
 
-- lifecycle state model and transition guards;
-- immutable validation and sandbox reports;
+- [x] lifecycle state model and transition guards through approval;
+- [x] append-only validation, test, sandbox, and transition reports;
 - version history and deprecation records;
 - approval/rejection records with actor and reason;
 - publish gate API.

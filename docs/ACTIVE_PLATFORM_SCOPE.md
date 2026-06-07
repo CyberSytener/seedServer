@@ -102,8 +102,8 @@ reach into FastAPI application state or infrastructure internals directly.
 
 ## Current Development Boundary
 
-The next active development area is Module SDK lifecycle evidence and hardened
-runtime isolation:
+The next active development area is signed Module SDK lifecycle evidence,
+publication gates, and hardened runtime isolation:
 
 - `modules/`
 - `app/contracts/module_contract.py`

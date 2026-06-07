@@ -10,10 +10,15 @@ import yaml
 from app.module_sdk import (
     ModuleExecutionContext,
     ModuleSDKError,
+    assess_module_readiness,
     create_module_package,
     execute_module,
+    fingerprint_module_package,
+    qualify_module_package,
+    record_module_evidence,
     run_module_package_tests,
     sandbox_module_package,
+    transition_module_lifecycle,
     validate_module_package,
 )
 from app.module_sdk.package import resolve_module_package
@@ -296,3 +301,204 @@ def test_sandbox_timeout_cannot_exceed_manifest_limit(tmp_path: Path) -> None:
 
     assert report["ok"] is True
     assert report["evidence"]["limits"]["wall_timeout_seconds"] == 1
+
+
+def test_module_package_fingerprint_changes_with_package_content(tmp_path: Path) -> None:
+    package = create_module_package("evidence_fingerprint", registry_root=tmp_path)
+    original = fingerprint_module_package(package)
+    (package.root / "__pycache__").mkdir()
+    (package.root / "__pycache__" / "ignored.pyc").write_bytes(b"ignored")
+
+    assert fingerprint_module_package(package) == original
+
+    assert package.handler_path is not None
+    package.handler_path.write_text(package.handler_path.read_text(encoding="utf-8") + "\n# changed\n", encoding="utf-8")
+
+    assert fingerprint_module_package(package) != original
+
+
+def test_module_package_fingerprint_ignores_lifecycle_transition(tmp_path: Path) -> None:
+    package = create_module_package("evidence_lifecycle", registry_root=tmp_path)
+    original = fingerprint_module_package(package)
+    manifest = package.load_manifest()
+    manifest["lifecycle"] = "sandboxed"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    assert fingerprint_module_package(package) == original
+
+
+def test_module_readiness_rejects_manual_lifecycle_promotion(tmp_path: Path) -> None:
+    package = create_module_package("evidence_manual_promotion", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    qualify_module_package(package, evidence_root=evidence_root)
+    manifest = package.load_manifest()
+    manifest["lifecycle"] = "approved"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = assess_module_readiness(package, evidence_root=evidence_root)
+
+    assert report["ok"] is False
+    assert report["lifecycle_verified"] is False
+    assert report["evidence_backed_lifecycle"] == "draft"
+    assert any(item["code"] == "lifecycle.unverified_state" for item in report["diagnostics"])
+
+
+def test_module_qualification_records_matching_evidence(tmp_path: Path) -> None:
+    package = create_module_package("evidence_ready", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+
+    report = qualify_module_package(package, evidence_root=evidence_root)
+
+    assert report["ok"] is True
+    assert report["approval_ready"] is True
+    assert report["recommended_lifecycle"] == "validated"
+    assert report["evidence"]["matching_count"] == 3
+    assert {item["kind"] for item in report["qualification_records"]} == {"validation", "test", "sandbox"}
+    assert report["publication"]["ready"] is False
+    assert any(item["code"] == "lifecycle.approval_required" for item in report["publication"]["blockers"])
+    assert any(item["code"] == "sandbox.network_isolation_missing" for item in report["publication"]["blockers"])
+
+
+def test_module_qualification_records_invalid_manifest_evidence(tmp_path: Path) -> None:
+    package = create_module_package("evidence_invalid", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    package.manifest_path.write_text("not: [valid", encoding="utf-8")
+
+    report = qualify_module_package(package, evidence_root=evidence_root)
+
+    assert report["ok"] is False
+    assert report["evidence"]["matching_count"] == 3
+    assert any(item["code"] == "evidence.validation_failed" for item in report["diagnostics"])
+
+
+def test_module_readiness_rejects_stale_evidence_after_package_change(tmp_path: Path) -> None:
+    package = create_module_package("evidence_stale", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    qualify_module_package(package, evidence_root=evidence_root)
+    assert package.handler_path is not None
+    package.handler_path.write_text(package.handler_path.read_text(encoding="utf-8") + "\n# changed\n", encoding="utf-8")
+
+    report = assess_module_readiness(package, evidence_root=evidence_root)
+
+    assert report["ok"] is False
+    assert report["evidence"]["matching_count"] == 0
+    assert report["evidence"]["stale_count"] == 3
+    assert any(item["code"] == "evidence.validation_missing" for item in report["diagnostics"])
+    assert report["warnings"][0]["code"] == "evidence.stale_records"
+
+
+def test_module_readiness_rejects_tampered_evidence(tmp_path: Path) -> None:
+    package = create_module_package("evidence_tampered", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    validation = validate_module_package(package)
+    record = record_module_evidence(package, kind="validation", report=validation, evidence_root=evidence_root)
+    path = Path(record["path"])
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["report"]["ok"] = False
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    report = assess_module_readiness(package, evidence_root=evidence_root)
+
+    assert report["ok"] is False
+    assert report["evidence"]["invalid_count"] == 1
+    assert any(item["code"] == "evidence.integrity_invalid" for item in report["diagnostics"])
+
+
+def test_module_readiness_rejects_tampered_evidence_envelope(tmp_path: Path) -> None:
+    package = create_module_package("evidence_envelope", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    validation = validate_module_package(package)
+    record = record_module_evidence(package, kind="validation", report=validation, evidence_root=evidence_root)
+    path = Path(record["path"])
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["module"]["fingerprint"] = "sha256:forged"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    report = assess_module_readiness(package, evidence_root=evidence_root)
+
+    assert report["ok"] is False
+    assert report["evidence"]["invalid_count"] == 1
+    assert any("envelope integrity hash mismatch" in item["message"] for item in report["diagnostics"])
+
+
+def test_module_lifecycle_requires_ordered_evidence_backed_transitions(tmp_path: Path) -> None:
+    package = create_module_package("evidence_transition", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    qualify_module_package(package, evidence_root=evidence_root)
+
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        report = transition_module_lifecycle(
+            package,
+            target=target,
+            actor="portfolio-reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+        )
+        assert report["ok"] is True
+        assert report["lifecycle"] == target
+
+    status = assess_module_readiness(package, evidence_root=evidence_root)
+    assert status["lifecycle"] == "approved"
+    assert status["lifecycle_verified"] is True
+    assert status["evidence"]["transition_count"] == 4
+    assert status["evidence"]["verified_transition_count"] == 4
+    assert status["publication"]["ready"] is False
+    assert not any(item["code"] == "lifecycle.approval_required" for item in status["publication"]["blockers"])
+
+
+def test_module_lifecycle_rejects_skipped_stage_and_direct_publish(tmp_path: Path) -> None:
+    package = create_module_package("evidence_guard", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    qualify_module_package(package, evidence_root=evidence_root)
+
+    skipped = transition_module_lifecycle(
+        package,
+        target="sandboxed",
+        actor="reviewer",
+        reason="try to skip",
+        evidence_root=evidence_root,
+    )
+    published = transition_module_lifecycle(
+        package,
+        target="published",
+        actor="reviewer",
+        reason="try to publish",
+        evidence_root=evidence_root,
+    )
+
+    assert skipped["ok"] is False
+    assert any(item["code"] == "lifecycle.invalid_transition" for item in skipped["diagnostics"])
+    assert published["ok"] is False
+    assert any(item["code"] == "lifecycle.publish_command_required" for item in published["diagnostics"])
+    assert package.load_manifest()["lifecycle"] == "draft"
+
+
+def test_module_lifecycle_can_reset_changed_approved_module_to_draft(tmp_path: Path) -> None:
+    package = create_module_package("evidence_reset", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    qualify_module_package(package, evidence_root=evidence_root)
+    for target in ("validated", "tested", "sandboxed", "approved"):
+        transition_module_lifecycle(
+            package,
+            target=target,
+            actor="reviewer",
+            reason=f"advance to {target}",
+            evidence_root=evidence_root,
+        )
+    assert package.handler_path is not None
+    package.handler_path.write_text(package.handler_path.read_text(encoding="utf-8") + "\n# revision\n", encoding="utf-8")
+
+    stale = assess_module_readiness(package, evidence_root=evidence_root)
+    reset = transition_module_lifecycle(
+        package,
+        target="draft",
+        actor="reviewer",
+        reason="start a new review after code revision",
+        evidence_root=evidence_root,
+    )
+
+    assert stale["lifecycle_verified"] is False
+    assert reset["ok"] is True
+    assert reset["lifecycle"] == "draft"
+    assert reset["readiness"]["lifecycle_verified"] is True
+    assert reset["readiness"]["approval_ready"] is False

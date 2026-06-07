@@ -6,10 +6,14 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Sequence
 
 from app.module_sdk import (
+    DEFAULT_EVIDENCE_ROOT,
+    assess_module_readiness,
     create_module_package,
+    qualify_module_package,
     resolve_module_package,
     run_module_package_tests,
     sandbox_module_package,
+    transition_module_lifecycle,
     validate_module_package,
 )
 
@@ -24,6 +28,11 @@ def _print_report(report: Dict[str, Any], *, as_json: bool) -> None:
         print(f"  - [{diagnostic['code']}] {diagnostic['path']}: {diagnostic['message']}")
     if "passed" in report:
         print(f"  golden cases: {report.get('passed', 0)} passed, {report.get('failed', 0)} failed")
+    if "approval_ready" in report:
+        print(f"  approval ready: {str(bool(report.get('approval_ready'))).lower()}")
+    publication = report.get("publication")
+    if isinstance(publication, dict):
+        print(f"  publication ready: {str(bool(publication.get('ready'))).lower()}")
 
 
 def _module_create(args: argparse.Namespace) -> int:
@@ -79,6 +88,44 @@ def _module_sandbox(args: argparse.Namespace) -> int:
     return 0 if report["ok"] else 1
 
 
+def _module_qualify(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = qualify_module_package(
+        package,
+        inputs=_load_sandbox_input(args),
+        timeout_seconds=args.timeout_seconds,
+        evidence_root=Path(args.evidence_root),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
+def _module_status(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = assess_module_readiness(package, evidence_root=Path(args.evidence_root))
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
+def _module_transition(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = transition_module_lifecycle(
+        package,
+        target=args.lifecycle,
+        actor=args.actor,
+        reason=args.reason,
+        evidence_root=Path(args.evidence_root),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
+def _add_sandbox_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--input", dest="input_json")
+    parser.add_argument("--input-file")
+    parser.add_argument("--timeout-seconds", type=float)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="seed", description="Seed Platform developer CLI")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -107,11 +154,37 @@ def build_parser() -> argparse.ArgumentParser:
     sandbox = module_commands.add_parser("sandbox", help="Run an SDK module in an isolated subprocess")
     sandbox.add_argument("target")
     sandbox.add_argument("--root", default="modules")
-    sandbox.add_argument("--input", dest="input_json")
-    sandbox.add_argument("--input-file")
-    sandbox.add_argument("--timeout-seconds", type=float)
+    _add_sandbox_arguments(sandbox)
     sandbox.add_argument("--json", action="store_true")
     sandbox.set_defaults(handler=_module_sandbox)
+
+    qualify = module_commands.add_parser("qualify", help="Run and record validation, test, and sandbox evidence")
+    qualify.add_argument("target")
+    qualify.add_argument("--root", default="modules")
+    qualify.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    _add_sandbox_arguments(qualify)
+    qualify.add_argument("--json", action="store_true")
+    qualify.set_defaults(handler=_module_qualify)
+
+    status = module_commands.add_parser("status", help="Inspect lifecycle readiness from matching evidence")
+    status.add_argument("target")
+    status.add_argument("--root", default="modules")
+    status.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    status.add_argument("--json", action="store_true")
+    status.set_defaults(handler=_module_status)
+
+    transition = module_commands.add_parser("transition", help="Apply one guarded lifecycle transition")
+    transition.add_argument("target")
+    transition.add_argument(
+        "lifecycle",
+        choices=("draft", "validated", "tested", "sandboxed", "approved", "published", "deprecated"),
+    )
+    transition.add_argument("--root", default="modules")
+    transition.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    transition.add_argument("--actor", required=True)
+    transition.add_argument("--reason", required=True)
+    transition.add_argument("--json", action="store_true")
+    transition.set_defaults(handler=_module_transition)
     return parser
 
 

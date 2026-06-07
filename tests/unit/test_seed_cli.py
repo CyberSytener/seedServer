@@ -88,6 +88,94 @@ def test_seed_module_sandbox_accepts_utf8_bom_input_file(tmp_path: Path, capsys)
     assert report["result"]["output"] == {"result": "from file"}
 
 
+def test_seed_module_qualify_and_status_use_matching_evidence(tmp_path: Path, capsys) -> None:
+    modules_root = tmp_path / "modules"
+    evidence_root = tmp_path / "evidence"
+    assert main(["module", "create", "cli_evidence", "--root", str(modules_root), "--json"]) == 0
+    capsys.readouterr()
+
+    assert (
+        main(
+            [
+                "module",
+                "qualify",
+                "cli_evidence",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    qualification = json.loads(capsys.readouterr().out)
+    assert qualification["approval_ready"] is True
+    assert len(qualification["qualification_records"]) == 3
+
+    assert (
+        main(
+            [
+                "module",
+                "transition",
+                "cli_evidence",
+                "validated",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--actor",
+                "cli-reviewer",
+                "--reason",
+                "validation evidence passed",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    transition = json.loads(capsys.readouterr().out)
+    assert transition["lifecycle"] == "validated"
+
+    assert (
+        main(
+            [
+                "module",
+                "status",
+                "cli_evidence",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    status = json.loads(capsys.readouterr().out)
+    assert status["approval_ready"] is True
+    assert status["evidence"]["matching_count"] == 4
+
+    handler = modules_root / "cli_evidence" / "handler.py"
+    handler.write_text(handler.read_text(encoding="utf-8") + "\n# changed\n", encoding="utf-8")
+    assert (
+        main(
+            [
+                "module",
+                "status",
+                "cli_evidence",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--json",
+            ]
+        )
+        == 1
+    )
+    stale_status = json.loads(capsys.readouterr().out)
+    assert stale_status["evidence"]["stale_count"] == 4
+
+
 def test_seed_module_create_returns_structured_error_for_existing_package(tmp_path: Path, capsys) -> None:
     assert main(["module", "create", "cli_demo", "--root", str(tmp_path), "--json"]) == 0
     capsys.readouterr()
