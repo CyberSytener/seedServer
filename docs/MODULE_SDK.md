@@ -25,7 +25,9 @@ seed module qualify text_normalizer
 seed module status text_normalizer
 seed module publish text_normalizer --actor reviewer --reason "approved release"
 seed module deprecate text_normalizer --actor reviewer --reason "replaced" --replacement-version 0.2.0
+seed module reject text_normalizer --actor reviewer --reason "repair required"
 seed module history text_normalizer
+seed module rejections text_normalizer
 ```
 
 Pass `--json` to any command for a machine-readable report suitable for an AI
@@ -293,6 +295,34 @@ Deprecation is irreversible in the current lifecycle. A replacement must be
 published as a new semantic version instead of mutating or restoring the old
 release.
 
+## Durable Rejection And Repair Context
+
+`seed module reject` preserves an unpublished candidate without changing its
+lifecycle. The command requires an authority signing key, actor, and reason.
+Published and deprecated releases cannot be rejected; use the deprecation gate
+for released versions.
+
+An allowed rejection writes signed evidence and a complete candidate snapshot
+under `.seed_artifacts/module_rejections/`. Each durable record contains:
+
+- the rejected package and exact fingerprint;
+- actor, reason, lifecycle, and rejection evidence reference;
+- validation and readiness diagnostics;
+- warnings and publication blockers;
+- current validation, test, and sandbox evidence references and full reports;
+- per-file hashes and a signed record envelope.
+
+`seed module rejections text_normalizer` verifies and lists rejected candidates
+without reading the current working package. This means a human or AI builder
+can modify or remove the working candidate while retaining the exact failed
+input and machine-readable repair instructions. A repaired candidate receives
+a new fingerprint and goes through qualification again; rejection is not a
+lifecycle state and does not prevent future repair.
+
+When `seed module reject` uses a custom `--evidence-root` without an explicit
+`--rejections-root`, it stores rejected candidates in the sibling
+`module_rejections` directory.
+
 ## Current Safety Boundary
 
 SDK tests load and execute local Python code in the developer process. They are
@@ -316,6 +346,11 @@ Published version snapshots are immutable by command behavior and verify every
 stored file and their envelope hash. Their HMAC signature is also verified when
 the authority key is available. They are still a local filesystem registry,
 not remote object-lock storage or a transparency log.
+
+Rejected candidate snapshots use the same local integrity boundary. They
+preserve repair evidence but do not execute repairs, prove reviewer identity
+beyond the shared authority key, or prevent a filesystem owner from deleting
+the local history.
 
 HMAC signatures establish that a record was produced by a holder of the shared
 authority key. They do not provide public-key identity, key rotation,

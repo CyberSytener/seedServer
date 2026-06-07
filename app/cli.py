@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional, Sequence
 
 from app.module_sdk import (
     DEFAULT_EVIDENCE_ROOT,
+    DEFAULT_REJECTION_HISTORY_ROOT,
     DEFAULT_VERSION_HISTORY_ROOT,
     assess_module_readiness,
     create_module_package,
@@ -15,6 +16,8 @@ from app.module_sdk import (
     publish_module_package,
     qualify_module_package,
     load_module_version_history,
+    load_module_rejection_history,
+    reject_module_package,
     resolve_module_package,
     run_module_package_tests,
     sandbox_module_package,
@@ -43,6 +46,12 @@ def _print_report(report: Dict[str, Any], *, as_json: bool) -> None:
                 f"  - {module.get('module_version')}: {version.get('lifecycle', 'published')} "
                 f"({module.get('fingerprint')})"
             )
+    if "rejection_count" in report:
+        print(f"  rejected candidates: {report.get('rejection_count', 0)}")
+        for rejection in report.get("rejections") or []:
+            module = rejection.get("module") if isinstance(rejection.get("module"), dict) else {}
+            decision = rejection.get("decision") if isinstance(rejection.get("decision"), dict) else {}
+            print(f"  - {module.get('module_version')}: {decision.get('reason')} ({module.get('fingerprint')})")
     publication = report.get("publication")
     if isinstance(publication, dict):
         print(f"  publication ready: {str(bool(publication.get('ready'))).lower()}")
@@ -184,6 +193,30 @@ def _module_deprecate(args: argparse.Namespace) -> int:
     return 0 if report["ok"] else 1
 
 
+def _module_reject(args: argparse.Namespace) -> int:
+    package = resolve_module_package(args.target, registry_root=Path(args.root))
+    report = reject_module_package(
+        package,
+        actor=args.actor,
+        reason=args.reason,
+        evidence_root=Path(args.evidence_root),
+        rejections_root=Path(args.rejections_root) if args.rejections_root else None,
+        signing_key=os.getenv(args.signing_key_env),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
+def _module_rejections(args: argparse.Namespace) -> int:
+    report = load_module_rejection_history(
+        args.module_id,
+        rejections_root=Path(args.rejections_root),
+        signing_key=os.getenv(args.signing_key_env),
+    )
+    _print_report(report, as_json=args.json)
+    return 0 if report["ok"] else 1
+
+
 def _add_sandbox_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--input", dest="input_json")
     parser.add_argument("--input-file")
@@ -279,12 +312,30 @@ def build_parser() -> argparse.ArgumentParser:
     deprecate.add_argument("--json", action="store_true")
     deprecate.set_defaults(handler=_module_deprecate)
 
+    reject = module_commands.add_parser("reject", help="Preserve a signed rejected candidate for repair")
+    reject.add_argument("target")
+    reject.add_argument("--root", default="modules")
+    reject.add_argument("--evidence-root", default=str(DEFAULT_EVIDENCE_ROOT))
+    reject.add_argument("--rejections-root")
+    reject.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    reject.add_argument("--actor", required=True)
+    reject.add_argument("--reason", required=True)
+    reject.add_argument("--json", action="store_true")
+    reject.set_defaults(handler=_module_reject)
+
     history = module_commands.add_parser("history", help="Inspect immutable published module versions")
     history.add_argument("module_id")
     history.add_argument("--versions-root", default=str(DEFAULT_VERSION_HISTORY_ROOT))
     history.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
     history.add_argument("--json", action="store_true")
     history.set_defaults(handler=_module_history)
+
+    rejections = module_commands.add_parser("rejections", help="Inspect durable rejected module candidates")
+    rejections.add_argument("module_id")
+    rejections.add_argument("--rejections-root", default=str(DEFAULT_REJECTION_HISTORY_ROOT))
+    rejections.add_argument("--signing-key-env", default="SEED_MODULE_EVIDENCE_SIGNING_KEY")
+    rejections.add_argument("--json", action="store_true")
+    rejections.set_defaults(handler=_module_rejections)
     return parser
 
 

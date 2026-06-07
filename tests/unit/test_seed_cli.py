@@ -362,3 +362,57 @@ def test_seed_module_publish_reads_authority_key_from_environment(tmp_path: Path
     deprecated_history = json.loads(capsys.readouterr().out)
     assert deprecated_history["versions"][0]["lifecycle"] == "deprecated"
     assert deprecated_history["versions"][0]["latest_deprecation"]["replacement_version"] == "0.2.0"
+
+
+def test_seed_module_reject_and_rejections_preserve_repair_context(tmp_path: Path, capsys, monkeypatch) -> None:
+    modules_root = tmp_path / "modules"
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "cli-rejection-authority-" + "a" * 32
+    assert main(["module", "create", "cli_rejection", "--root", str(modules_root), "--json"]) == 0
+    capsys.readouterr()
+    handler = modules_root / "cli_rejection" / "handler.py"
+    handler.write_text(handler.read_text(encoding="utf-8") + "\nimport httpx\n", encoding="utf-8")
+    monkeypatch.setenv("SEED_MODULE_EVIDENCE_SIGNING_KEY", signing_key)
+
+    assert (
+        main(
+            [
+                "module",
+                "reject",
+                "cli_rejection",
+                "--root",
+                str(modules_root),
+                "--evidence-root",
+                str(evidence_root),
+                "--rejections-root",
+                str(rejections_root),
+                "--actor",
+                "cli-reviewer",
+                "--reason",
+                "repair undeclared dependency",
+                "--json",
+            ]
+        )
+        == 0
+    )
+    rejected = json.loads(capsys.readouterr().out)
+    assert rejected["decision"] == "reject"
+    assert any(item["code"] == "sdk.dependency_not_allowed" for item in rejected["repair_context"]["diagnostics"])
+
+    assert (
+        main(
+            [
+                "module",
+                "rejections",
+                "cli_rejection",
+                "--rejections-root",
+                str(rejections_root),
+                "--json",
+            ]
+        )
+        == 0
+    )
+    history = json.loads(capsys.readouterr().out)
+    assert history["rejection_count"] == 1
+    assert history["rejections"][0]["decision"]["reason"] == "repair undeclared dependency"

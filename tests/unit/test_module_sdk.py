@@ -17,9 +17,11 @@ from app.module_sdk import (
     execute_module,
     fingerprint_module_package,
     load_module_evidence,
+    load_module_rejection_history,
     load_module_version_history,
     publish_module_package,
     qualify_module_package,
+    reject_module_package,
     record_module_evidence,
     run_module_package_tests,
     sandbox_module_package,
@@ -1504,6 +1506,244 @@ def test_module_version_history_detects_deprecation_tampering(tmp_path: Path, mo
     assert history["ok"] is False
     assert history["version_count"] == 0
     assert "deprecation record integrity hash mismatch" in history["invalid"][0]["message"]
+
+
+def test_rejection_history_preserves_candidate_and_repair_context(tmp_path: Path) -> None:
+    package = create_module_package("rejection_durable", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    rejections_root = tmp_path / "rejections"
+    signing_key = "rejection-authority-" + "a" * 32
+    assert package.handler_path is not None
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8") + "\nimport httpx\n",
+        encoding="utf-8",
+    )
+    qualify_module_package(package, evidence_root=evidence_root)
+
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="undeclared dependency requires repair",
+        evidence_root=evidence_root,
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    rejected_fingerprint = rejected["fingerprint"]
+    package.handler_path.write_text(
+        package.handler_path.read_text(encoding="utf-8").replace("import httpx", "# repaired"),
+        encoding="utf-8",
+    )
+    history = load_module_rejection_history(
+        "rejection_durable",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert rejected["ok"] is True
+    assert rejected["decision"] == "reject"
+    assert rejected["rejection_evidence"]["signature"]["algorithm"] == "hmac-sha256"
+    assert rejected["rejection_snapshot"]["signature_status"] == "valid"
+    assert any(
+        item["code"] == "sdk.dependency_not_allowed"
+        for item in rejected["repair_context"]["diagnostics"]
+    )
+    assert any(
+        item["code"] == "sdk.dependency_not_allowed"
+        for item in rejected["repair_context"]["qualification_reports"]["validation"]["report"]["diagnostics"]
+    )
+    assert history["ok"] is True
+    assert history["rejection_count"] == 1
+    assert history["rejections"][0]["module"]["fingerprint"] == rejected_fingerprint
+    assert history["rejections"][0]["decision"]["reason"] == "undeclared dependency requires repair"
+    rejected_package = resolve_module_package(Path(history["rejections"][0]["package_path"]))
+    assert fingerprint_module_package(rejected_package) == rejected_fingerprint
+    assert fingerprint_module_package(package) != rejected_fingerprint
+
+
+def test_reject_gate_blocks_published_release(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("rejection_published_guard", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "rejection-authority-" + "b" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish before rejection guard",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    report = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="attempt to reject release",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["decision"] == "block"
+    assert report["rejection_snapshot"] is None
+    assert any(item["code"] == "reject.unpublished_candidate_required" for item in report["diagnostics"])
+
+
+def test_reject_gate_blocks_published_release_after_manifest_lifecycle_edit(tmp_path: Path, monkeypatch) -> None:
+    package = create_module_package("rejection_published_evidence_guard", registry_root=tmp_path / "modules")
+    evidence_root = tmp_path / "evidence"
+    signing_key = "rejection-authority-" + "g" * 32
+    _approve_hardened_package(
+        package,
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+        monkeypatch=monkeypatch,
+    )
+    publish_module_package(
+        package,
+        actor="release-manager",
+        reason="publish before lifecycle edit",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+    manifest = package.load_manifest()
+    manifest["lifecycle"] = "draft"
+    package.manifest_path.write_text(yaml.safe_dump(manifest, sort_keys=False), encoding="utf-8")
+
+    report = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="attempt rejection after lifecycle edit",
+        evidence_root=evidence_root,
+        signing_key=signing_key,
+    )
+
+    assert report["ok"] is False
+    assert report["rejection_snapshot"] is None
+    assert any(item["code"] == "reject.unpublished_candidate_required" for item in report["diagnostics"])
+
+
+def test_rejection_history_detects_candidate_tampering(tmp_path: Path) -> None:
+    package = create_module_package("rejection_tampered", registry_root=tmp_path / "modules")
+    rejections_root = tmp_path / "rejections"
+    signing_key = "rejection-authority-" + "c" * 32
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="preserve before tamper test",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    snapshot_handler = Path(rejected["rejection_snapshot"]["package_path"]) / "handler.py"
+    snapshot_handler.write_text(snapshot_handler.read_text(encoding="utf-8") + "\n# tampered\n", encoding="utf-8")
+
+    history = load_module_rejection_history(
+        "rejection_tampered",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert history["ok"] is False
+    assert history["rejection_count"] == 0
+    assert "rejected candidate file hash mismatch" in history["invalid"][0]["message"]
+
+
+def test_rejection_history_rejects_unsigned_record(tmp_path: Path) -> None:
+    package = create_module_package("rejection_unsigned_record", registry_root=tmp_path / "modules")
+    rejections_root = tmp_path / "rejections"
+    signing_key = "rejection-authority-" + "e" * 32
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="preserve before signature test",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    record_path = Path(rejected["rejection_snapshot"]["path"]) / "rejection.json"
+    payload = json.loads(record_path.read_text(encoding="utf-8"))
+    payload.pop("signature")
+    record_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    history = load_module_rejection_history(
+        "rejection_unsigned_record",
+        rejections_root=rejections_root,
+    )
+
+    assert history["ok"] is False
+    assert history["rejection_count"] == 0
+    assert history["invalid"][0]["message"] == "rejection record signature missing"
+
+
+def test_reject_gate_requires_signing_authority(tmp_path: Path) -> None:
+    package = create_module_package("rejection_unsigned", registry_root=tmp_path / "modules")
+
+    report = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="attempt unsigned rejection",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=tmp_path / "rejections",
+    )
+
+    assert report["ok"] is False
+    assert report["rejection_snapshot"] is None
+    assert any(item["code"] == "reject.signing_key_required" for item in report["diagnostics"])
+
+
+def test_reject_gate_preserves_candidate_with_unreadable_manifest(tmp_path: Path) -> None:
+    package = create_module_package("rejection_broken_manifest", registry_root=tmp_path / "modules")
+    rejections_root = tmp_path / "rejections"
+    signing_key = "rejection-authority-" + "d" * 32
+    package.manifest_path.write_text("not: [valid", encoding="utf-8")
+
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="repair malformed manifest",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    history = load_module_rejection_history(
+        "rejection_broken_manifest",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert rejected["ok"] is True
+    assert any(item["code"] == "sdk.manifest_unreadable" for item in rejected["repair_context"]["diagnostics"])
+    assert history["ok"] is True
+    assert history["rejection_count"] == 1
+
+
+def test_reject_gate_preserves_candidate_with_incomplete_manifest(tmp_path: Path) -> None:
+    package = create_module_package("rejection_incomplete_manifest", registry_root=tmp_path / "modules")
+    rejections_root = tmp_path / "rejections"
+    signing_key = "rejection-authority-" + "f" * 32
+    package.manifest_path.write_text("title: Incomplete candidate\n", encoding="utf-8")
+
+    rejected = reject_module_package(
+        package,
+        actor="reviewer",
+        reason="repair incomplete manifest",
+        evidence_root=tmp_path / "evidence",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+    history = load_module_rejection_history(
+        "rejection_incomplete_manifest",
+        rejections_root=rejections_root,
+        signing_key=signing_key,
+    )
+
+    assert rejected["ok"] is True
+    assert history["ok"] is True
+    assert history["rejection_count"] == 1
 
 
 def test_publish_gate_rejects_evidence_added_after_approval(tmp_path: Path) -> None:

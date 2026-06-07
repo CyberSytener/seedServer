@@ -387,7 +387,9 @@ seed module qualify {module_id}
 seed module status {module_id}
 seed module publish {module_id} --actor reviewer --reason "approved release"
 seed module deprecate {module_id} --actor reviewer --reason "replaced"
+seed module reject {module_id} --actor reviewer --reason "repair required"
 seed module history {module_id}
+seed module rejections {module_id}
 ```
 
 Edit `module.yaml` to declare the contract and `handler.py` to implement it.

@@ -152,7 +152,9 @@ seed module status    [done]
 seed module transition [done]
 seed module publish   [done: gate]
 seed module deprecate [done: gate]
+seed module reject    [done: gate]
 seed module history   [done]
+seed module rejections [done]
 ```
 
 ### Exit Criteria
@@ -171,8 +173,9 @@ ordered CLI transitions through human approval. The second slice adds optional
 HMAC evidence signatures and signed allow/block publication decisions. The
 third slice adds signed immutable package snapshots and semantic-version
 conflict prevention. The fourth slice adds signed deprecation decisions bound
-to immutable release snapshots. Asymmetric signing, key rotation, durable
-rejection records, and a publish gate API remain open.
+to immutable release snapshots. The fifth slice adds signed durable rejected
+candidate snapshots and structured repair context. Asymmetric signing, key
+rotation, a publish gate API, and the automated AI repair loop remain open.
 
 ### Lifecycle
 
@@ -187,7 +190,7 @@ Draft -> Validated -> Tested -> Sandboxed -> Approved -> Published -> Deprecated
 - [x] signed publish decision and dedicated CLI gate;
 - [x] immutable published version history;
 - [x] signed deprecation records bound to published versions;
-- approval/rejection records with actor and reason;
+- [x] signed durable rejection records with actor, reason, and repair context;
 - publish gate API.
 
 ### Exit Criteria
