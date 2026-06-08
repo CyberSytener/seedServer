@@ -169,7 +169,7 @@ export function RunsView() {
                 No run selected
               </div>
               <p className="mt-1 text-[11px] text-zinc-600">
-                Sandbox the demo flow from Gallery, then inspect the execution timeline here.
+                Sandbox a flow or run a module, then inspect its execution timeline here.
               </p>
               <button
                 onClick={() => navigateView('gallery')}
@@ -190,12 +190,18 @@ export function RunsView() {
                   Run ID: {selectedRun.run_id}
                 </p>
               </div>
-              <button
-                onClick={() => openBlueprint(selectedRun.blueprint_name)}
-                className="text-[11px] px-2 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-500"
-              >
-                Open Blueprint
-              </button>
+              {selectedRun.target_type === 'flow' ? (
+                <button
+                  onClick={() => openBlueprint(selectedRun.blueprint_name)}
+                  className="text-[11px] px-2 py-1 rounded-md bg-blue-600 text-white hover:bg-blue-500"
+                >
+                  Open Blueprint
+                </button>
+              ) : (
+                <span className="rounded-md bg-blue-500/10 px-2 py-1 text-[10px] font-medium text-blue-300">
+                  Module run
+                </span>
+              )}
             </div>
 
             {detailLoading && (
@@ -391,6 +397,8 @@ function RunRow({
         </span>
       </div>
       <div className="flex items-center gap-2 mt-1 text-[10px] text-zinc-500">
+        <span>{run.target_type}</span>
+        <span>/</span>
         <span>{run.status}</span>
         <span>/</span>
         <span>{run.execution_mode}</span>

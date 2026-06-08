@@ -62,7 +62,7 @@ Usage:
     stats = quota_manager.get_usage(tenant_id="tenant_001")
 """
 
-from typing import Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional, List, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from enum import Enum
@@ -318,7 +318,7 @@ class QuotaManager:
             
             return True
     
-    def get_usage(self, tenant_id: str) -> Optional[Dict[str, any]]:
+    def get_usage(self, tenant_id: str) -> Optional[Dict[str, Any]]:
         """Get usage stats for tenant"""
         with self.lock:
             if tenant_id not in self.usage:
@@ -416,11 +416,11 @@ class TenantWorkerPool:
     
     def __init__(self, config: WorkerPoolConfig):
         self.config = config
-        self.queue: List[Tuple[int, any]] = []  # (priority, task)
+        self.queue: List[Tuple[int, Any]] = []  # (priority, task)
         self.active_workers: int = 0
         self.lock = threading.RLock()
     
-    def submit_task(self, task: any, priority: int = 1) -> bool:
+    def submit_task(self, task: Any, priority: int = 1) -> bool:
         """
         Submit task to queue
         
@@ -457,7 +457,7 @@ class TenantWorkerPool:
         with self.lock:
             self.active_workers = max(0, self.active_workers - 1)
     
-    def get_next_task(self) -> Optional[any]:
+    def get_next_task(self) -> Optional[Any]:
         """Get next task from queue"""
         with self.lock:
             if self.queue:
@@ -465,7 +465,7 @@ class TenantWorkerPool:
                 return task
             return None
     
-    def get_status(self) -> Dict[str, any]:
+    def get_status(self) -> Dict[str, Any]:
         """Get pool status"""
         with self.lock:
             return {
@@ -520,7 +520,7 @@ class MultiTenantOrchestrator:
         self,
         tenant_id: str,
         operation: OperationType,
-        task: any,
+        task: Any,
         priority: int = 1,
     ) -> Tuple[bool, Optional[str]]:
         """
@@ -544,7 +544,7 @@ class MultiTenantOrchestrator:
         
         return True, None
     
-    def get_system_status(self) -> Dict[str, any]:
+    def get_system_status(self) -> Dict[str, Any]:
         """Get status across all tenants"""
         with self.lock:
             return {

@@ -7,15 +7,18 @@ Use this checklist before sharing the repository link with reviewers.
 ```bash
 python scripts/run_portfolio_demo.py --smoke-test --no-open
 python scripts/run_quality_gate.py portfolio
-cd saga-console && npm run build
+python scripts/run_quality_gate.py integration
+python -m pip_audit
+cd saga-console && npm audit && npm run build
 ```
 
 Expected:
 
 - demo smoke prints `Smoke test passed`;
 - Saga Console build completes without chunk-size warnings;
-- backend focused tests pass.
-- the documented portfolio quality gate passes.
+- backend focused and integration tests pass;
+- the documented portfolio quality gate passes;
+- Python and npm audits report no known vulnerabilities.
 
 ## Reviewer Path
 
@@ -27,6 +30,7 @@ Expected:
 6. Run `Sandbox`.
 7. Open `Runs` and inspect the timeline.
 8. Open `Modules` and run `general_assistant` in stub mode.
+9. Return to `Runs` and confirm both the flow and module runs are visible.
 
 ## Suggested Screenshots
 
@@ -34,6 +38,7 @@ Expected:
 - Canvas showing `market_scan_default`.
 - Runs detail view after sandbox execution.
 - Modules view with `general_assistant` stub result.
+- Runs view showing both a flow run and a module run.
 - Root README quick demo section.
 
 ## Do Not Publish

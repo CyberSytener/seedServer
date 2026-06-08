@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 PORTFOLIO_TESTS = [
+    "tests/unit/test_portfolio_demo_launcher.py",
     "tests/unit/test_console_runtime_api.py",
     "tests/unit/test_auth_providers_api.py",
     "tests/unit/test_module_registry.py",
@@ -18,6 +19,7 @@ PORTFOLIO_TESTS = [
     "tests/unit/test_seed_cli.py",
     "tests/unit/test_flow_contract_validator.py",
     "tests/unit/test_modes_api.py",
+    "tests/unit/test_auth_rate_limit.py",
     "tests/unit/test_security_hardening.py",
     "tests/unit/test_llm_router_openai_regression.py",
     "tests/unit/sim",

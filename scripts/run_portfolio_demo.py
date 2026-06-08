@@ -135,6 +135,9 @@ def _wait_for_http(url: str, *, timeout: int) -> bool:
 
 
 def _check_python_deps() -> bool:
+    if sys.version_info < (3, 11):
+        print(f"Python 3.11+ is required. Current interpreter: {sys.version.split()[0]}")
+        return False
     missing = [
         package
         for package in ("fastapi", "uvicorn", "pydantic")
@@ -146,6 +149,33 @@ def _check_python_deps() -> bool:
     print("Missing Python dependencies:", ", ".join(missing))
     print('Install them first: python -m pip install -e ".[dev]"')
     return False
+
+
+def _check_node_runtime() -> bool:
+    node = _command("node")
+    npm = _command("npm")
+    if not node or not npm:
+        print("Node.js 18+ and npm are required to run Saga Console.")
+        return False
+    try:
+        version = subprocess.check_output([node, "--version"], text=True).strip().lstrip("v")
+        major = int(version.split(".", 1)[0])
+    except (OSError, subprocess.SubprocessError, ValueError):
+        print("Unable to determine the installed Node.js version.")
+        return False
+    if major < 18:
+        print(f"Node.js 18+ is required. Current version: {version}")
+        return False
+    return True
+
+
+def _reset_demo_state() -> None:
+    for path in (
+        DEMO_DB,
+        Path(f"{DEMO_DB}-shm"),
+        Path(f"{DEMO_DB}-wal"),
+    ):
+        path.unlink(missing_ok=True)
 
 
 def _ensure_frontend_deps(skip_install: bool) -> bool:
@@ -181,6 +211,7 @@ def _demo_env(backend_port: int) -> tuple[dict[str, str], dict[str, str]]:
             "SEED_LOG_LEVEL": "WARNING",
             "SEED_ADMIN_KEY": "portfolio_demo_admin",
             "SEED_API_KEY_PEPPER": "portfolio_demo_pepper",
+            "JWT_SECRET_KEY": "portfolio-demo-jwt-secret-key-32-bytes",
             "SEED_DB_PATH": str(DEMO_DB),
             "PYTHONUNBUFFERED": "1",
         }
@@ -207,6 +238,8 @@ def _start_backend(port: int, env: dict[str, str], *, verbose: bool) -> subproce
             "127.0.0.1",
             "--port",
             str(port),
+            "--ws",
+            "websockets-sansio",
             "--log-level",
             "warning",
             "--no-access-log",
@@ -241,6 +274,11 @@ def _terminate(processes: list[subprocess.Popen[Any]]) -> None:
                     stderr=subprocess.DEVNULL,
                     check=False,
                 )
+                try:
+                    proc.wait(timeout=8)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait(timeout=2)
         return
 
     for proc in processes:
@@ -288,6 +326,18 @@ def _run_smoke_checks(api_base: str) -> None:
     )
     if run.get("status") != "done":
         raise RuntimeError("Module stub run did not complete")
+    runs = _request_json("GET", f"{api_base}/v1/runs").get("runs")
+    if not isinstance(runs, list):
+        raise RuntimeError("Run history did not return a list")
+    expected_targets = {
+        (str(item.get("target_type") or ""), str(item.get("target_id") or ""))
+        for item in runs
+        if isinstance(item, dict)
+    }
+    if ("flow", DEMO_FLOW["flow_id"]) not in expected_targets:
+        raise RuntimeError("Run history did not preserve the sandboxed demo flow")
+    if ("module", "general_assistant") not in expected_targets:
+        raise RuntimeError("Run history did not preserve the module stub run")
 
 
 def main() -> int:
@@ -295,6 +345,7 @@ def main() -> int:
     parser.add_argument("--backend-port", type=int, default=8000)
     parser.add_argument("--frontend-port", type=int, default=5173)
     parser.add_argument("--skip-install", action="store_true", help="Do not run npm install if node_modules is missing")
+    parser.add_argument("--keep-state", action="store_true", help="Keep prior .demo SQLite state instead of resetting it")
     parser.add_argument("--no-open", action="store_true", help="Do not open the browser automatically")
     parser.add_argument("--smoke-test", action="store_true", help="Start services, run checks, stop, and exit")
     parser.add_argument("--verbose", action="store_true", help="Show uvicorn and Vite logs")
@@ -302,8 +353,12 @@ def main() -> int:
 
     if not _check_python_deps():
         return 1
+    if not _check_node_runtime():
+        return 1
     if not _ensure_frontend_deps(args.skip_install):
         return 1
+    if not args.keep_state:
+        _reset_demo_state()
 
     backend_port = _choose_port(args.backend_port)
     frontend_port = _choose_port(args.frontend_port)
@@ -353,8 +408,9 @@ def main() -> int:
         print("  1. Gallery -> open market_scan_default")
         print("  2. Canvas -> inspect modules and edges")
         print("  3. Gallery -> Sandbox")
-        print("  4. Modules -> run general_assistant in stub mode")
-        print("  5. Runs -> inspect the timeline")
+        print("  4. Runs -> inspect the flow timeline")
+        print("  5. Modules -> run general_assistant in stub mode")
+        print("  6. Runs -> compare the module and flow runs")
         print()
         print("Press Ctrl+C to stop the demo.")
         if not args.no_open:

@@ -70,7 +70,7 @@ def load_block_from_path(path: Path, base_cls: type) -> type:
 def iter_block_files() -> Iterable[Path]:
     path = ensure_registry_dir()
     for entry in sorted(path.glob("*.py")):
-        if entry.name == "__init__.py":
+        if entry.name in {"__init__.py", "loader.py"}:
             continue
         yield entry
 

@@ -85,6 +85,7 @@ export interface ExecutionResult {
 
 export interface SagaRunSummary {
   run_id: string;
+  target_type: 'module' | 'flow';
   blueprint_name: string;
   owner_id: string;
   status: string;

@@ -60,13 +60,6 @@ class AuthFailureRateLimiter:
             self._buckets[ip].append(now)
 
     def is_blocked(self, ip: str) -> bool:
-        try:
-            from app.settings import get_settings as _gs
-            _s = _gs()
-            if _s.environment in {"development", "test"} or _s.test_auth_mode:
-                return False
-        except Exception:
-            pass
         now = time.monotonic()
         with self._lock:
             self._prune(ip, now)
@@ -92,13 +85,6 @@ class AuthFailureRateLimiter:
 
     async def is_blocked_async(self, ip: str) -> bool:
         """Check Redis first, fall back to memory."""
-        try:
-            from app.settings import get_settings as _gs
-            _s = _gs()
-            if _s.environment in {"development", "test"} or _s.test_auth_mode:
-                return False
-        except Exception:
-            pass
         if self._redis is not None:
             try:
                 key = f"auth:failure:{ip}"

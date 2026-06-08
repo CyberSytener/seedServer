@@ -5,7 +5,7 @@ Generates alert rules and threshold definitions for critical metrics.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import json
 import logging
 
@@ -337,7 +337,7 @@ class SagaAlertRules:
         }
     
     @classmethod
-    def get_alert_thresholds(cls) -> Dict[str, Dict[str, any]]:
+    def get_alert_thresholds(cls) -> Dict[str, Dict[str, Any]]:
         """Get alert threshold definitions."""
         return {
             "success_rate": {

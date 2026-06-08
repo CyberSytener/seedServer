@@ -504,12 +504,12 @@ export const api = {
     limit?: number;
   }): Promise<{ runs: SagaRunSummary[] }> => {
     const response = await api.getRunsRaw({
-      targetType: 'flow',
       blueprint: params?.blueprint,
       limit: params?.limit,
     });
     const runs = response.runs.map((run) => ({
       run_id: run.run_id,
+      target_type: run.target_type,
       blueprint_name: run.target_id,
       owner_id: 'system',
       status: run.status,
@@ -524,6 +524,7 @@ export const api = {
     const timeline = Array.isArray(detail.timeline) ? detail.timeline : [];
     return {
       run_id: detail.run_id,
+      target_type: detail.target_type,
       blueprint_name: detail.target_id,
       owner_id: 'system',
       status: detail.status,

@@ -25,6 +25,7 @@ Prerequisites:
 
 - Python 3.11+
 - Node.js 18+
+- Desktop browser; the operator console is demonstrated at 1280px width or wider
 
 Install backend dependencies once:
 
@@ -44,7 +45,9 @@ Or, if you have `make`:
 make demo
 ```
 
-The launcher starts the FastAPI backend and Saga Console, chooses free local ports, seeds a demo flow, and opens the UI.
+The launcher starts the FastAPI backend and Saga Console, chooses free local
+ports, resets local demo state, seeds a demo flow, and opens the UI. Pass
+`--keep-state` only when you intentionally want to preserve earlier demo runs.
 
 Default credentials:
 
@@ -59,8 +62,9 @@ Password: P@SSW0RD
 2. Go to `Gallery` and open `market_scan_default`.
 3. Inspect the flow on `Canvas`.
 4. Return to `Gallery` and run `Sandbox`.
-5. Go to `Modules` and run `general_assistant` in stub mode.
-6. Open `Runs` and inspect the timeline/result.
+5. Open `Runs` and inspect the flow execution timeline.
+6. Go to `Modules`, run `general_assistant` in stub mode, then return to
+   `Runs` to compare the module run with the flow run.
 
 This path demonstrates the core story: gallery flow -> compiled graph -> module interaction -> sandbox execution -> run observability.
 
@@ -141,6 +145,9 @@ seed module test text_normalizer
 seed module sandbox text_normalizer --input-file sample-input.json
 seed module qualify text_normalizer
 seed module status text_normalizer
+seed module reject text_normalizer --actor reviewer --reason "repair required"
+seed module repair-plan text_normalizer --rejection-id REJECTION_ID --json
+seed module repair-check text_normalizer --rejection-id REJECTION_ID --actor reviewer
 seed module publish text_normalizer --actor reviewer --reason "approved release"
 docker build -f Dockerfile.module-sandbox -t seed-module-sandbox:local .
 seed module qualify text_normalizer --runtime docker

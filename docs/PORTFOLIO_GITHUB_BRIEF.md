@@ -53,7 +53,9 @@ vite
   diagnostics, subprocess sandbox evidence, package fingerprints, and guarded
   lifecycle transitions with an optional Docker hardened sandbox and signed
   publication gate that rejects observed Python-level capability violations
-  and unresolved secret/dependency requirements.
+  and unresolved secret/dependency requirements. Signed rejected candidates
+  can be turned into bounded repair context packs and qualified through a
+  three-attempt repair loop with preserved provenance.
 - Saga depth: version registry, typed flow handlers, retry/timeouts,
   idempotency, distributed locking, compensation-oriented state model.
 - Domain proof: NeoEats uses the runtime for pantry, recipes, receipt
@@ -116,12 +118,9 @@ vite
 
 ## Remaining Publication Risks
 
-- The working tree still contains a large historical cleanup delta. Before
-  publishing, commit or intentionally remove tracked generated artifacts,
-  especially previously tracked `node_modules` and SQLite runtime files.
 - Some historical docs still contain old architecture wording. The new README,
-  `DEMO.md`, and this brief should be the public entry points until those docs
-  are normalized.
+  `DEMO.md`, this brief, and `docs/PLATFORM_ROADMAP.md` are the public entry
+  points.
 - `requirements.txt` is not the canonical runtime source; `pyproject.toml` and
   `requirements.lock` are more reliable for setup.
 - Active run cancellation is not implemented yet; the API currently reports
