@@ -18,6 +18,7 @@ from app.api.console.utils import (
     RunTarget,
     _CONTEXT_ROOTS,
     _blueprint_to_flow_graph,
+    _canonicalize_blueprint_steps,
     _canonical_sha256,
     _create_flow_run,
     _flow_document,
@@ -111,6 +112,8 @@ async def compile_flow(payload: FlowCompileRequest, request: Request) -> Dict[st
                 "errors": contract_validation.get("errors", []),
             },
         )
+    blueprint_steps = _graph_to_blueprint_steps(graph_nodes, graph_edges)
+    raw_blueprint["steps"] = blueprint_steps
     raw_blueprint["contract_validation"] = contract_validation
 
     compiled_payload = {
@@ -176,11 +179,13 @@ async def validate_flow(flow_id: str, request: Request) -> Dict[str, Any]:
 
     registry = build_default_registry()
     architect = SagaArchitect(registry)
-    validation = architect.validate_blueprint(record.data if isinstance(record.data, dict) else {})
+    blueprint = _canonicalize_blueprint_steps(
+        record.data if isinstance(record.data, dict) else {}
+    )
+    validation = architect.validate_blueprint(blueprint)
     _validate_errors = []
     if not validation.get("ok"):
         _validate_errors = [str(err) for err in (validation.get("errors") or [])]
-    blueprint = record.data if isinstance(record.data, dict) else {}
     contract_validation = _validate_flow_contract_blueprint(blueprint)
     contract_errors = [str(error) for error in (contract_validation.get("errors") or [])]
 
@@ -218,13 +223,15 @@ async def sandbox_flow(flow_id: str, request: Request) -> Dict[str, Any]:
 
     registry = build_default_registry()
     architect = SagaArchitect(registry)
-    validation = architect.validate_blueprint(record.data if isinstance(record.data, dict) else {})
+    blueprint = _canonicalize_blueprint_steps(
+        record.data if isinstance(record.data, dict) else {}
+    )
+    validation = architect.validate_blueprint(blueprint)
     if not validation.get("ok"):
         raise HTTPException(
             status_code=400,
             detail={"error": "invalid_flow", "details": validation.get("errors", [])},
         )
-    blueprint = record.data if isinstance(record.data, dict) else {}
     contract_validation = _validate_flow_contract_blueprint(blueprint)
     if not contract_validation.get("ok"):
         raise HTTPException(

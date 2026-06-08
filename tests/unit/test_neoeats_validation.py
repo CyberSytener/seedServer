@@ -31,6 +31,23 @@ def test_order_saga_requires_core_blocks() -> None:
     assert any("order saga missing required blocks" in err for err in result["errors"])
 
 
+def test_order_saga_detection_does_not_match_substrings() -> None:
+    blueprint = {
+        "name": "visually_reordered_demo",
+        "version": "v1",
+        "steps": [
+            {
+                "id": "scan",
+                "block": "market_scanner",
+                "inputs": {"user_id": {"from": "user_id"}},
+            }
+        ],
+    }
+
+    result = _architect().validate_blueprint(blueprint)
+    assert result["ok"] is True
+
+
 def test_order_saga_block_ordering() -> None:
     blueprint = {
         "name": "order_checkout",

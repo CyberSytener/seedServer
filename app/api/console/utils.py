@@ -350,19 +350,52 @@ def _graph_to_blueprint_steps(
     nodes: List[Dict[str, Any]],
     edges: List[Dict[str, Any]],
 ) -> List[Dict[str, Any]]:
-    ordered_nodes = [
+    candidate_nodes = [
         node
         for node in nodes
         if isinstance(node, dict) and str(node.get("node_id") or "").strip()
     ]
+    node_by_id = {
+        str(node.get("node_id") or "").strip(): node
+        for node in candidate_nodes
+    }
+    original_index = {
+        str(node.get("node_id") or "").strip(): index
+        for index, node in enumerate(candidate_nodes)
+    }
+    dependencies: Dict[str, set[str]] = {node_id: set() for node_id in node_by_id}
+    dependents: Dict[str, set[str]] = {node_id: set() for node_id in node_by_id}
     incoming: Dict[str, List[Dict[str, Any]]] = {}
     for edge in edges:
         if not isinstance(edge, dict):
             continue
+        src = str(edge.get("from") or "").strip()
         dst = str(edge.get("to") or "").strip()
         if not dst:
             continue
         incoming.setdefault(dst, []).append(edge)
+        if src in node_by_id and dst in node_by_id and src != dst:
+            dependencies[dst].add(src)
+            dependents[src].add(dst)
+
+    ready = sorted(
+        (node_id for node_id, required in dependencies.items() if not required),
+        key=original_index.get,
+    )
+    ordered_ids: List[str] = []
+    while ready:
+        node_id = ready.pop(0)
+        ordered_ids.append(node_id)
+        for dependent in sorted(dependents[node_id], key=original_index.get):
+            dependencies[dependent].discard(node_id)
+            if not dependencies[dependent] and dependent not in ordered_ids and dependent not in ready:
+                ready.append(dependent)
+        ready.sort(key=original_index.get)
+
+    if len(ordered_ids) != len(candidate_nodes):
+        ordered_nodes = candidate_nodes
+    else:
+        ordered_nodes = [node_by_id[node_id] for node_id in ordered_ids]
 
     steps: List[Dict[str, Any]] = []
     for node in ordered_nodes:
@@ -405,6 +438,18 @@ def _graph_to_blueprint_steps(
             step["params"] = params
         steps.append(step)
     return steps
+
+
+def _canonicalize_blueprint_steps(blueprint: Dict[str, Any]) -> Dict[str, Any]:
+    canonical = dict(blueprint)
+    graph = blueprint.get("graph") if isinstance(blueprint.get("graph"), dict) else {}
+    nodes = graph.get("nodes") if isinstance(graph.get("nodes"), list) else []
+    edges = graph.get("edges") if isinstance(graph.get("edges"), list) else []
+    if not nodes:
+        nodes, edges = _blueprint_to_flow_graph(blueprint)
+    if nodes:
+        canonical["steps"] = _graph_to_blueprint_steps(nodes, edges)
+    return canonical
 
 
 def _validate_flow_contract_graph(
@@ -1172,7 +1217,9 @@ async def _create_flow_run(
     if not record:
         raise HTTPException(status_code=404, detail="flow_not_found")
 
-    blueprint_payload = record.data if isinstance(record.data, dict) else {}
+    blueprint_payload = _canonicalize_blueprint_steps(
+        record.data if isinstance(record.data, dict) else {}
+    )
     ctx = auth_ctx
     graph = blueprint_payload.get("graph") if isinstance(blueprint_payload.get("graph"), dict) else {}
     graph_nodes = graph.get("nodes") if isinstance(graph.get("nodes"), list) else []

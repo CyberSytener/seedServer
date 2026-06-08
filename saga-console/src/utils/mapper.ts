@@ -187,7 +187,51 @@ export function graphToBlueprint(
   nodes: Node<SagaNodeData>[],
   edges: Edge[],
 ): BlueprintStep[] {
-  const sorted = [...nodes].sort((a, b) => a.position.y - b.position.y);
+  const positionSorted = [...nodes].sort((a, b) => a.position.y - b.position.y);
+  const nodeById = new Map(positionSorted.map((node) => [node.id, node]));
+  const positionIndex = new Map(positionSorted.map((node, index) => [node.id, index]));
+  const dependencies = new Map(positionSorted.map((node) => [node.id, new Set<string>()]));
+  const dependents = new Map(positionSorted.map((node) => [node.id, new Set<string>()]));
+
+  for (const edge of edges) {
+    if (!nodeById.has(edge.source) || !nodeById.has(edge.target) || edge.source === edge.target) {
+      continue;
+    }
+    dependencies.get(edge.target)?.add(edge.source);
+    dependents.get(edge.source)?.add(edge.target);
+  }
+
+  const byPosition = (a: string, b: string) =>
+    (positionIndex.get(a) ?? 0) - (positionIndex.get(b) ?? 0);
+  const ready = positionSorted
+    .filter((node) => dependencies.get(node.id)?.size === 0)
+    .map((node) => node.id);
+  const orderedIds: string[] = [];
+
+  while (ready.length > 0) {
+    const nodeId = ready.shift();
+    if (!nodeId) break;
+    orderedIds.push(nodeId);
+    for (const dependent of [...(dependents.get(nodeId) ?? [])].sort(byPosition)) {
+      dependencies.get(dependent)?.delete(nodeId);
+      if (
+        dependencies.get(dependent)?.size === 0 &&
+        !orderedIds.includes(dependent) &&
+        !ready.includes(dependent)
+      ) {
+        ready.push(dependent);
+      }
+    }
+    ready.sort(byPosition);
+  }
+
+  const sorted =
+    orderedIds.length === positionSorted.length
+      ? orderedIds.flatMap((nodeId) => {
+          const node = nodeById.get(nodeId);
+          return node ? [node] : [];
+        })
+      : positionSorted;
 
   return sorted.map((node) => {
     const d = node.data;

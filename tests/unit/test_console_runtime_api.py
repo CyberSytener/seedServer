@@ -401,6 +401,108 @@ def test_compile_flow_from_blueprint_preserves_inputs_and_params() -> None:
     ]
 
 
+def test_compile_flow_orders_blueprint_steps_by_dependencies() -> None:
+    client, _ = _build_client()
+
+    compile_response = client.post(
+        "/v1/flows/compile",
+        headers=_headers(),
+        json={
+            "flow_id": "visually_moved_demo",
+            "version": "v1",
+            "blueprint": {
+                "steps": [
+                    {
+                        "id": "notification_1",
+                        "block": "notification_block",
+                        "inputs": {"items": {"from": "job_scorer_1.scored_jobs"}},
+                    },
+                    {
+                        "id": "job_scorer_1",
+                        "block": "job_scorer",
+                        "inputs": {
+                            "user_id": {"from": "user_id"},
+                            "jobs": {"from": "market_scanner_1.jobs"},
+                        },
+                    },
+                    {
+                        "id": "market_scanner_1",
+                        "block": "market_scanner",
+                        "inputs": {"user_id": {"from": "user_id"}},
+                    },
+                ]
+            },
+            "save": True,
+        },
+    )
+    assert compile_response.status_code == 200
+
+    flow_response = client.get("/v1/flows/visually_moved_demo", headers=_headers())
+    assert flow_response.status_code == 200
+    steps = flow_response.json()["raw_blueprint"]["steps"]
+    assert [step["id"] for step in steps] == [
+        "market_scanner_1",
+        "job_scorer_1",
+        "notification_1",
+    ]
+
+    sandbox_response = client.post(
+        "/v1/flows/visually_moved_demo/sandbox",
+        headers=_headers(),
+    )
+    assert sandbox_response.status_code == 200
+    assert sandbox_response.json()["dry_run"]["status"] == "succeeded"
+
+
+def test_sandbox_accepts_existing_flow_with_visually_ordered_steps() -> None:
+    client, app = _build_client()
+    asyncio.run(
+        app.state.console_blueprint_store.save(
+            "existing_visual_layout_demo",
+            {
+                "name": "existing_visual_layout_demo",
+                "version": "v1",
+                "steps": [
+                    {
+                        "id": "notification_1",
+                        "block": "notification_block",
+                        "inputs": {"items": {"from": "job_scorer_1.scored_jobs"}},
+                    },
+                    {
+                        "id": "job_scorer_1",
+                        "block": "job_scorer",
+                        "inputs": {
+                            "user_id": {"from": "user_id"},
+                            "jobs": {"from": "market_scanner_1.jobs"},
+                        },
+                    },
+                    {
+                        "id": "market_scanner_1",
+                        "block": "market_scanner",
+                        "inputs": {"user_id": {"from": "user_id"}},
+                    },
+                ],
+            },
+            owner_id="admin",
+            status=BlueprintStatus.DRAFT,
+        )
+    )
+
+    validate_response = client.post(
+        "/v1/flows/existing_visual_layout_demo/validate",
+        headers=_headers(),
+    )
+    assert validate_response.status_code == 200
+    assert validate_response.json()["ok"] is True
+
+    sandbox_response = client.post(
+        "/v1/flows/existing_visual_layout_demo/sandbox",
+        headers=_headers(),
+    )
+    assert sandbox_response.status_code == 200
+    assert sandbox_response.json()["dry_run"]["status"] == "succeeded"
+
+
 def test_compile_flow_rejects_incompatible_contract_mapping() -> None:
     client, _ = _build_client()
 

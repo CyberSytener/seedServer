@@ -379,20 +379,23 @@ class SagaArchitect:
     def validate_blueprint(self, json_data: Dict[str, Any] | List[Dict[str, Any]]) -> Dict[str, Any]:
         steps = self._normalize_steps(json_data)
         errors: List[str] = []
-        step_names: List[str] = []
+        step_names: List[str] = [
+            str(step.get("name") or step.get("id") or f"step_{index}")
+            for index, step in enumerate(steps)
+        ]
         block_sequence: List[str] = []
+        seen_step_names: set[str] = set()
 
         for index, step in enumerate(steps):
-            name = step.get("name") or step.get("id")
+            name = step_names[index]
             block_type = step.get("block") or step.get("block_type")
             block_sequence.append(str(block_type or ""))
 
-            if not name:
+            if not step.get("name") and not step.get("id"):
                 errors.append(f"step[{index}] is missing name/id")
-                name = f"step_{index}"
-            if name in step_names:
+            if name in seen_step_names:
                 errors.append(f"duplicate step name: {name}")
-            step_names.append(name)
+            seen_step_names.add(name)
 
             if not block_type:
                 errors.append(f"step[{index}] ({name}) missing block type")
@@ -413,7 +416,8 @@ class SagaArchitect:
     def _is_order_saga(json_data: Dict[str, Any] | List[Dict[str, Any]], block_sequence: List[str]) -> bool:
         if isinstance(json_data, dict):
             name = str(json_data.get("name") or "").lower()
-            if any(token in name for token in ("order", "checkout", "purchase")):
+            name_tokens = set(re.findall(r"[a-z0-9]+", name))
+            if name_tokens.intersection({"order", "checkout", "purchase"}):
                 return True
         return any(
             block in block_sequence
