@@ -18,6 +18,7 @@ def test_candidate_gate_inventory_is_focused_and_versioned() -> None:
     assert quality_gate.INTENT_TO_OUTCOME_TESTS == EXPECTED_INTENT_TO_OUTCOME_TESTS
     assert "intent-to-outcome" in quality_gate.GATE_CHOICES
     assert "tests/unit/opportunity" not in quality_gate.PORTFOLIO_TESTS
+    assert "tests/unit/test_quality_gate_runner.py" not in quality_gate.PORTFOLIO_TESTS
     assert "tests/unit" not in quality_gate.INTENT_TO_OUTCOME_TESTS
     assert "tests/integration" not in quality_gate.INTENT_TO_OUTCOME_TESTS
 
