@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.0.0",
+  "target_id": "SEED-ITO-M3",
+  "target_version": "2026-07-17",
+  "strategic_goal": "Demonstrate a deterministic retail-footwear Intent-to-Outcome loop in stub mode with inspectable evidence, proposals, simulated actions, and measured outcomes.",
+  "immediate_checkpoint": {
+    "task_id": "ITO-102",
+    "title": "IntentContextV1",
+    "goal": "Represent confirmed goals, constraints, preferences, permissions, optimization targets, and forbidden objectives without adding runtime, API, persistence, live sources, or UI behavior."
+  },
+  "audited_starting_ref": "main@eee84040fd8388e842d45b1e099dcd898574fd01",
+  "scope_status": "candidate",
+  "required_documents": [
+    "SOURCE_OF_TRUTH.md",
+    "AGENTS.md",
+    "docs/ACTIVE_PLATFORM_SCOPE.md",
+    "docs/TEST_STRATEGY.md",
+    "docs/INTENT_TO_OUTCOME_MANIFEST.md",
+    "docs/INTENT_TO_OUTCOME_IMPLEMENTATION_PLAN.md",
+    "docs/SEED_SERVER_MANIFEST_ALIGNMENT_AUDIT.md",
+    "docs/adr/0015-intent-to-outcome-candidate-surface.md"
+  ],
+  "merged_prerequisites": [
+    {
+      "task": "ITO-001/ITO-002",
+      "proof": "PR #2 merged"
+    },
+    {
+      "task": "ITO-R001",
+      "proof": "PR #3 merged"
+    },
+    {
+      "task": "ITO-R014",
+      "proof": "PR #4 merged"
+    },
+    {
+      "task": "ITO-101",
+      "proof": "PR #5 merged as eee84040fd8388e842d45b1e099dcd898574fd01"
+    }
+  ],
+  "constraints": [
+    "Preserve Active portfolio demo, Saga Console, module registry/SDK, Saga runtime, and deterministic stub mode.",
+    "Do not introduce API routes, persistence tables, live sources, provider calls, or UI behavior during Phase 1 contracts and policies.",
+    "Do not silently convert inferred interests into confirmed goals.",
+    "Consequential capabilities remain independently permissioned and human-gated.",
+    "execute_financial_actions defaults to denied.",
+    "No real financial, public, physical, or privacy-sensitive effect is authorized.",
+    "Universal contracts remain domain-neutral; retail knowledge belongs in later vertical modules.",
+    "Every slice uses stable diagnostics, deterministic fixtures, schema snapshots, focused tests, Candidate gate, and Cold Review."
+  ],
+  "strategic_go_gates": [
+    {
+      "gate": "M1-language",
+      "requires": [
+        "universal schemas",
+        "lifecycle transition engine",
+        "deterministic scoring and policy tests"
+      ]
+    },
+    {
+      "gate": "M2-modules",
+      "requires": [
+        "fixture-only Contract v1 vertical modules",
+        "SDK validation and golden tests",
+        "sandbox and publication evidence"
+      ]
+    },
+    {
+      "gate": "M3-closed-loop",
+      "requires": [
+        "safe module-to-flow execution bridge",
+        "deterministic retail reference flow",
+        "simulated action path",
+        "evidence and outcome inspection in the reviewer path"
+      ]
+    }
+  ],
+  "blocked_until_later": [
+    "persistent universal repositories",
+    "controlled live retail sources",
+    "third-party messages",
+    "real spending or purchases",
+    "crypto order execution",
+    "sensor observation",
+    "physical device control",
+    "Candidate-to-Active promotion"
+  ]
+}
