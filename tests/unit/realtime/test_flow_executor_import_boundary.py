@@ -18,7 +18,8 @@ DIRECT_EXECUTOR_MODULE = "app.core.realtime.sagas.flows.flow_executor"
 
 
 def _imports_direct_executor(path: Path) -> bool:
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    source = path.read_text(encoding="utf-8-sig")
+    tree = ast.parse(source, filename=str(path))
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             if any(alias.name == DIRECT_EXECUTOR_MODULE for alias in node.names):
