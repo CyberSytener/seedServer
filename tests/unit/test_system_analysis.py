@@ -155,8 +155,8 @@ async def health() -> dict[str, str]:
 
             inventory = ANALYZER.build_inventory(root, self._profile(), revision="test-ref")
             paths = {
-                item["path"]
-                for item in ANALYZER.iter_repository_files(root, self._profile())
+                path.relative_to(root).as_posix()
+                for path in ANALYZER.iter_repository_files(root, self._profile())
             }
 
             self.assertNotIn(".env", paths)
