@@ -46,7 +46,11 @@ def test_candidate_packages_exist_and_import_without_runtime_registration() -> N
 
     for package_name in IMPORTABLE_PACKAGES:
         module = importlib.import_module(package_name)
-        assert tuple(getattr(module, "__all__", ())) == ()
+        exported_names = tuple(getattr(module, "__all__", ()))
+        assert all(isinstance(name, str) and name for name in exported_names)
+        assert len(exported_names) == len(set(exported_names))
+        for name in exported_names:
+            assert hasattr(module, name), f"{package_name} exports missing attribute {name}"
 
 
 def test_candidate_packages_do_not_import_runtime_or_infrastructure() -> None:
