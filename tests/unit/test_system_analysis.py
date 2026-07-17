@@ -20,6 +20,18 @@ class SystemAnalysisTests(unittest.TestCase):
         return {
             "schema_version": "1.0.0",
             "repository": "example/seed",
+            "exclude_globs": [
+                ".env",
+                ".env.*",
+                "*.db",
+                "*.sqlite",
+                "*.sqlite3",
+                "*.log",
+                "*.pem",
+                "*.key",
+                "*.p12",
+                "*.zip",
+            ],
             "required_docs": ["README.md"],
             "surfaces": [
                 {
@@ -130,7 +142,7 @@ async def health() -> dict[str, str]:
             self.assertEqual(inventory["quality"]["gates"]["choices"], ["portfolio", "integration"])
             self.assertEqual(inventory["dependencies"]["project"]["version"], "1.2.3")
 
-    def test_sensitive_and_generated_files_are_excluded(self) -> None:
+    def test_profile_excludes_sensitive_and_generated_files(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             self._write_repository(root)
