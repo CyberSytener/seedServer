@@ -9,6 +9,16 @@
     "runtime-data"
   ],
   "exclude_globs": [
+    ".env",
+    ".env.*",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
+    "*.log",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.zip",
     "**/*.coverage",
     "**/coverage.xml",
     "**/local_state/**",
