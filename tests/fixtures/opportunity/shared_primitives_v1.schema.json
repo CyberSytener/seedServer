@@ -1,0 +1,241 @@
+{
+  "compatibility_policy": "Shared primitive v1 models reject unknown fields. Additive or breaking shape changes require an explicit schema-version update and snapshot review.",
+  "enums": {
+    "ActionProposalStatus": [
+      "proposed",
+      "policy_denied",
+      "waiting_confirmation",
+      "confirmed",
+      "rejected",
+      "expired",
+      "submitted",
+      "cancelled"
+    ],
+    "ConfirmationClass": [
+      "none",
+      "user",
+      "elevated",
+      "dual_control"
+    ],
+    "EvidenceRelationType": [
+      "supports",
+      "contradicts",
+      "qualifies",
+      "duplicates",
+      "supersedes"
+    ],
+    "HypothesisStatus": [
+      "proposed",
+      "testing",
+      "supported",
+      "weakened",
+      "rejected",
+      "expired"
+    ],
+    "OpportunityStatus": [
+      "candidate",
+      "reviewed",
+      "approved_for_experiment",
+      "active",
+      "completed",
+      "dismissed",
+      "expired"
+    ],
+    "OutcomeStatus": [
+      "recorded",
+      "reviewed",
+      "inconclusive",
+      "superseded"
+    ],
+    "RetentionClass": [
+      "ephemeral",
+      "session",
+      "short_term",
+      "user_managed",
+      "long_term"
+    ],
+    "ReversibilityClass": [
+      "fully_reversible",
+      "compensatable",
+      "partially_reversible",
+      "irreversible"
+    ],
+    "SensitivityClass": [
+      "public",
+      "internal",
+      "personal",
+      "sensitive",
+      "restricted"
+    ]
+  },
+  "models": {
+    "ConfidenceValueV1": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value"
+      ],
+      "title": "ConfidenceValueV1",
+      "type": "object"
+    },
+    "MoneyAmountV1": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z][A-Z0-9]{2,11}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "minor_units": {
+          "minimum": 0,
+          "title": "Minor Units",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "currency",
+        "minor_units"
+      ],
+      "title": "MoneyAmountV1",
+      "type": "object"
+    },
+    "PolicyVersionRefV1": {
+      "additionalProperties": false,
+      "properties": {
+        "digest_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest Sha256"
+        },
+        "policy_id": {
+          "pattern": "^[a-z][a-z0-9._-]{1,127}$",
+          "title": "Policy Id",
+          "type": "string"
+        },
+        "version": {
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_id",
+        "version"
+      ],
+      "title": "PolicyVersionRefV1",
+      "type": "object"
+    },
+    "ProvenanceStepV1": {
+      "additionalProperties": false,
+      "properties": {
+        "input_refs": {
+          "default": [],
+          "items": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$",
+            "type": "string"
+          },
+          "title": "Input Refs",
+          "type": "array"
+        },
+        "operation": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Operation",
+          "type": "string"
+        },
+        "output_ref": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Ref"
+        },
+        "performed_at": {
+          "format": "date-time",
+          "title": "Performed At",
+          "type": "string"
+        },
+        "processor_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$",
+          "title": "Processor Id",
+          "type": "string"
+        },
+        "processor_version": {
+          "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+          "title": "Processor Version",
+          "type": "string"
+        },
+        "step_id": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,255}$",
+          "title": "Step Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step_id",
+        "operation",
+        "processor_id",
+        "processor_version",
+        "performed_at"
+      ],
+      "title": "ProvenanceStepV1",
+      "type": "object"
+    },
+    "SourceTimestampsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "ingested_at": {
+          "format": "date-time",
+          "title": "Ingested At",
+          "type": "string"
+        },
+        "observed_at": {
+          "format": "date-time",
+          "title": "Observed At",
+          "type": "string"
+        },
+        "source_updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Updated At"
+        }
+      },
+      "required": [
+        "observed_at",
+        "ingested_at"
+      ],
+      "title": "SourceTimestampsV1",
+      "type": "object"
+    }
+  },
+  "schema_version": "1.0.0"
+}
