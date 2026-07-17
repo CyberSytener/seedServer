@@ -1,10 +1,30 @@
 """Portable versioned contracts for the Intent-to-Outcome Candidate surface.
 
 This package must remain independent of FastAPI, persistence adapters, provider
-clients, and UI code. Versioned primitives reject unknown fields by policy so
+clients, and UI code. Versioned contracts reject unknown fields by policy so
 contract evolution is explicit and reviewable.
 """
 
+from .intent_context import (
+    CapabilityEffectClass,
+    CapabilityPermissionV1,
+    ConfirmationRecordV1,
+    ConfirmedGoalV1,
+    ConstraintOperator,
+    ForbiddenObjectiveV1,
+    GoalOrigin,
+    INTENT_CONTEXT_SCHEMA_VERSION,
+    IntentConstraintV1,
+    IntentContextV1,
+    InterestOrigin,
+    InterestSignalV1,
+    OptimizationDirection,
+    OptimizationTargetV1,
+    PermissionDecision,
+    PreferenceSource,
+    UserPreferenceV1,
+    intent_context_schema_v1,
+)
 from .primitives import (
     ActionProposalStatus,
     ConfidenceValueV1,
@@ -29,15 +49,31 @@ from .primitives import (
 
 __all__ = (
     "ActionProposalStatus",
+    "CapabilityEffectClass",
+    "CapabilityPermissionV1",
     "ConfidenceValueV1",
     "ConfirmationClass",
+    "ConfirmationRecordV1",
+    "ConfirmedGoalV1",
+    "ConstraintOperator",
     "EvidenceRelationType",
+    "ForbiddenObjectiveV1",
+    "GoalOrigin",
     "HypothesisStatus",
+    "INTENT_CONTEXT_SCHEMA_VERSION",
+    "IntentConstraintV1",
+    "IntentContextV1",
+    "InterestOrigin",
+    "InterestSignalV1",
     "MoneyAmountV1",
     "OpportunityPrimitiveModel",
     "OpportunityStatus",
+    "OptimizationDirection",
+    "OptimizationTargetV1",
     "OutcomeStatus",
+    "PermissionDecision",
     "PolicyVersionRefV1",
+    "PreferenceSource",
     "ProvenanceStepV1",
     "RetentionClass",
     "ReversibilityClass",
@@ -46,5 +82,7 @@ __all__ = (
     "SensitivityClass",
     "SourceTimestampsV1",
     "StableStringEnum",
+    "UserPreferenceV1",
+    "intent_context_schema_v1",
     "shared_primitives_schema_snapshot_v1",
 )
