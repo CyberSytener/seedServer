@@ -34,13 +34,14 @@ def test_topological_order_rejects_self_loop_with_stable_code() -> None:
     )
 
 
-def test_topological_order_reports_remaining_nodes_in_insertion_order() -> None:
+def test_topological_order_reports_only_cycle_participants() -> None:
     with pytest.raises(FlowGraphCycleError) as exc_info:
         topological_order(
-            ["alpha", "beta", "free"],
+            ["alpha", "beta", "downstream", "free"],
             [
                 {"from": "alpha", "to": "beta"},
                 {"from": "beta", "to": "alpha"},
+                {"from": "beta", "to": "downstream"},
             ],
         )
 
