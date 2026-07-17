@@ -163,6 +163,7 @@ cd saga-console && npm run build
 - [Module SDK and CLI](docs/MODULE_SDK.md)
 - [Active platform scope](docs/ACTIVE_PLATFORM_SCOPE.md)
 - [Test and quality strategy](docs/TEST_STRATEGY.md)
+- [Repeatable system analysis workspace](docs/system-analysis/README.md)
 - [Architecture decisions](docs/adr/README.md)
 - [Canonical source and worktree policy](SOURCE_OF_TRUTH.md)
 

@@ -1,0 +1,81 @@
+name: system-analysis
+
+on:
+  pull_request:
+    paths:
+      - "scripts/build_system_analysis.py"
+      - "tests/unit/test_system_analysis.py"
+      - "docs/system-analysis/**"
+      - "README.md"
+      - "SOURCE_OF_TRUTH.md"
+      - "AGENTS.md"
+      - "docs/ACTIVE_PLATFORM_SCOPE.md"
+      - "docs/TEST_STRATEGY.md"
+      - "scripts/run_quality_gate.py"
+      - "pyproject.toml"
+      - ".github/workflows/**"
+      - "app/**"
+      - "modules/**"
+      - "tests/**"
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Prepare analysis artifact directory
+        run: mkdir -p system-analysis-artifacts
+
+      - name: Test analyzer
+        id: analyzer_tests
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s tests/unit -p "test_system_analysis.py" -v \
+            2>&1 | tee system-analysis-artifacts/analyzer-tests.log
+
+      - name: Generate repository inventory
+        id: inventory
+        if: always()
+        continue-on-error: true
+        run: >-
+          python scripts/build_system_analysis.py
+          --revision "${GITHUB_SHA}"
+          --output-dir system-analysis-artifacts
+
+      - name: Validate machine-readable inventory
+        id: validate
+        if: always() && steps.inventory.outcome == 'success'
+        continue-on-error: true
+        run: python -m json.tool system-analysis-artifacts/inventory.json > /dev/null
+
+      - name: Upload analysis artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seed-system-analysis
+          path: system-analysis-artifacts/
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Enforce analysis status
+        if: always()
+        shell: bash
+        run: |
+          test "${{ steps.analyzer_tests.outcome }}" = "success"
+          test "${{ steps.inventory.outcome }}" = "success"
+          test "${{ steps.validate.outcome }}" = "success"

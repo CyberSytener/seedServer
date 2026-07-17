@@ -1,0 +1,200 @@
+{
+  "schema_version": "1.0.0",
+  "repository": "CyberSytener/seedServer",
+  "exclude_dirs": [
+    ".artifacts",
+    "_archive",
+    "archive",
+    "artifacts",
+    "runtime-data"
+  ],
+  "exclude_globs": [
+    ".env",
+    ".env.*",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
+    "*.log",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.zip",
+    "**/*.coverage",
+    "**/coverage.xml",
+    "**/local_state/**",
+    "**/runtime_artifacts/**"
+  ],
+  "required_docs": [
+    "README.md",
+    "SOURCE_OF_TRUTH.md",
+    "AGENTS.md",
+    "docs/ACTIVE_PLATFORM_SCOPE.md",
+    "docs/PLATFORM_ROADMAP.md",
+    "docs/MODULE_CONTRACT_V1.md",
+    "docs/MODULE_SDK.md",
+    "docs/TEST_STRATEGY.md",
+    "docs/INTENT_TO_OUTCOME_MANIFEST.md",
+    "docs/INTENT_TO_OUTCOME_IMPLEMENTATION_PLAN.md",
+    "docs/SEED_SERVER_MANIFEST_ALIGNMENT_AUDIT.md"
+  ],
+  "hotspot_thresholds": {
+    "line_count": 600,
+    "function_count": 40,
+    "class_count": 20
+  },
+  "surfaces": [
+    {
+      "id": "portfolio-demo",
+      "status": "active",
+      "description": "Reviewer launcher and deterministic demo path.",
+      "paths": [
+        "scripts/run_portfolio_demo.py",
+        "tests/unit/test_portfolio_demo_launcher.py"
+      ]
+    },
+    {
+      "id": "saga-console",
+      "status": "active",
+      "description": "React and Vite operator console.",
+      "paths": [
+        "saga-console/**"
+      ]
+    },
+    {
+      "id": "console-control-plane",
+      "status": "active",
+      "description": "FastAPI facade used by the Saga Console.",
+      "paths": [
+        "app/api/console/**",
+        "tests/unit/test_console_runtime_api.py"
+      ]
+    },
+    {
+      "id": "module-registry-sdk",
+      "status": "active",
+      "description": "Contract v1 registry, SDK, CLI, lifecycle, sandbox and publication evidence.",
+      "paths": [
+        "modules/**",
+        "app/module_sdk/**",
+        "app/services/module_registry.py",
+        "app/cli.py",
+        "tests/unit/test_module_*.py",
+        "tests/unit/test_seed_cli.py"
+      ]
+    },
+    {
+      "id": "saga-runtime",
+      "status": "active",
+      "description": "Realtime Saga execution, flow runtime and recovery mechanisms.",
+      "paths": [
+        "app/core/realtime/sagas/**",
+        "tests/unit/realtime/**",
+        "tests/integration/realtime/**"
+      ]
+    },
+    {
+      "id": "stub-simulation",
+      "status": "active",
+      "description": "Deterministic simulation and stub-provider proof surface.",
+      "paths": [
+        "app/sim/**",
+        "tests/unit/sim/**"
+      ]
+    },
+    {
+      "id": "intent-to-outcome",
+      "status": "candidate",
+      "description": "Universal contracts, deterministic policies and focused fixtures governed by ADR 0015.",
+      "paths": [
+        "app/contracts/opportunity/**",
+        "app/domain/opportunity/**",
+        "app/services/opportunity/**",
+        "tests/unit/opportunity/**",
+        "tests/integration/opportunity/**",
+        "tests/fixtures/opportunity/**",
+        "docs/INTENT_TO_OUTCOME_*.md",
+        "docs/SEED_SERVER_MANIFEST_ALIGNMENT_AUDIT.md"
+      ]
+    },
+    {
+      "id": "neoeats",
+      "status": "candidate",
+      "description": "Food and inventory vertical APIs, services and runtime blocks.",
+      "paths": [
+        "app/**/neoeats*",
+        "app/**/inventory*",
+        "app/**/recipe*",
+        "tests/**/*neoeats*",
+        "tests/**/*inventory*",
+        "tests/**/*recipe*"
+      ]
+    },
+    {
+      "id": "production-infrastructure",
+      "status": "candidate",
+      "description": "Database, Redis, worker and deployment adapters.",
+      "paths": [
+        "app/infrastructure/**",
+        "migrations/**",
+        "docker-compose*.yml",
+        "Dockerfile*"
+      ]
+    },
+    {
+      "id": "historical-unit-suite",
+      "status": "experimental",
+      "description": "Broad unit suite outside explicit release-gate inventories.",
+      "paths": [
+        "tests/unit/**"
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "id": "opportunity-contract-isolation",
+      "severity": "error",
+      "source_paths": [
+        "app/contracts/opportunity/**"
+      ],
+      "forbidden_import_prefixes": [
+        "fastapi",
+        "redis",
+        "sqlalchemy",
+        "app.api",
+        "app.infrastructure",
+        "app.main",
+        "app.settings",
+        "app.core.llm",
+        "app.services.llm_engine"
+      ]
+    },
+    {
+      "id": "opportunity-domain-isolation",
+      "severity": "error",
+      "source_paths": [
+        "app/domain/opportunity/**"
+      ],
+      "forbidden_import_prefixes": [
+        "fastapi",
+        "redis",
+        "sqlalchemy",
+        "app.api",
+        "app.infrastructure",
+        "app.main",
+        "app.settings"
+      ]
+    },
+    {
+      "id": "module-sdk-platform-isolation",
+      "severity": "warning",
+      "source_paths": [
+        "app/module_sdk/**"
+      ],
+      "forbidden_import_prefixes": [
+        "fastapi",
+        "app.api",
+        "app.main"
+      ]
+    }
+  ]
+}
