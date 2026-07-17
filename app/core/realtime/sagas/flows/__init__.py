@@ -14,7 +14,7 @@ from .market_watcher import MarketWatcherFlow
 from .dynamic_saga import DynamicSaga
 from .neoeats_order import NeoEatsOrderFlow
 from .llm_pipeline import LLMPipelineFlow
-from .flow_executor import FlowExecutorSaga
+from .validated_flow_executor import FlowExecutorSaga
 
 __all__ = [
     "BookingFlow",

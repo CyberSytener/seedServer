@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Set
 
 from app.contracts import ContractIssue
 from app.core.blocks import BlockRegistry, build_default_registry
+from app.core.flow_graph import FlowGraphCycleError, topological_order
 from app.services.module_registry import ModuleRegistry
 
 
@@ -73,11 +74,13 @@ class FlowContractValidator:
         nodes: Iterable[Mapping[str, Any]],
         edges: Iterable[Mapping[str, Any]],
     ) -> Dict[str, Any]:
+        node_items = list(nodes)
+        edge_items = list(edges)
         node_map: Dict[str, Mapping[str, Any]] = {}
         resolved: Dict[str, ResolvedFlowModule] = {}
         issues: List[ContractIssue] = []
 
-        for index, node in enumerate(nodes):
+        for index, node in enumerate(node_items):
             node_id = str(node.get("node_id") or "").strip()
             module_id = str(node.get("module_id") or "").strip()
             path = f"$.graph.nodes.{index}"
@@ -137,7 +140,7 @@ class FlowContractValidator:
                 )
 
         checked_edges = 0
-        for index, edge in enumerate(edges):
+        for index, edge in enumerate(edge_items):
             source_id = str(edge.get("from") or "").strip()
             target_id = str(edge.get("to") or "").strip()
             path = f"$.graph.edges.{index}"
@@ -165,6 +168,17 @@ class FlowContractValidator:
                 continue
             checked_edges += 1
             issues.extend(self._validate_edge(path=path, edge=edge, producer=producer, consumer=consumer))
+
+        try:
+            topological_order(node_map.keys(), edge_items)
+        except FlowGraphCycleError as exc:
+            issues.append(
+                ContractIssue(
+                    code=exc.code,
+                    path="$.graph.edges",
+                    message=str(exc),
+                )
+            )
 
         sorted_issues = sorted(issues, key=lambda issue: (issue.path, issue.code, issue.message))
         return {
