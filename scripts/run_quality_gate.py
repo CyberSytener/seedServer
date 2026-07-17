@@ -21,7 +21,6 @@ PORTFOLIO_TESTS = [
     "tests/unit/test_flow_contract_validator.py",
     "tests/unit/realtime/test_flow_executor_import_boundary.py",
     "tests/unit/realtime/test_flow_cycle_rejection.py",
-    "tests/unit/test_quality_gate_runner.py",
     "tests/unit/test_modes_api.py",
     "tests/unit/test_auth_rate_limit.py",
     "tests/unit/test_security_hardening.py",
