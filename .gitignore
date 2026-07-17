@@ -90,6 +90,7 @@ _archive/
 # Generated benchmark/test artifacts
 test_artifacts/
 test_path/
+system-analysis-artifacts/
 optimizer_logs/
 optimizer_logs_temp/
 mode_test_logs/
