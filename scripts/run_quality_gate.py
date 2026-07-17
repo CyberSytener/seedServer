@@ -18,6 +18,7 @@ PORTFOLIO_TESTS = [
     "tests/unit/test_module_sdk.py",
     "tests/unit/test_seed_cli.py",
     "tests/unit/test_flow_contract_validator.py",
+    "tests/unit/opportunity",
     "tests/unit/test_modes_api.py",
     "tests/unit/test_auth_rate_limit.py",
     "tests/unit/test_security_hardening.py",
