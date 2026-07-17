@@ -69,6 +69,24 @@ def test_flow_contract_validator_requires_explicit_mapping() -> None:
     assert any(issue["code"] == "flow.edge_mapping_required" for issue in report["issues"])
 
 
+def test_flow_contract_validator_rejects_cycle_with_stable_diagnostic() -> None:
+    report = FlowContractValidator().validate_graph(
+        _nodes(),
+        [
+            {"from": "scan", "to": "score", "mapping": {"jobs": "jobs", "scan_id": "scan_id"}},
+            {"from": "score", "to": "scan", "mapping": {"query": "scored_jobs"}},
+        ],
+    )
+
+    cycle_issues = [
+        issue for issue in report["issues"] if issue["code"] == "flow.cycle_detected"
+    ]
+    assert report["ok"] is False
+    assert len(cycle_issues) == 1
+    assert cycle_issues[0]["path"] == "$.graph.edges"
+    assert "scan, score" in cycle_issues[0]["message"]
+
+
 def test_flow_contract_validator_reports_module_without_flow_adapter() -> None:
     report = FlowContractValidator(block_registry=build_default_registry()).validate_graph(
         [{"node_id": "assistant", "module_id": "general_assistant"}],
