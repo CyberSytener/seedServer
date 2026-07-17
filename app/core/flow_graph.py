@@ -17,6 +17,57 @@ class FlowGraphCycleError(ValueError):
         )
 
 
+def _find_cycle_nodes(
+    ordered_nodes: list[str],
+    adjacency: Mapping[str, Sequence[str]],
+) -> list[str]:
+    """Return only nodes that belong to a strongly connected cycle."""
+
+    next_index = 0
+    indices: dict[str, int] = {}
+    lowlinks: dict[str, int] = {}
+    stack: list[str] = []
+    on_stack: set[str] = set()
+    cycle_nodes: set[str] = set()
+
+    def visit(node: str) -> None:
+        nonlocal next_index
+        indices[node] = next_index
+        lowlinks[node] = next_index
+        next_index += 1
+        stack.append(node)
+        on_stack.add(node)
+
+        for target in adjacency[node]:
+            if target not in indices:
+                visit(target)
+                lowlinks[node] = min(lowlinks[node], lowlinks[target])
+            elif target in on_stack:
+                lowlinks[node] = min(lowlinks[node], indices[target])
+
+        if lowlinks[node] != indices[node]:
+            return
+
+        component: list[str] = []
+        while stack:
+            member = stack.pop()
+            on_stack.remove(member)
+            component.append(member)
+            if member == node:
+                break
+
+        if len(component) > 1:
+            cycle_nodes.update(component)
+        elif component and component[0] in adjacency[component[0]]:
+            cycle_nodes.add(component[0])
+
+    for node in ordered_nodes:
+        if node not in indices:
+            visit(node)
+
+    return [node for node in ordered_nodes if node in cycle_nodes]
+
+
 def topological_order(
     node_ids: Iterable[str],
     edges: Iterable[Mapping[str, Any]],
@@ -61,7 +112,7 @@ def topological_order(
                 queue.append(target)
 
     if len(result) != len(ordered_nodes):
-        remaining = [node_id for node_id in ordered_nodes if indegree[node_id] > 0]
-        raise FlowGraphCycleError(remaining)
+        cycle_nodes = _find_cycle_nodes(ordered_nodes, adjacency)
+        raise FlowGraphCycleError(cycle_nodes)
 
     return result
