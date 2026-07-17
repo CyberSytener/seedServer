@@ -30,6 +30,7 @@ Without that separation, an old file can look like a current product commitment,
 | `ANALYSIS_PROTOCOL.md` | Required evidence classes, analysis stages, scoring, risk handling, and Cold Review rules. |
 | `TASK_ROUTE_TEMPLATE.md` | Standard output for converting a target into PR-sized, gate-backed work. |
 | `CURRENT_SYSTEM_BASELINE.md` | Human-reviewed starting assessment for the current canonical system. |
+| `INVENTORY_FINDINGS.md` | Quantitative repository findings, verified target blockers, readiness verdicts, and the current route. |
 | `targets/intent-to-outcome.json` | Current strategic target and immediate checkpoint used by the first route. |
 | `scripts/build_system_analysis.py` | Deterministic repository inventory generator. |
 | `.github/workflows/system-analysis.yml` | CI execution and downloadable analysis artifact. |
