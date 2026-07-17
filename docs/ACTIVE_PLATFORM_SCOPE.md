@@ -1,6 +1,6 @@
 # Active Platform Scope
 
-Last updated: 2026-06-07
+Last updated: 2026-07-17
 
 This document defines what Seed Platform currently promises to maintain. The
 repository contains a broad historical system, but not every file represents an
@@ -35,6 +35,10 @@ explicit ADR and test commitment.
 - Agent session and multi-agent APIs.
 - Provider profiles and real-LLM adapters.
 - PostgreSQL, Redis, worker, and public deployment integrations.
+- Intent-to-Outcome contracts, deterministic policies, application services,
+  fixtures, and focused tests under `app/*/opportunity/` and
+  `tests/*/opportunity/`, governed by ADR 0015. This Candidate status does not
+  authorize API routes, persistence, live sources, or consequential actions.
 
 Candidate code may be used by demos and integration tests, but broad refactors
 are not required merely to satisfy historical expectations.
